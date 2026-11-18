@@ -662,9 +662,19 @@ def main() -> int:
                 "            onItemAccepted: item => tagSuggestions.acceptTag(item.name)",
             ),
             (
-                "id: animeProviderPicker",
-                "        Rectangle { // Tag input area",
+                "const sel = tagSuggestions.currentItem();",
+                "                if (tagSuggestions.selectedIndex >= 0 && tagSuggestions.selectedIndex < tagSuggestionRepeater.count) {\n"
+                "                    const tag = root.suggestionList[tagSuggestions.selectedIndex].name;\n"
+                "                    tagSuggestions.acceptTag(tag);\n"
+                "                }",
+                "                const sel = tagSuggestions.currentItem();\n"
+                "                if (sel) tagSuggestions.acceptTag(sel.name);",
+            ),
+            (
+                "id: animeClickDismiss",
+                "        ScrollEdgeFade {",
                 "        MouseArea {\n"
+                "            id: animeClickDismiss\n"
                 "            anchors.fill: parent\n"
                 "            visible: root.providerPickerOpen\n"
                 "            z: 5\n"
@@ -672,7 +682,10 @@ def main() -> int:
                 "                root.providerPickerOpen = false;\n"
                 "                mouse.accepted = false;\n"
                 "            }\n"
-                "        }\n\n"
+                "        }\n"
+                "        ScrollEdgeFade {",
+            ),
+                "        Rectangle { // Tag input area",
                 "        Rectangle { // Inline Anime Provider Picker\n"
                 "            id: animeProviderPicker\n"
                 "            visible: root.providerPickerOpen\n"
