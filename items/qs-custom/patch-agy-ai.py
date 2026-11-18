@@ -860,6 +860,48 @@ def main() -> int:
                 '                    },',
             ),
             (
+                "} else if (tagSuggestions.visible) {",
+                "                        } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)) {\n"
+                "                            if (event.modifiers & Qt.ShiftModifier) {\n"
+                "                                // Insert newline\n"
+                "                                tagInputField.insert(tagInputField.cursorPosition, \"\\n\")\n"
+                "                                event.accepted = true\n"
+                "                            } else { // Accept text\n"
+                "                                const inputText = tagInputField.text\n"
+                "                                root.handleInput(inputText)\n"
+                "                                tagInputField.clear()\n"
+                "                                event.accepted = true\n"
+                "                            }\n"
+                "                        }",
+                "                        } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)) {\n"
+                "                            if (event.modifiers & Qt.ShiftModifier) {\n"
+                "                                // Insert newline\n"
+                "                                tagInputField.insert(tagInputField.cursorPosition, \"\\n\")\n"
+                "                                event.accepted = true\n"
+                "                            } else if (tagSuggestions.visible) {\n"
+                "                                tagSuggestions.acceptSelectedTag();\n"
+                "                                event.accepted = true;\n"
+                "                            } else { // Accept text\n"
+                "                                const inputText = tagInputField.text\n"
+                "                                root.handleInput(inputText)\n"
+                "                                tagInputField.clear()\n"
+                "                                event.accepted = true\n"
+                "                            }\n"
+                "                        }",
+            ),
+            (
+                "root.suggestionList = []; // clear after accept",
+                "                const updatedText = words.join(\" \") + \" \";\n"
+                "                tagInputField.text = updatedText;\n"
+                "                tagInputField.cursorPosition = tagInputField.text.length;\n"
+                "                tagInputField.forceActiveFocus();",
+                "                const updatedText = words.join(\" \") + \" \";\n"
+                "                tagInputField.text = updatedText;\n"
+                "                root.suggestionList = []; // clear after accept\n"
+                "                tagInputField.cursorPosition = tagInputField.text.length;\n"
+                "                tagInputField.forceActiveFocus();",
+            ),
+            (
                 "root.providerPickerOpen = !root.providerPickerOpen",
                 '                ApiInputBoxIndicator { // Tool indicator\n'
                 '                    icon: "api"\n'
@@ -881,6 +923,37 @@ def main() -> int:
                 '                        onClicked: root.providerPickerOpen = !root.providerPickerOpen\n'
                 '                    }\n'
                 '                }',
+            ),
+        ],
+    )
+
+    # 7. BooruImage.qml: clicking an anime image opens a floating full-size viewer
+    ok &= patch_file(
+        ii / "modules/ii/sidebarLeft/anime/BooruImage.qml",
+        [
+            (
+                "property bool viewerOpen: false",
+                "    property bool showActions: false",
+                "    property bool showActions: false\n"
+                "    property bool viewerOpen: false",
+            ),
+            (
+                "sourceComponent: AnimeImageViewer",
+                "    padding: 0\n"
+                "    implicitWidth: root.rowHeight * modelData.aspect_ratio",
+                "    onClicked: root.viewerOpen = true\n\n"
+                "    PointingHandInteraction {}\n\n"
+                "    Loader {\n"
+                "        active: root.viewerOpen\n"
+                "        sourceComponent: AnimeImageViewer {\n"
+                "            sourceUrl: root.imageData.file_url ?? root.imageData.sample_url ?? root.imageData.preview_url ?? \"\"\n"
+                "            previewUrl: root.imageData.preview_url ?? \"\"\n"
+                "            tags: root.imageData.tags ?? \"\"\n"
+                "            onCloseRequested: root.viewerOpen = false\n"
+                "        }\n"
+                "    }\n\n"
+                "    padding: 0\n"
+                "    implicitWidth: root.rowHeight * modelData.aspect_ratio",
             ),
         ],
     )
