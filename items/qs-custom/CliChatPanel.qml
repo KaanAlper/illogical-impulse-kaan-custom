@@ -18,6 +18,10 @@ Item {
     property bool busy: false
     property bool modelPickerOpen: false
     property bool cliInstalled: true
+    property bool installing: false
+    property bool needsPassword: false
+    property real installProgress: 0.0
+    property string installStatus: ""
     property string selectedModel: ""
     property string selectedEffort: "medium"
     property var modelCatalog: []
@@ -25,6 +29,71 @@ Item {
     property var suggestionList: []
 
     readonly property string metaScript: FileUtils.trimFileProtocol(`${Directories.scriptPath}/ai/fetch-cli-meta.py`)
+
+    function startInstall() {
+        if (root.installing)
+            return;
+        root.installing = true;
+        root.needsPassword = false;
+        root.installProgress = 0.08;
+        root.installStatus = Translation.tr("Preparing installation…");
+        const pkg = root.backend === "claude" ? "claude-code" : "openai-codex";
+        const npmPkg = root.backend === "claude" ? "@anthropic-ai/claude-code" : "@openai/codex";
+        installProc.command = [
+            "bash", "-c",
+            `if command -v npm >/dev/null 2>&1; then npm install -g ${npmPkg}; ` +
+            `elif command -v paru >/dev/null 2>&1; then paru -S --needed --noconfirm ${pkg}; ` +
+            `else echo "ERR: npm or paru not found" >&2; exit 1; fi`
+        ];
+        installProc.running = true;
+    }
+
+    function submitInstallPassword(pwd: string) {
+        if (!installProc.running || !pwd)
+            return;
+        root.needsPassword = false;
+        root.installStatus = Translation.tr("Authenticating & installing…");
+        installProc.write(pwd + "\n");
+    }
+
+    Process {
+        id: installProc
+        stdout: SplitParser {
+            onRead: data => {
+                const line = (data ?? "").trim();
+                if (!line) return;
+                root.installStatus = line;
+                if (line.includes("added") || line.includes("Installing"))
+                    root.installProgress = Math.max(root.installProgress, 0.75);
+                else
+                    root.installProgress = Math.min(0.92, root.installProgress + 0.08);
+            }
+        }
+        stderr: SplitParser {
+            onRead: data => {
+                const line = (data ?? "").trim();
+                if (!line) return;
+                if (/password|parola|sudo/i.test(line)) {
+                    root.needsPassword = true;
+                    root.installStatus = Translation.tr("Administrator password required");
+                } else {
+                    root.installStatus = line;
+                }
+            }
+        }
+        onExited: (code, status) => {
+            root.installing = false;
+            root.needsPassword = false;
+            if (code === 0) {
+                root.installProgress = 1.0;
+                root.installStatus = Translation.tr("Installed!");
+                root.refreshMeta();
+            } else {
+                root.installProgress = 0.0;
+                root.installStatus = Translation.tr("Installation failed (exit %1)").arg(code);
+            }
+        }
+    }
 
     function refreshMeta() {
         metaProc.running = false;
@@ -209,7 +278,149 @@ Item {
         anchors.margins: 8
         spacing: 6
 
+        // On-demand CLI installer card when claude/codex is not installed
         Item {
+            visible: !root.cliInstalled
+            Layout.fillWidth: true
+            Layout.fillHeight: true
+
+            Rectangle {
+                anchors.centerIn: parent
+                width: Math.min(parent.width - 24, 340)
+                implicitHeight: instCol.implicitHeight + 32
+                radius: Appearance.rounding.large
+                color: Appearance.colors.colLayer2
+                border.width: 1
+                border.color: Appearance.colors.colOutlineVariant
+
+                ColumnLayout {
+                    id: instCol
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
+                    anchors.margins: 16
+                    spacing: 12
+
+                    MaterialSymbol {
+                        Layout.alignment: Qt.AlignHCenter
+                        text: root.installing ? "downloading" : "terminal"
+                        iconSize: 36
+                        color: Appearance.colors.colPrimary
+                    }
+
+                    StyledText {
+                        Layout.fillWidth: true
+                        horizontalAlignment: Text.AlignHCenter
+                        font.pixelSize: Appearance.font.pixelSize.normal
+                        font.weight: Font.DemiBold
+                        color: Appearance.m3colors.m3onSurface
+                        text: root.backend === "claude"
+                            ? Translation.tr("Claude CLI is not installed")
+                            : Translation.tr("Codex CLI is not installed")
+                    }
+
+                    StyledText {
+                        Layout.fillWidth: true
+                        horizontalAlignment: Text.AlignHCenter
+                        wrapMode: Text.Wrap
+                        font.pixelSize: Appearance.font.pixelSize.smaller
+                        color: Appearance.colors.colSubtext
+                        text: root.installStatus || Translation.tr("Would you like to install it now?")
+                    }
+
+                    // Animated percentage progress bar
+                    ColumnLayout {
+                        visible: root.installing || root.installProgress > 0
+                        Layout.fillWidth: true
+                        spacing: 4
+
+                        Rectangle {
+                            Layout.fillWidth: true
+                            implicitHeight: 8
+                            radius: Appearance.rounding.full
+                            color: Appearance.colors.colSurfaceContainerHigh
+                            clip: true
+
+                            Rectangle {
+                                anchors.left: parent.left
+                                anchors.top: parent.top
+                                anchors.bottom: parent.bottom
+                                width: parent.width * root.installProgress
+                                radius: Appearance.rounding.full
+                                color: Appearance.colors.colPrimary
+                                Behavior on width {
+                                    NumberAnimation { duration: 250; easing.type: Easing.OutCubic }
+                                }
+                            }
+                        }
+
+                        StyledText {
+                            Layout.alignment: Qt.AlignRight
+                            font.pixelSize: Appearance.font.pixelSize.smaller - 1
+                            font.family: Appearance.font.family.monospace
+                            color: Appearance.colors.colPrimary
+                            text: Math.round(root.installProgress * 100) + "%"
+                        }
+                    }
+
+                    // Inline sudo password prompt when needed
+                    RowLayout {
+                        visible: root.needsPassword
+                        Layout.fillWidth: true
+                        spacing: 6
+
+                        TextField {
+                            id: pwdField
+                            Layout.fillWidth: true
+                            echoMode: TextInput.Password
+                            placeholderText: Translation.tr("Enter password")
+                            onAccepted: {
+                                root.submitInstallPassword(text);
+                                text = "";
+                            }
+                        }
+                        RippleButton {
+                            implicitWidth: 36
+                            implicitHeight: 36
+                            buttonRadius: Appearance.rounding.small
+                            colBackground: Appearance.colors.colPrimary
+                            onClicked: {
+                                root.submitInstallPassword(pwdField.text);
+                                pwdField.text = "";
+                            }
+                            contentItem: MaterialSymbol {
+                                anchors.centerIn: parent
+                                text: "check"
+                                iconSize: 18
+                                color: Appearance.m3colors.m3onPrimary
+                            }
+                        }
+                    }
+
+                    RippleButton {
+                        visible: !root.installing
+                        Layout.alignment: Qt.AlignHCenter
+                        implicitWidth: instBtnText.implicitWidth + 32
+                        implicitHeight: 36
+                        buttonRadius: Appearance.rounding.full
+                        colBackground: Appearance.colors.colPrimary
+                        colBackgroundHover: Appearance.colors.colPrimaryHover
+                        onClicked: root.startInstall()
+                        contentItem: StyledText {
+                            id: instBtnText
+                            anchors.centerIn: parent
+                            font.pixelSize: Appearance.font.pixelSize.small
+                            font.weight: Font.Medium
+                            color: Appearance.m3colors.m3onPrimary
+                            text: Translation.tr("Install")
+                        }
+                    }
+                }
+            }
+        }
+
+        Item {
+            visible: root.cliInstalled
             Layout.fillWidth: true
             Layout.fillHeight: true
 
@@ -426,6 +637,7 @@ Item {
 
         // Input box
         Rectangle {
+            visible: root.cliInstalled
             Layout.fillWidth: true
             implicitHeight: Math.max(66, inputCol.implicitHeight + 10)
             radius: Appearance.rounding.normal

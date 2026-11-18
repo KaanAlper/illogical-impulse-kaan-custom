@@ -605,289 +605,174 @@ def main() -> int:
             (
                 "property bool providerPickerOpen: false",
                 '    property string commandPrefix: "/"',
-                '    property string commandPrefix: "/"
-    property bool providerPickerOpen: false',
+                '    property string commandPrefix: "/"\n    property bool providerPickerOpen: false',
             ),
             (
                 "CliSlashList {",
-                "        FlowButtonGroup { // Tag suggestions
-"
-                "            id: tagSuggestions
-"
-                "            visible: root.suggestionList.length > 0 && tagInputField.text.length > 0
-"
-                "            property int selectedIndex: 0
-"
-                "            Layout.fillWidth: true
-"
-                "            spacing: 5
-
-"
-                "            Repeater {
-"
-                "                id: tagSuggestionRepeater
-"
-                "                model: {
-"
-                "                    tagSuggestions.selectedIndex = 0
-"
-                "                    return root.suggestionList.slice(0, 10)
-"
-                "                }
-"
-                "                delegate: ApiCommandButton {
-"
-                "                    id: tagButton
-"
-                "                    colBackground: tagSuggestions.selectedIndex === index ? Appearance.colors.colSecondaryContainerHover : Appearance.colors.colSecondaryContainer
-"
-                "                    bounce: false
-"
-                "                    contentItem: RowLayout {
-"
-                "                        anchors.centerIn: parent
-"
-                "                        spacing: 5
-"
-                "                        StyledText {
-"
-                "                            Layout.fillWidth: false
-"
-                "                            font.pixelSize: Appearance.font.pixelSize.small
-"
-                "                            color: Appearance.colors.colOnSecondaryContainer
-"
-                "                            horizontalAlignment: Text.AlignRight
-"
-                "                            text: modelData.displayName ?? modelData.name
-"
-                "                        }
-"
-                "                        StyledText {
-"
-                "                            Layout.fillWidth: false
-"
-                "                            visible: modelData.count !== undefined
-"
-                "                            font.pixelSize: Appearance.font.pixelSize.smaller
-"
-                "                            color: Appearance.colors.colOnSecondaryContainer
-"
-                "                            horizontalAlignment: Text.AlignLeft
-"
-                "                            text: modelData.count ?? \"\"
-"
-                "                        }
-"
-                "                    }
-
-"
-                "                    onHoveredChanged: {
-"
-                "                        if (tagButton.hovered) {
-"
-                "                            tagSuggestions.selectedIndex = index;
-"
-                "                        }
-"
-                "                    }
-"
-                "                    onClicked: {
-"
-                "                        tagSuggestions.acceptTag(modelData.name)
-"
-                "                    }
-"
-                "                }
-"
+                "        FlowButtonGroup { // Tag suggestions\n"
+                "            id: tagSuggestions\n"
+                "            visible: root.suggestionList.length > 0 && tagInputField.text.length > 0\n"
+                "            property int selectedIndex: 0\n"
+                "            Layout.fillWidth: true\n"
+                "            spacing: 5\n\n"
+                "            Repeater {\n"
+                "                id: tagSuggestionRepeater\n"
+                "                model: {\n"
+                "                    tagSuggestions.selectedIndex = 0\n"
+                "                    return root.suggestionList.slice(0, 10)\n"
+                "                }\n"
+                "                delegate: ApiCommandButton {\n"
+                "                    id: tagButton\n"
+                "                    colBackground: tagSuggestions.selectedIndex === index ? Appearance.colors.colSecondaryContainerHover : Appearance.colors.colSecondaryContainer\n"
+                "                    bounce: false\n"
+                "                    contentItem: RowLayout {\n"
+                "                        anchors.centerIn: parent\n"
+                "                        spacing: 5\n"
+                "                        StyledText {\n"
+                "                            Layout.fillWidth: false\n"
+                "                            font.pixelSize: Appearance.font.pixelSize.small\n"
+                "                            color: Appearance.colors.colOnSecondaryContainer\n"
+                "                            horizontalAlignment: Text.AlignRight\n"
+                "                            text: modelData.displayName ?? modelData.name\n"
+                "                        }\n"
+                "                        StyledText {\n"
+                "                            Layout.fillWidth: false\n"
+                "                            visible: modelData.count !== undefined\n"
+                "                            font.pixelSize: Appearance.font.pixelSize.smaller\n"
+                "                            color: Appearance.colors.colOnSecondaryContainer\n"
+                "                            horizontalAlignment: Text.AlignLeft\n"
+                "                            text: modelData.count ?? \"\"\n"
+                "                        }\n"
+                "                    }\n\n"
+                "                    onHoveredChanged: {\n"
+                "                        if (tagButton.hovered) {\n"
+                "                            tagSuggestions.selectedIndex = index;\n"
+                "                        }\n"
+                "                    }\n"
+                "                    onClicked: {\n"
+                "                        tagSuggestions.acceptTag(modelData.name)\n"
+                "                    }\n"
+                "                }\n"
                 "            }",
-                "        CliSlashList {
-"
-                "            id: tagSuggestions
-"
-                "            visible: root.suggestionList.length > 0 && tagInputField.text.length > 0
-"
-                "            Layout.fillWidth: true
-"
-                "            model: root.suggestionList
-"
-                "            onItemAccepted: item => tagSuggestions.acceptTag(item.name)",
+                "        CliSlashList {\n"
+                "            id: tagSuggestions\n"
+                "            visible: root.suggestionList.length > 0 && tagInputField.text.length > 0\n"
+                "            Layout.fillWidth: true\n"
+                "            model: root.suggestionList\n"
+                "            onItemAccepted: item => tagSuggestions.acceptTag(item.name)\n"
+                "            function acceptSelectedTag() {\n"
+                "                const item = currentItem();\n"
+                "                if (item) acceptTag(item.name);\n"
+                "            }",
             ),
             (
                 "visible: root.providerPickerOpen\n                z: 5",
                 "        Rectangle { // Tag input area",
-                "        MouseArea {
-"
-                "            anchors.fill: parent
-"
-                "            visible: root.providerPickerOpen
-"
-                "            z: 5
-"
-                "            onPressed: mouse => {
-"
-                "                root.providerPickerOpen = false;
-"
-                "                mouse.accepted = false;
-"
-                "            }
-"
-                "        }
-
-"
-                "        Rectangle { // Inline Anime Provider Picker
-"
-                "            id: animeProviderPicker
-"
-                "            visible: root.providerPickerOpen
-"
-                "            Layout.fillWidth: true
-"
-                "            implicitHeight: Math.min(240, provCol.implicitHeight + 14)
-"
-                "            clip: true
-"
-                "            radius: Appearance.rounding.normal
-"
-                "            color: Appearance.colors.colLayer2
-"
-                "            border.width: 1
-"
-                "            border.color: Appearance.colors.colOutlineVariant
-
-"
-                "            ColumnLayout {
-"
-                "                id: provCol
-"
-                "                anchors.left: parent.left
-"
-                "                anchors.right: parent.right
-"
-                "                anchors.top: parent.top
-"
-                "                anchors.margins: 8
-"
-                "                spacing: 4
-"
-                "                StyledText {
-"
-                "                    Layout.leftMargin: 6
-"
-                "                    font.pixelSize: Appearance.font.pixelSize.smaller
-"
-                "                    font.weight: Font.Medium
-"
-                "                    color: Appearance.colors.colSubtext
-"
-                "                    text: Translation.tr(\"Providers\")
-"
-                "                }
-"
-                "                ListView {
-"
-                "                    id: provList
-"
-                "                    Layout.fillWidth: true
-"
-                "                    implicitHeight: Math.min(190, contentHeight)
-"
-                "                    clip: true
-"
-                "                    spacing: 2
-"
-                "                    model: Booru.providerList
-"
-                "                    delegate: RippleButton {
-"
-                "                        required property string modelData
-"
-                "                        readonly property bool active: Booru.currentProvider === modelData
-"
-                "                        width: provList.width
-"
-                "                        implicitHeight: 30
-"
-                "                        buttonRadius: Appearance.rounding.small
-"
-                "                        colBackground: active ? Appearance.colors.colPrimaryContainer : \"transparent\"
-"
-                "                        colBackgroundHover: active ? Appearance.colors.colPrimaryContainer : Appearance.colors.colSurfaceContainerHigh
-"
-                "                        onClicked: {
-"
-                "                            Booru.setProvider(modelData);
-"
-                "                            root.providerPickerOpen = false;
-"
-                "                        }
-"
-                "                        contentItem: RowLayout {
-"
-                "                            anchors.fill: parent
-"
-                "                            anchors.leftMargin: 8
-"
-                "                            anchors.rightMargin: 8
-"
-                "                            StyledText {
-"
-                "                                Layout.fillWidth: true
-"
-                "                                font.pixelSize: Appearance.font.pixelSize.small
-"
-                "                                color: active ? Appearance.colors.colOnPrimaryContainer : Appearance.m3colors.m3onSurface
-"
-                "                                text: Booru.providers[modelData]?.name ?? modelData
-"
-                "                            }
-"
-                "                            MaterialSymbol {
-"
-                "                                visible: active
-"
-                "                                text: \"check\"
-"
-                "                                iconSize: 16
-"
-                "                                color: Appearance.colors.colPrimary
-"
-                "                            }
-"
-                "                        }
-"
-                "                    }
-"
-                "                }
-"
-                "            }
-"
-                "        }
-
-"
+                "        MouseArea {\n"
+                "            anchors.fill: parent\n"
+                "            visible: root.providerPickerOpen\n"
+                "            z: 5\n"
+                "            onPressed: mouse => {\n"
+                "                root.providerPickerOpen = false;\n"
+                "                mouse.accepted = false;\n"
+                "            }\n"
+                "        }\n\n"
+                "        Rectangle { // Inline Anime Provider Picker\n"
+                "            id: animeProviderPicker\n"
+                "            visible: root.providerPickerOpen\n"
+                "            Layout.fillWidth: true\n"
+                "            implicitHeight: Math.min(240, provCol.implicitHeight + 14)\n"
+                "            clip: true\n"
+                "            radius: Appearance.rounding.normal\n"
+                "            color: Appearance.colors.colLayer2\n"
+                "            border.width: 1\n"
+                "            border.color: Appearance.colors.colOutlineVariant\n\n"
+                "            ColumnLayout {\n"
+                "                id: provCol\n"
+                "                anchors.left: parent.left\n"
+                "                anchors.right: parent.right\n"
+                "                anchors.top: parent.top\n"
+                "                anchors.margins: 8\n"
+                "                spacing: 4\n"
+                "                StyledText {\n"
+                "                    Layout.leftMargin: 6\n"
+                "                    font.pixelSize: Appearance.font.pixelSize.smaller\n"
+                "                    font.weight: Font.Medium\n"
+                "                    color: Appearance.colors.colSubtext\n"
+                "                    text: Translation.tr(\"Providers\")\n"
+                "                }\n"
+                "                ListView {\n"
+                "                    id: provList\n"
+                "                    Layout.fillWidth: true\n"
+                "                    implicitHeight: Math.min(190, contentHeight)\n"
+                "                    clip: true\n"
+                "                    spacing: 2\n"
+                "                    model: Booru.providerList\n"
+                "                    delegate: RippleButton {\n"
+                "                        required property string modelData\n"
+                "                        readonly property bool active: Booru.currentProvider === modelData\n"
+                "                        width: provList.width\n"
+                "                        implicitHeight: 30\n"
+                "                        buttonRadius: Appearance.rounding.small\n"
+                "                        colBackground: active ? Appearance.colors.colPrimaryContainer : \"transparent\"\n"
+                "                        colBackgroundHover: active ? Appearance.colors.colPrimaryContainer : Appearance.colors.colSurfaceContainerHigh\n"
+                "                        onClicked: {\n"
+                "                            Booru.setProvider(modelData);\n"
+                "                            root.providerPickerOpen = false;\n"
+                "                        }\n"
+                "                        contentItem: RowLayout {\n"
+                "                            anchors.fill: parent\n"
+                "                            anchors.leftMargin: 8\n"
+                "                            anchors.rightMargin: 8\n"
+                "                            StyledText {\n"
+                "                                Layout.fillWidth: true\n"
+                "                                font.pixelSize: Appearance.font.pixelSize.small\n"
+                "                                color: active ? Appearance.colors.colOnPrimaryContainer : Appearance.m3colors.m3onSurface\n"
+                "                                text: Booru.providers[modelData]?.name ?? modelData\n"
+                "                            }\n"
+                "                            MaterialSymbol {\n"
+                "                                visible: active\n"
+                "                                text: \"check\"\n"
+                "                                iconSize: 16\n"
+                "                                color: Appearance.colors.colPrimary\n"
+                "                            }\n"
+                "                        }\n"
+                "                    }\n"
+                "                }\n"
+                "            }\n"
+                "        }\n\n"
                 "        Rectangle { // Tag input area",
             ),
             (
                 "onActiveFocusChanged: if (activeFocus) root.providerPickerOpen = false;",
-                "                StyledTextArea { // The actual TextArea
-"
+                "                StyledTextArea { // The actual TextArea\n"
                 "                    id: tagInputField",
-                "                StyledTextArea { // The actual TextArea
-"
-                "                    id: tagInputField
-"
+                "                StyledTextArea { // The actual TextArea\n"
+                "                    id: tagInputField\n"
                 "                    onActiveFocusChanged: if (activeFocus) root.providerPickerOpen = false;",
             ),
             (
-                "if (root.providerPickerOpen) { root.providerPickerOpen = false; event.accepted = true; return; }",
-                "                        } else if (event.key === Qt.Key_Up && tagSuggestions.visible) {",
-                "                        } else if (event.key === Qt.Key_Escape) {
-"
-                "                            if (root.providerPickerOpen) { root.providerPickerOpen = false; event.accepted = true; return; }
-"
-                "                            if (tagSuggestions.visible) { tagInputField.clear(); event.accepted = true; return; }
-"
-                "                        } else if (event.key === Qt.Key_Up && tagSuggestions.visible) {",
+                "tagSuggestions.moveUp()",
+                "                        } else if (event.key === Qt.Key_Up) {\n"
+                "                            tagSuggestions.selectedIndex = Math.max(0, tagSuggestions.selectedIndex - 1);\n"
+                "                            event.accepted = true;\n"
+                "                        } else if (event.key === Qt.Key_Down) {\n"
+                "                            tagSuggestions.selectedIndex = Math.min(root.suggestionList.length - 1, tagSuggestions.selectedIndex + 1);\n"
+                "                            event.accepted = true;\n"
+                "                        }",
+                "                        } else if (event.key === Qt.Key_Up) {\n"
+                "                            tagSuggestions.moveUp();\n"
+                "                            event.accepted = true;\n"
+                "                        } else if (event.key === Qt.Key_Down) {\n"
+                "                            tagSuggestions.moveDown();\n"
+                "                            event.accepted = true;\n"
+                "                        }",
+            ),
+                "                        } else if (event.key === Qt.Key_Up) {",
+                "                        } else if (event.key === Qt.Key_Escape) {\n"
+                "                            if (root.providerPickerOpen) { root.providerPickerOpen = false; event.accepted = true; return; }\n"
+                "                            if (tagSuggestions.visible) { tagInputField.clear(); event.accepted = true; return; }\n"
+                "                        } else if (event.key === Qt.Key_Up) {",
             ),
             (
                 'dontAddSpace: true\n                    },',
