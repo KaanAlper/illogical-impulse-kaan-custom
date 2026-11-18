@@ -55,13 +55,18 @@ def human_size(num: int) -> str:
     return ""
 
 
-def display_dir(path: str, home: str) -> str:
+def display_dir(path: str, home: str, max_len: int = 46) -> str:
     parent = os.path.dirname(path) or "/"
     if parent == home:
-        return "~"
-    if parent.startswith(home + "/"):
-        return "~" + parent[len(home):]
-    return parent
+        shown = "~"
+    elif parent.startswith(home + "/"):
+        shown = "~" + parent[len(home):]
+    else:
+        shown = parent
+    if len(shown) <= max_len:
+        return shown
+    keep = (max_len - 1) // 2
+    return shown[:keep] + "…" + shown[-keep:]
 
 
 def run_locate(db_path: str, update_script: str, terms: list[str], home: str) -> list[str]:

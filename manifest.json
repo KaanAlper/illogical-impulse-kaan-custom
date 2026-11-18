@@ -157,6 +157,21 @@
       "terminal": true,
       "default": false,
       "install": "sudo bash {repo}/items/autologin-lock/enable.sh"
+    },
+    {
+      "id": "default-file-manager",
+      "title": "Klasörleri Dolphin ile aç (inode/directory)",
+      "desc": "Uygulamalarda veya dosya yoluna tıklandığında klasörleri terminal yerine Dolphin ile açar.",
+      "kind": "check",
+      "check": [
+        {
+          "file_has": [
+            "~/.config/mimeapps.list",
+            "inode/directory=org.kde.dolphin.desktop"
+          ]
+        }
+      ],
+      "install": "xdg-mime default org.kde.dolphin.desktop inode/directory"
     }
   ]
 }
