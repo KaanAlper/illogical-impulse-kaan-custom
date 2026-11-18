@@ -248,7 +248,7 @@ def main() -> int:
                 '            if (cmd === "config" || cmd === "settings") { root.modelPickerOpen = false; root.configPickerOpen = true; return; }\n'
                 '            if (cmd === "login") {\n'
                 '                const agyBin = FileUtils.trimFileProtocol(`${Directories.home}/.local/bin/agy`);\n'
-                '                Quickshell.execDetached([Config.options.apps.terminal, "-e", agyBin]);\n'
+                '                Quickshell.execDetached(["bash", "-c", `${Config.options.apps.terminal} -e "${agyBin}"`]);\n'
                 '                return;\n'
                 '            }\n'
                 '            if (cmd === "clear") { Ai.clearMessages(); return; }\n'

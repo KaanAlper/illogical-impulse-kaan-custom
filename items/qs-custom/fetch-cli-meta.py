@@ -140,7 +140,7 @@ def fetch_codex() -> dict:
         try:
             raw = pathlib.Path(bin_path).resolve().read_bytes()
             slugs = sorted(
-                {m.decode() for m in re.findall(rb"gpt-5\.[0-9]+(?:-codex(?:-(?:mini|max))?)?", raw)},
+                {m.decode() for m in re.findall(rb"gpt-5\.[0-9]+(?:-(?:codex(?:-(?:mini|max))?|luna|sol|terra))?(?![A-Za-z0-9_.-])", raw)},
                 reverse=True,
             )
             for slug in slugs:

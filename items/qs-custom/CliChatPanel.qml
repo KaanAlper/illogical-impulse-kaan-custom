@@ -168,7 +168,7 @@ Item {
 
     function openLogin() {
         const cmd = root.backend === "claude" ? "claude" : "codex login";
-        Quickshell.execDetached([Config.options.apps.terminal, "-e", "bash", "-c", `${cmd}; echo; read -p 'Press Enter to close...'`]);
+        Quickshell.execDetached(["bash", "-c", `${Config.options.apps.terminal} -e bash -c '${cmd}; echo; read -p "Press Enter to close..."'`]);
     }
 
     function clearChat() {
