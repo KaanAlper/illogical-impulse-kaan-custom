@@ -9,7 +9,7 @@ import sys
 
 EFFORT_ORDER = {"Low": 0, "Medium": 1, "High": 2, "XHigh": 3, "Max": 4}
 ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]|\r")
-LINE_RE = re.compile(r"^([a-z0-9._-]+)\s{2,}(.+?)\s*$")
+LINE_RE = re.compile(r"^([a-z0-9._-]+)\s+(.+?)\s*$")
 EFFORT_RE = re.compile(r"^(.*?)\s+\((Low|Medium|High|XHigh|Max)\)$")
 
 

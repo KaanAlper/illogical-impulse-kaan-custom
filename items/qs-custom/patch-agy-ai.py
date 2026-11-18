@@ -87,10 +87,10 @@ def main() -> int:
                 "                        });\n"
                 "                    }\n"
                 "                    if (list.length > 0) {\n"
-                "                        root.models = Object.assign({}, updated, root.models);\n"
+                "                        root.models = updated;\n"
                 "                        root.modelList = Object.keys(root.models);\n"
                 "                        root.agyFamilies = payload.families ?? [];\n"
-                "                        if (!root.currentModelId || root.currentModelId === \"gemini-2.5-flash\" || root.currentModelId === \"antigravity\" || !(root.currentModelId in root.models)) {\n"
+                "                        if (!root.currentModelId || !(root.currentModelId in root.models)) {\n"
                 "                            const pref = updated[\"gemini-4-hydrogen-medium\"] ? \"gemini-4-hydrogen-medium\" : list[0].id;\n"
                 "                            root.setModel(pref, false);\n"
                 "                        }\n"
@@ -184,6 +184,12 @@ def main() -> int:
                 '                }\n\n'
                 '                // Handle response line\n'
                 '                try {',
+            ),
+            (
+                "function addUserModels() { return; }",
+                "    function addUserModels() {\n        (Config?.options.ai?.extraModels ?? []).forEach(model => {",
+                "    function addUserModels() { return; }\n"
+                "    function _unusedAddUserModels() {\n        (Config?.options.ai?.extraModels ?? []).forEach(model => {",
             ),
             (
                 'if (models[requester.message.model]?.api_format === "agy") {\n                if (requester.message.thinking)',
@@ -322,8 +328,9 @@ def main() -> int:
                 "                                font.pixelSize: Appearance.font.pixelSize.smaller\n"
                 "                                color: commandButton.active ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colSubtext\n"
                 "                                horizontalAlignment: Text.AlignRight\n"
+                "                                maximumLineCount: 1\n"
                 "                                elide: Text.ElideRight\n"
-                "                                text: modelData.description ?? \"\"\n"
+                "                                text: (modelData.description ?? \"\").replace(/\\n+/g, \" · \")\n"
                 "                            }\n"
                 "                        }\n"
                 "                    }\n"
@@ -354,6 +361,7 @@ def main() -> int:
                 '                    text: Ai.getModel().name\n'
                 '                    tooltipText: Translation.tr("Current model: %1\\nSet it with %2model MODEL").arg(Ai.getModel().name).arg(root.commandPrefix)\n'
                 '                    MouseArea {\n'
+                '                        z: 10\n'
                 '                        anchors.fill: parent\n'
                 '                        cursorShape: Qt.PointingHandCursor\n'
                 '                        onClicked: root.modelPickerOpen = !root.modelPickerOpen\n'
