@@ -768,6 +768,8 @@ def main() -> int:
                 "                            event.accepted = true;\n"
                 "                        }",
             ),
+            (
+                "if (root.providerPickerOpen) { root.providerPickerOpen = false; event.accepted = true; return; }",
                 "                        } else if (event.key === Qt.Key_Up) {",
                 "                        } else if (event.key === Qt.Key_Escape) {\n"
                 "                            if (root.providerPickerOpen) { root.providerPickerOpen = false; event.accepted = true; return; }\n"
