@@ -78,20 +78,6 @@ Rectangle {
                     color: Appearance.colors.colSubtext
                 }
             }
-            RippleButton {
-                implicitWidth: 26
-                implicitHeight: 26
-                buttonRadius: Appearance.rounding.full
-                colBackground: "transparent"
-                colBackgroundHover: Appearance.colors.colSurfaceContainerHigh
-                onClicked: root.closeRequested()
-                contentItem: MaterialSymbol {
-                    anchors.centerIn: parent
-                    text: "close"
-                    iconSize: 16
-                    color: Appearance.colors.colSubtext
-                }
-            }
         }
 
         ListView {

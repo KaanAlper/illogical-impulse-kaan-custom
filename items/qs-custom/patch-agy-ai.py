@@ -369,6 +369,25 @@ def main() -> int:
                 '                }',
             ),
             (
+                "onActiveFocusChanged: if (activeFocus) root.modelPickerOpen = false;",
+                '                    StyledTextArea { // The actual TextArea (inside ScrollView to enable scrolling)\n                        id: messageInputField',
+                '                    StyledTextArea { // The actual TextArea (inside ScrollView to enable scrolling)\n                        id: messageInputField\n                        onActiveFocusChanged: if (activeFocus) root.modelPickerOpen = false;',
+            ),
+            (
+                "visible: root.modelPickerOpen\n                z: 5",
+                "            StyledListView { // Message list",
+                "            MouseArea {\n"
+                "                anchors.fill: parent\n"
+                "                visible: root.modelPickerOpen\n"
+                "                z: 5\n"
+                "                onPressed: mouse => {\n"
+                "                    root.modelPickerOpen = false;\n"
+                "                    mouse.accepted = false;\n"
+                "                }\n"
+                "            }\n"
+                "            StyledListView { // Message list",
+            ),
+            (
                 'visible: Ai.getModel()?.api_format !== "agy"\n                    // Tool indicator',
                 '                ApiInputBoxIndicator {\n                    // Tool indicator',
                 '                ApiInputBoxIndicator {\n                    visible: Ai.getModel()?.api_format !== "agy"\n                    // Tool indicator',
