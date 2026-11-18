@@ -35,15 +35,19 @@ Item {
             return;
         root.installing = true;
         root.needsPassword = false;
-        root.installProgress = 0.08;
+        root.installProgress = 0.10;
         root.installStatus = Translation.tr("Preparing installation…");
         const pkg = root.backend === "claude" ? "claude-code" : "openai-codex";
         const npmPkg = root.backend === "claude" ? "@anthropic-ai/claude-code" : "@openai/codex";
         installProc.command = [
             "bash", "-c",
-            `if command -v paru >/dev/null 2>&1; then paru --sudoflags="-S" -S --needed --noconfirm ${pkg}; ` +
-            `elif command -v npm >/dev/null 2>&1; then npm install -g --prefix "$HOME/.local" ${npmPkg}; ` +
-            `else echo "ERR: paru or npm not found" >&2; exit 1; fi`
+            `if command -v pacman >/dev/null 2>&1 && pacman -Si ${pkg} >/dev/null 2>&1; then ` +
+            `  sudo -S -p $'SUDO_PWD_PROMPT\\n' pacman -S --needed --noconfirm ${pkg}; ` +
+            `elif command -v paru >/dev/null 2>&1; then ` +
+            `  echo "SUDO_PWD_PROMPT" >&2; paru --sudoflags="-S" -S --needed --noconfirm ${pkg}; ` +
+            `elif command -v npm >/dev/null 2>&1; then ` +
+            `  npm install -g --prefix "$HOME/.local" ${npmPkg}; ` +
+            `else echo "ERR: pacman/paru/npm not found" >&2; exit 1; fi`
         ];
         installProc.running = true;
     }
@@ -84,9 +88,10 @@ Item {
             onRead: data => {
                 const line = (data ?? "").trim();
                 if (!line) return;
-                if (/password|parola|sudo/i.test(line)) {
+                if (/SUDO_PWD_PROMPT|password|parola|sudo/i.test(line)) {
                     root.needsPassword = true;
                     root.installStatus = Translation.tr("Administrator password required");
+                    Qt.callLater(() => pwdField.forceActiveFocus());
                 } else {
                     root.installStatus = line;
                 }
