@@ -22,5 +22,6 @@ hl.bind("ALT_R", hl.dsp.global("alttab:alt"), { ignore_mods = true, transparent 
 -- (Fn+F12 ve F12 Linux'ta aynı keysym üretiyor — donanım Fn'i yutuyor)
 hl.bind("SUPER + F12", hl.dsp.exec_cmd("/home/kaanalper/.local/bin/msi-fan-toggle"), { description = "MSI Fan: Toggle Max/Auto" })
 
--- Everything-style file search: Super+H opens Super menu with # prefix
-hl.bind("SUPER + H", hl.dsp.global("quickshell:overviewFilesToggle"), { description = "Search: Files (Everything)" })
+-- Everything-style file search: Super+B opens Super menu with # prefix (AI sidebar already uses Super+A)
+hl.unbind("SUPER + B")
+hl.bind("SUPER + B", hl.dsp.global("quickshell:overviewFilesToggle"), { description = "Search: Files (Everything)" })
