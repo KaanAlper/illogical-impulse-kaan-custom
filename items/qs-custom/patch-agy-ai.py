@@ -439,6 +439,28 @@ def main() -> int:
                 '                    StyledTextArea { // The actual TextArea (inside ScrollView to enable scrolling)\n                        id: messageInputField\n                        onActiveFocusChanged: if (activeFocus) { root.modelPickerOpen = false; root.configPickerOpen = false; }',
             ),
             (
+                "suggestions.acceptSuggestion(sel.name, sel.instant ?? false);",
+                '                            } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)) {\n'
+                '                                if (event.modifiers & Qt.ShiftModifier) {\n'
+                '                                    // Insert newline\n'
+                '                                    messageInputField.insert(messageInputField.cursorPosition, "\\n");\n'
+                '                                    event.accepted = true;\n'
+                '                                } else {',
+                '                            } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)) {\n'
+                '                                if (event.modifiers & Qt.ShiftModifier) {\n'
+                '                                    // Insert newline\n'
+                '                                    messageInputField.insert(messageInputField.cursorPosition, "\\n");\n'
+                '                                    event.accepted = true;\n'
+                '                                } else if (suggestions.visible && root.suggestionList.length > 0 && Ai.getModel()?.api_format === "agy") {\n'
+                '                                    const sel = root.suggestionList[suggestions.selectedIndex] ?? root.suggestionList[0];\n'
+                '                                    if (sel) {\n'
+                '                                        suggestions.acceptSuggestion(sel.name, sel.instant ?? false);\n'
+                '                                        event.accepted = true;\n'
+                '                                        return;\n'
+                '                                    }\n'
+                '                                } else {',
+            ),
+            (
                 "visible: root.modelPickerOpen || root.configPickerOpen\n                z: 5",
                 "            StyledListView { // Message list",
                 "            MouseArea {\n"
