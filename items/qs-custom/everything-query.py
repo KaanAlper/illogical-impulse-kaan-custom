@@ -21,7 +21,7 @@ EXT_GROUPS = {
 def icon_for(path: str, ext: str, is_dir: bool) -> tuple[str, str]:
     """Return (material_icon_name, type_label) for a file/directory."""
     if is_dir:
-        return ("folder", "Klasör")
+        return ("folder", "Folder")
     if ext in EXT_GROUPS["image"]:
         return ("image", ext.upper())
     if ext in EXT_GROUPS["video"]:
@@ -31,20 +31,20 @@ def icon_for(path: str, ext: str, is_dir: bool) -> tuple[str, str]:
     if ext == "pdf":
         return ("picture_as_pdf", "PDF")
     if ext in EXT_GROUPS["doc"]:
-        return ("article", ext.upper() if ext else "Belge")
+        return ("article", ext.upper() if ext else "Document")
     if ext in EXT_GROUPS["archive"]:
         return ("folder_zip", ext.upper())
     if ext in ("exe", "msi"):
         return ("sports_esports", ext.upper())
     if ext in ("appimage", "desktop"):
-        return ("apps", "AppImage" if ext == "appimage" else "Uygulama")
+        return ("apps", "AppImage" if ext == "appimage" else "App")
     if ext in ("sh", "bat", "cmd", "bin", "run"):
         return ("terminal", ext.upper())
     if ext in EXT_GROUPS["code"]:
         return ("code", ext.upper())
     if os.access(path, os.X_OK):
-        return ("terminal", "Çalıştırılabilir")
-    return ("description", ext.upper() if ext else "Dosya")
+        return ("terminal", "Executable")
+    return ("description", ext.upper() if ext else "File")
 
 
 def human_size(num: int) -> str:

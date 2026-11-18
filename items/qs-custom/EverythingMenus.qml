@@ -12,24 +12,24 @@ Rectangle {
     color: Appearance.colors.colLayer1
 
     readonly property var sortOptions: [
-        { id: "relevance", label: "Eşleşme", icon: "auto_awesome" },
-        { id: "name",      label: "İsim", icon: "sort_by_alpha" },
-        { id: "size",      label: "Boyut", icon: "straighten" },
-        { id: "type",      label: "Dosya tipi", icon: "category" },
-        { id: "mtime",     label: "Değiştirme tarihi", icon: "schedule" }
+        { id: "relevance", label: Translation.tr("Relevance"),     icon: "auto_awesome" },
+        { id: "name",      label: Translation.tr("Name"),          icon: "sort_by_alpha" },
+        { id: "size",      label: Translation.tr("Size"),          icon: "straighten" },
+        { id: "type",      label: Translation.tr("File type"),     icon: "category" },
+        { id: "mtime",     label: Translation.tr("Date modified"), icon: "schedule" }
     ]
 
     readonly property var filterOptions: [
-        { id: "all",     label: "Tümü", icon: "select_all" },
-        { id: "dir",     label: "Klasörler", icon: "folder" },
-        { id: "file",    label: "Dosyalar", icon: "description" },
-        { id: "image",   label: "Görseller", icon: "image" },
-        { id: "video",   label: "Videolar", icon: "movie" },
-        { id: "audio",   label: "Ses", icon: "music_note" },
-        { id: "doc",     label: "Belgeler", icon: "article" },
-        { id: "archive", label: "Arşivler", icon: "folder_zip" },
-        { id: "exec",    label: "Uygulama / Exe / AppImage", icon: "sports_esports" },
-        { id: "code",    label: "Kod / Config", icon: "code" }
+        { id: "all",     label: Translation.tr("All"),                     icon: "select_all" },
+        { id: "dir",     label: Translation.tr("Folders"),                 icon: "folder" },
+        { id: "file",    label: Translation.tr("Files"),                   icon: "description" },
+        { id: "image",   label: Translation.tr("Images"),                  icon: "image" },
+        { id: "video",   label: Translation.tr("Videos"),                  icon: "movie" },
+        { id: "audio",   label: Translation.tr("Audio"),                   icon: "music_note" },
+        { id: "doc",     label: Translation.tr("Documents"),               icon: "article" },
+        { id: "archive", label: Translation.tr("Archives"),                icon: "folder_zip" },
+        { id: "exec",    label: Translation.tr("Apps / Exe / AppImage"),   icon: "sports_esports" },
+        { id: "code",    label: Translation.tr("Code / Config"),           icon: "code" }
     ]
 
     Rectangle {
@@ -53,8 +53,8 @@ Rectangle {
             font.pixelSize: Appearance.font.pixelSize.smaller
             color: Appearance.colors.colSubtext
             text: FileSearch.sortMenuOpen
-                ? "Sırala (aynı öğeye tekrar tıkla: ↑ Artan / ↓ Azalan)"
-                : "Dosya tipi filtresi"
+                ? Translation.tr("Sort (click again to toggle ↑/↓)")
+                : Translation.tr("Filter by file type")
         }
 
         Flow {

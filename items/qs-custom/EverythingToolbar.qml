@@ -31,7 +31,7 @@ RowLayout {
         }
         text: FileSearch.sortOrder === "asc" && FileSearch.sortBy !== "relevance" ? "arrow_upward" : "swap_vert"
         StyledToolTip {
-            text: "Sırala (" + (FileSearch.sortOrder === "asc" ? "Artan" : "Azalan") + ")"
+            text: Translation.tr("Sort (%1)").arg(FileSearch.sortOrder === "asc" ? Translation.tr("Ascending") : Translation.tr("Descending"))
         }
     }
 
@@ -46,7 +46,7 @@ RowLayout {
         }
         text: "filter_list"
         StyledToolTip {
-            text: "Filtre"
+            text: Translation.tr("Filter")
         }
     }
 }
