@@ -38,5 +38,13 @@
   "Not recognized, move closer · retrying (%1/%2)": "Tanınamadı, biraz yaklaş · tekrar deneniyor (%1/%2)",
   "Face not recognized · click icon or enter password": "Yüz tanınamadı · simgeye tıkla ya da şifre gir",
   "Local CLI | Antigravity agent (no API key needed)": "Yerel CLI | Antigravity ajanı (API anahtarı gerekmez)",
-  "Antigravity Models": "Antigravity Modelleri"
+  "Antigravity Models": "Antigravity Modelleri",
+  "Select Antigravity model & thinking": "Antigravity modelini ve düşünme seviyesini seç",
+  "Sign in / authenticate Antigravity CLI": "Antigravity CLI giriş / oturum aç",
+  "Compact conversation context": "Sohbet bağlamını özetleyip sıkıştır",
+  "Step-by-step planning mode": "Adım adım planlama modu",
+  "Deep thinking & rigorous verification": "Derin düşünme ve sıkı doğrulama modu",
+  "Interactive design interview": "Tasarım kararları için etkileşimli soru-cevap",
+  "Autonomous long-running goal mode": "Uzun soluklu otonom hedef modu",
+  "Start a new conversation": "Yeni bir agy sohbeti başlat"
 }

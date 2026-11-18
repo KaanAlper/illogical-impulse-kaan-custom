@@ -159,6 +159,19 @@
         }
       ],
       "install": "xdg-mime default org.kde.dolphin.desktop inode/directory"
+    },
+    {
+      "id": "agy-cli",
+      "title": "Antigravity CLI (agy)",
+      "desc": "Super+A AI panelinin kullandığı Antigravity CLI (~/.local/bin/agy) yoksa kurar.",
+      "kind": "check",
+      "check": [
+        {
+          "exists": "~/.local/bin/agy"
+        }
+      ],
+      "terminal": true,
+      "install": "paru -S --needed --noconfirm antigravity"
     }
   ]
 }

@@ -38,5 +38,13 @@
   "Not recognized, move closer · retrying (%1/%2)": "Tidak dikenali, mendekat · mencoba lagi (%1/%2)",
   "Face not recognized · click icon or enter password": "Wajah tidak dikenali · klik ikon atau masukkan kata sandi",
   "Local CLI | Antigravity agent (no API key needed)": "CLI Lokal | Agen Antigravity (tanpa kunci API)",
-  "Antigravity Models": "Model Antigravity"
+  "Antigravity Models": "Model Antigravity",
+  "Select Antigravity model & thinking": "Pilih model Antigravity & tingkat berpikir",
+  "Sign in / authenticate Antigravity CLI": "Masuk / autentikasi Antigravity CLI",
+  "Compact conversation context": "Padatkan konteks percakapan",
+  "Step-by-step planning mode": "Mode perencanaan langkah demi langkah",
+  "Deep thinking & rigorous verification": "Berpikir mendalam & verifikasi ketat",
+  "Interactive design interview": "Wawancara desain interaktif",
+  "Autonomous long-running goal mode": "Mode tujuan otonom jangka panjang",
+  "Start a new conversation": "Mulai percakapan baru"
 }

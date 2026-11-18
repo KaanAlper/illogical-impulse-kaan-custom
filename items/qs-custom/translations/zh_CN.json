@@ -38,5 +38,13 @@
   "Not recognized, move closer · retrying (%1/%2)": "未识别，请靠近一点 · 重试中 (%1/%2)",
   "Face not recognized · click icon or enter password": "未能识别人脸 · 点击图标或输入密码",
   "Local CLI | Antigravity agent (no API key needed)": "本地 CLI | Antigravity 智能体（无需 API 密钥）",
-  "Antigravity Models": "Antigravity 模型"
+  "Antigravity Models": "Antigravity 模型",
+  "Select Antigravity model & thinking": "选择 Antigravity 模型和思考深度",
+  "Sign in / authenticate Antigravity CLI": "登录 / 认证 Antigravity CLI",
+  "Compact conversation context": "压缩对话上下文",
+  "Step-by-step planning mode": "分步规划模式",
+  "Deep thinking & rigorous verification": "深度思考与严格验证",
+  "Interactive design interview": "交互式设计访谈",
+  "Autonomous long-running goal mode": "长时自主目标模式",
+  "Start a new conversation": "开始新对话"
 }

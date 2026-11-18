@@ -141,7 +141,8 @@ def main() -> int:
                 '                const agyBin = CF.FileUtils.trimFileProtocol(`${Directories.home}/.local/bin/agy`);\n'
                 '                const modelArgs = (model.model && model.model !== "antigravity") ? ["--model", model.model] : [];\n'
                 '                const convArgs = root.agyConversationId ? ["--conversation", root.agyConversationId] : [];\n'
-                '                requester.command = [agyBin, "-p", promptText, ...modelArgs, ...convArgs, "--output-format", "stream-json", "--disable-slash-commands"];\n'
+                '                const slashArgs = promptText.trim().startsWith("/") ? [] : ["--disable-slash-commands"];\n'
+                '                requester.command = [agyBin, "-p", promptText, ...modelArgs, ...convArgs, "--output-format", "stream-json", ...slashArgs];\n'
                 '                requester.running = true;\n'
                 '                return;\n'
                 '            }\n\n'
@@ -214,9 +215,40 @@ def main() -> int:
         ii / "modules/ii/sidebarLeft/AiChat.qml",
         [
             (
-                "property bool modelPickerOpen: false",
+                "property var agyCommands:",
                 '    property string commandPrefix: "/"',
-                '    property string commandPrefix: "/"\n    property bool modelPickerOpen: false',
+                '    property string commandPrefix: "/"\n'
+                '    property bool modelPickerOpen: false\n'
+                '    readonly property var agyCommands: [\n'
+                '        { name: "model",    instant: true,  description: Translation.tr("Select Antigravity model & thinking") },\n'
+                '        { name: "login",    instant: true,  description: Translation.tr("Sign in / authenticate Antigravity CLI") },\n'
+                '        { name: "compact",  instant: true,  description: Translation.tr("Compact conversation context") },\n'
+                '        { name: "plan",     instant: false, description: Translation.tr("Step-by-step planning mode") },\n'
+                '        { name: "boost",    instant: false, description: Translation.tr("Deep thinking & rigorous verification") },\n'
+                '        { name: "grill-me", instant: false, description: Translation.tr("Interactive design interview") },\n'
+                '        { name: "goal",     instant: false, description: Translation.tr("Autonomous long-running goal mode") },\n'
+                '        { name: "clear",    instant: true,  description: Translation.tr("Start a new conversation") },\n'
+                '    ]',
+            ),
+            (
+                'Ai.getModel()?.api_format === "agy" && inputText.startsWith(root.commandPrefix)',
+                '        if (inputText.startsWith(root.commandPrefix)) {',
+                '        if (Ai.getModel()?.api_format === "agy" && inputText.startsWith(root.commandPrefix)) {\n'
+                '            const parts = inputText.trim().split(/\\s+/);\n'
+                '            const cmd = parts[0].substring(1);\n'
+                '            if (cmd === "model") { root.modelPickerOpen = true; return; }\n'
+                '            if (cmd === "login") {\n'
+                '                const agyBin = FileUtils.trimFileProtocol(`${Directories.home}/.local/bin/agy`);\n'
+                '                Quickshell.execDetached([Config.options.apps.terminal, "-e", agyBin]);\n'
+                '                return;\n'
+                '            }\n'
+                '            if (cmd === "clear") { Ai.clearMessages(); return; }\n'
+                '            if (["compact", "plan", "boost", "grill-me", "goal"].includes(cmd)) {\n'
+                '                Ai.sendUserMessage(inputText);\n'
+                '                return;\n'
+                '            }\n'
+                '        }\n'
+                '        if (inputText.startsWith(root.commandPrefix)) {',
             ),
             (
                 "visible: (Ai.getModel()?.api_format !== \"agy\") || Ai.tokenCount.total > 0",
@@ -237,9 +269,28 @@ def main() -> int:
                 'const isAgy = Ai.getModel()?.api_format === "agy";',
                 '                                root.suggestionList = root.allCommands.filter(cmd => cmd.name.startsWith(messageInputField.text.substring(1))).map(cmd => {',
                 '                                const isAgy = Ai.getModel()?.api_format === "agy";\n'
-                '                                const agySkip = ["key", "temp", "prompt", "test", "tool"];\n'
-                '                                const cmds = isAgy ? root.allCommands.filter(c => !agySkip.includes(c.name)) : root.allCommands;\n'
-                '                                root.suggestionList = cmds.filter(cmd => cmd.name.startsWith(messageInputField.text.substring(1))).map(cmd => {',
+                '                                if (isAgy) {\n'
+                '                                    const q = messageInputField.text.substring(1).toLowerCase();\n'
+                '                                    root.suggestionList = root.agyCommands.filter(cmd => cmd.name.startsWith(q)).map(cmd => ({\n'
+                '                                        name: `${root.commandPrefix}${cmd.name}`,\n'
+                '                                        description: cmd.description,\n'
+                '                                        instant: cmd.instant,\n'
+                '                                    }));\n'
+                '                                    return;\n'
+                '                                }\n'
+                '                                root.suggestionList = root.allCommands.filter(cmd => cmd.name.startsWith(messageInputField.text.substring(1))).map(cmd => {',
+            ),
+            (
+                "if (isInstant && Ai.getModel()?.api_format === \"agy\")",
+                '            function acceptSuggestion(word) {\n'
+                '                const words = messageInputField.text.trim().split(/\\s+/);',
+                '            function acceptSuggestion(word, isInstant = false) {\n'
+                '                if (isInstant && Ai.getModel()?.api_format === "agy") {\n'
+                '                    messageInputField.clear();\n'
+                '                    root.handleInput(word);\n'
+                '                    return;\n'
+                '                }\n'
+                '                const words = messageInputField.text.trim().split(/\\s+/);',
             ),
             (
                 "// Native CLI-style command & suggestion palette",
@@ -310,7 +361,7 @@ def main() -> int:
                 "                            if (commandButton.hovered)\n"
                 "                                suggestions.selectedIndex = index;\n"
                 "                        }\n"
-                "                        onClicked: suggestions.acceptSuggestion(modelData.name)\n\n"
+                "                        onClicked: suggestions.acceptSuggestion(modelData.name, modelData.instant ?? false)\n\n"
                 "                        contentItem: RowLayout {\n"
                 "                            anchors.fill: parent\n"
                 "                            anchors.leftMargin: 8\n"

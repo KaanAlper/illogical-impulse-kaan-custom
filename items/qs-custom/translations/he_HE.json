@@ -38,5 +38,13 @@
   "Not recognized, move closer · retrying (%1/%2)": "לא זוהה, התקרב מעט · מנסה שוב (%1/%2)",
   "Face not recognized · click icon or enter password": "הפנים לא זוהו · לחץ על הסמל או הזן סיסמה",
   "Local CLI | Antigravity agent (no API key needed)": "CLI מקומי | סוכן Antigravity (ללא צורך במפתח API)",
-  "Antigravity Models": "מודלים של Antigravity"
+  "Antigravity Models": "מודלים של Antigravity",
+  "Select Antigravity model & thinking": "בחר מודל Antigravity ורמת חשיבה",
+  "Sign in / authenticate Antigravity CLI": "התחבר / אמת מול Antigravity CLI",
+  "Compact conversation context": "דחוס את הקשר השיחה",
+  "Step-by-step planning mode": "מצב תכנון צעד אחר צעד",
+  "Deep thinking & rigorous verification": "חשיבה עמוקה ואימות קפדני",
+  "Interactive design interview": "ראיון עיצוב אינטראקטיבי",
+  "Autonomous long-running goal mode": "מצב יעד אוטונומי ממושך",
+  "Start a new conversation": "התחל שיחה חדשה"
 }

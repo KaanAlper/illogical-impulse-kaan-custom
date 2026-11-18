@@ -38,5 +38,13 @@
   "Not recognized, move closer · retrying (%1/%2)": "Non reconnu, rapprochez-vous · nouvel essai (%1/%2)",
   "Face not recognized · click icon or enter password": "Visage non reconnu · cliquez sur l'icône ou entrez le mot de passe",
   "Local CLI | Antigravity agent (no API key needed)": "CLI locale | Agent Antigravity (aucune clé API requise)",
-  "Antigravity Models": "Modèles Antigravity"
+  "Antigravity Models": "Modèles Antigravity",
+  "Select Antigravity model & thinking": "Choisir le modèle Antigravity et la réflexion",
+  "Sign in / authenticate Antigravity CLI": "Se connecter à Antigravity CLI",
+  "Compact conversation context": "Compacter le contexte de conversation",
+  "Step-by-step planning mode": "Mode planification étape par étape",
+  "Deep thinking & rigorous verification": "Réflexion approfondie et vérification rigoureuse",
+  "Interactive design interview": "Entretien de conception interactif",
+  "Autonomous long-running goal mode": "Mode objectif autonome longue durée",
+  "Start a new conversation": "Démarrer une nouvelle conversation"
 }

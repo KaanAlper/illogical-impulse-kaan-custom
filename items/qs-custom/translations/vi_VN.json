@@ -38,5 +38,13 @@
   "Not recognized, move closer · retrying (%1/%2)": "Không nhận diện được, lại gần hơn · thử lại (%1/%2)",
   "Face not recognized · click icon or enter password": "Không nhận diện được khuôn mặt · nhấn biểu tượng hoặc nhập mật khẩu",
   "Local CLI | Antigravity agent (no API key needed)": "CLI cục bộ | Tác nhân Antigravity (không cần khóa API)",
-  "Antigravity Models": "Mô hình Antigravity"
+  "Antigravity Models": "Mô hình Antigravity",
+  "Select Antigravity model & thinking": "Chọn mô hình Antigravity & mức suy nghĩ",
+  "Sign in / authenticate Antigravity CLI": "Đăng nhập / xác thực Antigravity CLI",
+  "Compact conversation context": "Nén ngữ cảnh cuộc trò chuyện",
+  "Step-by-step planning mode": "Chế độ lập kế hoạch từng bước",
+  "Deep thinking & rigorous verification": "Suy nghĩ sâu & kiểm chứng chặt chẽ",
+  "Interactive design interview": "Phỏng vấn thiết kế tương tác",
+  "Autonomous long-running goal mode": "Chế độ mục tiêu tự chủ dài hạn",
+  "Start a new conversation": "Bắt đầu cuộc trò chuyện mới"
 }
