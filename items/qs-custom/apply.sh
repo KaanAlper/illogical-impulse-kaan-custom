@@ -43,6 +43,8 @@ cp "$CUSTOM_DIR/EverythingMenus.qml" "$II/modules/ii/overview/EverythingMenus.qm
 mkdir -p "$II/scripts/ai" "$II/modules/ii/sidebarLeft"
 cp "$CUSTOM_DIR/fetch-agy-models.py" "$II/scripts/ai/fetch-agy-models.py"
 chmod +x "$II/scripts/ai/fetch-agy-models.py"
+cp "$CUSTOM_DIR/fetch-agy-commands.py" "$II/scripts/ai/fetch-agy-commands.py"
+chmod +x "$II/scripts/ai/fetch-agy-commands.py"
 cp "$CUSTOM_DIR/AgyModelPicker.qml" "$II/modules/ii/sidebarLeft/AgyModelPicker.qml"
 cp "$CUSTOM_DIR/SleepInhibitToggle.qml" "$BAR/SleepInhibitToggle.qml"
 cp "$CUSTOM_DIR/AppVolumeMixer.qml" "$BAR/AppVolumeMixer.qml"

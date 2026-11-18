@@ -58,10 +58,27 @@ def main() -> int:
                 "    property var modelList: Object.keys(root.models)",
                 "    property var modelList: Object.keys(root.models)\n"
                 "    property var agyFamilies: []\n"
+                "    property var agyCommands: []\n"
                 "    property string agyConversationId: \"\"\n\n"
                 "    function refreshAgyModels() {\n"
                 "        getAgyModelsProc.running = false;\n"
                 "        getAgyModelsProc.running = true;\n"
+                "    }\n\n"
+                "    Process {\n"
+                "        id: getAgyCommandsProc\n"
+                "        command: [\"python3\", CF.FileUtils.trimFileProtocol(`${Directories.scriptPath}/ai/fetch-agy-commands.py`)]\n"
+                "        running: true\n"
+                "        stdout: StdioCollector {\n"
+                "            onStreamFinished: {\n"
+                "                try {\n"
+                "                    const list = JSON.parse(text);\n"
+                "                    if (Array.isArray(list) && list.length > 0)\n"
+                "                        root.agyCommands = list;\n"
+                "                } catch (e) {\n"
+                "                    console.log(\"[AI] Could not fetch agy commands:\", e);\n"
+                "                }\n"
+                "            }\n"
+                "        }\n"
                 "    }\n\n"
                 "    Process {\n"
                 "        id: getAgyModelsProc\n"
@@ -215,20 +232,10 @@ def main() -> int:
         ii / "modules/ii/sidebarLeft/AiChat.qml",
         [
             (
-                "property var agyCommands:",
+                '    property bool modelPickerOpen: false',
                 '    property string commandPrefix: "/"',
                 '    property string commandPrefix: "/"\n'
-                '    property bool modelPickerOpen: false\n'
-                '    readonly property var agyCommands: [\n'
-                '        { name: "model",    instant: true,  description: Translation.tr("Select Antigravity model & thinking") },\n'
-                '        { name: "login",    instant: true,  description: Translation.tr("Sign in / authenticate Antigravity CLI") },\n'
-                '        { name: "compact",  instant: true,  description: Translation.tr("Compact conversation context") },\n'
-                '        { name: "plan",     instant: false, description: Translation.tr("Step-by-step planning mode") },\n'
-                '        { name: "boost",    instant: false, description: Translation.tr("Deep thinking & rigorous verification") },\n'
-                '        { name: "grill-me", instant: false, description: Translation.tr("Interactive design interview") },\n'
-                '        { name: "goal",     instant: false, description: Translation.tr("Autonomous long-running goal mode") },\n'
-                '        { name: "clear",    instant: true,  description: Translation.tr("Start a new conversation") },\n'
-                '    ]',
+                '    property bool modelPickerOpen: false',
             ),
             (
                 'Ai.getModel()?.api_format === "agy" && inputText.startsWith(root.commandPrefix)',
@@ -243,10 +250,8 @@ def main() -> int:
                 '                return;\n'
                 '            }\n'
                 '            if (cmd === "clear") { Ai.clearMessages(); return; }\n'
-                '            if (["compact", "plan", "boost", "grill-me", "goal"].includes(cmd)) {\n'
-                '                Ai.sendUserMessage(inputText);\n'
-                '                return;\n'
-                '            }\n'
+                '            Ai.sendUserMessage(inputText);\n'
+                '            return;\n'
                 '        }\n'
                 '        if (inputText.startsWith(root.commandPrefix)) {',
             ),
@@ -271,7 +276,7 @@ def main() -> int:
                 '                                const isAgy = Ai.getModel()?.api_format === "agy";\n'
                 '                                if (isAgy) {\n'
                 '                                    const q = messageInputField.text.substring(1).toLowerCase();\n'
-                '                                    root.suggestionList = root.agyCommands.filter(cmd => cmd.name.startsWith(q)).map(cmd => ({\n'
+                '                                    root.suggestionList = Ai.agyCommands.filter(cmd => cmd.name.startsWith(q)).map(cmd => ({\n'
                 '                                        name: `${root.commandPrefix}${cmd.name}`,\n'
                 '                                        description: cmd.description,\n'
                 '                                        instant: cmd.instant,\n'
@@ -331,58 +336,57 @@ def main() -> int:
                 "            visible: root.suggestionList.length > 0 && messageInputField.text.length > 0\n"
                 "            property int selectedIndex: 0\n"
                 "            Layout.fillWidth: true\n"
-                "            implicitHeight: Math.min(240, suggestionCol.implicitHeight + 12)\n"
+                "            implicitHeight: Math.min(220, suggestionListView.contentHeight + 12)\n"
+                "            clip: true\n"
                 "            radius: Appearance.rounding.normal\n"
                 "            color: Appearance.colors.colLayer2\n"
                 "            border.width: 1\n"
                 "            border.color: Appearance.colors.colOutlineVariant\n\n"
-                "            ColumnLayout {\n"
-                "                id: suggestionCol\n"
+                "            ListView {\n"
+                "                id: suggestionListView\n"
                 "                anchors.fill: parent\n"
                 "                anchors.margins: 6\n"
-                "                spacing: 2\n\n"
-                "                Repeater {\n"
-                "                    id: suggestionRepeater\n"
-                "                    model: {\n"
-                "                        suggestions.selectedIndex = 0;\n"
-                "                        return root.suggestionList.slice(0, 8);\n"
+                "                clip: true\n"
+                "                spacing: 2\n"
+                "                model: {\n"
+                "                    suggestions.selectedIndex = 0;\n"
+                "                    return root.suggestionList;\n"
+                "                }\n"
+                "                delegate: RippleButton {\n"
+                "                    id: commandButton\n"
+                "                    required property var modelData\n"
+                "                    required property int index\n"
+                "                    readonly property bool active: suggestions.selectedIndex === index\n"
+                "                    width: suggestionListView.width\n"
+                "                    implicitHeight: 32\n"
+                "                    buttonRadius: Appearance.rounding.small\n"
+                "                    colBackground: active ? Appearance.colors.colPrimaryContainer : \"transparent\"\n"
+                "                    colBackgroundHover: active ? Appearance.colors.colPrimaryContainer : Appearance.colors.colSurfaceContainerHigh\n"
+                "                    onHoveredChanged: {\n"
+                "                        if (commandButton.hovered)\n"
+                "                            suggestions.selectedIndex = index;\n"
                 "                    }\n"
-                "                    delegate: RippleButton {\n"
-                "                        id: commandButton\n"
-                "                        required property var modelData\n"
-                "                        required property int index\n"
-                "                        readonly property bool active: suggestions.selectedIndex === index\n"
-                "                        Layout.fillWidth: true\n"
-                "                        implicitHeight: 32\n"
-                "                        buttonRadius: Appearance.rounding.small\n"
-                "                        colBackground: active ? Appearance.colors.colPrimaryContainer : \"transparent\"\n"
-                "                        colBackgroundHover: active ? Appearance.colors.colPrimaryContainer : Appearance.colors.colSurfaceContainerHigh\n"
-                "                        onHoveredChanged: {\n"
-                "                            if (commandButton.hovered)\n"
-                "                                suggestions.selectedIndex = index;\n"
+                "                    onClicked: suggestions.acceptSuggestion(modelData.name, modelData.instant ?? false)\n\n"
+                "                    contentItem: RowLayout {\n"
+                "                        anchors.fill: parent\n"
+                "                        anchors.leftMargin: 8\n"
+                "                        anchors.rightMargin: 8\n"
+                "                        spacing: 10\n"
+                "                        StyledText {\n"
+                "                            font.pixelSize: Appearance.font.pixelSize.small\n"
+                "                            font.family: Appearance.font.family.monospace\n"
+                "                            font.weight: Font.Medium\n"
+                "                            color: commandButton.active ? Appearance.colors.colPrimary : Appearance.m3colors.m3onSurface\n"
+                "                            text: modelData.displayName ?? modelData.name\n"
                 "                        }\n"
-                "                        onClicked: suggestions.acceptSuggestion(modelData.name, modelData.instant ?? false)\n\n"
-                "                        contentItem: RowLayout {\n"
-                "                            anchors.fill: parent\n"
-                "                            anchors.leftMargin: 8\n"
-                "                            anchors.rightMargin: 8\n"
-                "                            spacing: 10\n"
-                "                            StyledText {\n"
-                "                                font.pixelSize: Appearance.font.pixelSize.small\n"
-                "                                font.family: Appearance.font.family.monospace\n"
-                "                                font.weight: Font.Medium\n"
-                "                                color: commandButton.active ? Appearance.colors.colPrimary : Appearance.m3colors.m3onSurface\n"
-                "                                text: modelData.displayName ?? modelData.name\n"
-                "                            }\n"
-                "                            StyledText {\n"
-                "                                Layout.fillWidth: true\n"
-                "                                font.pixelSize: Appearance.font.pixelSize.smaller\n"
-                "                                color: commandButton.active ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colSubtext\n"
-                "                                horizontalAlignment: Text.AlignRight\n"
-                "                                maximumLineCount: 1\n"
-                "                                elide: Text.ElideRight\n"
-                "                                text: (modelData.description ?? \"\").replace(/\\n+/g, \" · \")\n"
-                "                            }\n"
+                "                        StyledText {\n"
+                "                            Layout.fillWidth: true\n"
+                "                            font.pixelSize: Appearance.font.pixelSize.smaller\n"
+                "                            color: commandButton.active ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colSubtext\n"
+                "                            horizontalAlignment: Text.AlignRight\n"
+                "                            maximumLineCount: 1\n"
+                "                            elide: Text.ElideRight\n"
+                "                            text: (modelData.description ?? \"\").replace(/\\n+/g, \" · \")\n"
                 "                        }\n"
                 "                    }\n"
                 "                }\n"
