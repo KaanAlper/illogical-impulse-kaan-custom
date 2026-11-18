@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Disable SDDM and enable tty1 autologin -> Hyprland -> immediate Super+L lockscreen.
+# Disable any active display manager (sddm, gdm, lightdm, greetd, ly, etc.)
+# and enable tty1 autologin -> Hyprland -> immediate ii Super+L lockscreen.
 set -euo pipefail
 
 USER_NAME="${SUDO_USER:-kaanalper}"
@@ -10,7 +11,14 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-systemctl disable sddm.service || true
+for dm in sddm gdm lightdm lxdm ly greetd display-manager; do
+    systemctl disable "${dm}.service" 2>/dev/null || true
+done
+
+if pacman -Q sddm >/dev/null 2>&1; then
+    pacman -Rns --noconfirm sddm
+fi
+
 mkdir -p "$DROPIN_DIR"
 cat > "$DROPIN_DIR/autologin.conf" <<EOF
 [Service]
@@ -19,5 +27,5 @@ ExecStart=-/sbin/agetty -o '-p -f -- \\u' --noclear --autologin $USER_NAME %I \$
 EOF
 
 systemctl daemon-reload
-echo "✓ SDDM devre disi birakildi, tty1 autologin ($USER_NAME) ayarlandi."
-echo "  Yeniden baslatinca sistem dogrudan Super+L kilit ekraninda acilacaktir."
+echo "✓ Diger giris ekranlari (SDDM/DM) iptal edildi, tty1 autologin ($USER_NAME) ayarlandi."
+echo "  Yeniden baslatinca sistem dogrudan ii Super+L kilit ekraninda acilacaktir."

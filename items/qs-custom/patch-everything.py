@@ -113,17 +113,50 @@ def main() -> int:
                 'case SearchBar.SearchPrefixType.Emojis: return "add_reaction";\n'
                 '            case SearchBar.SearchPrefixType.Files: return "folder_open";',
             ),
+            (
+                "EverythingToolbar {",
+                "    IconToolbarButton {\n        Layout.topMargin: 4\n        Layout.bottomMargin: 4\n        onClicked: {",
+                "    EverythingToolbar {\n"
+                "        visible: root.searchPrefixType === SearchBar.SearchPrefixType.Files\n"
+                "    }\n\n"
+                "    IconToolbarButton {\n        Layout.topMargin: 4\n        Layout.bottomMargin: 4\n        onClicked: {",
+            ),
         ],
     )
 
-    # 4. SearchWidget.qml: cleanOnePrefix includes prefix.files
+    # 4. SearchWidget.qml: cleanOnePrefix includes prefix.files + inline EverythingMenus
     ok &= patch_file(
         ii / "modules/ii/overview/SearchWidget.qml",
         [
             (
+                "EverythingMenus {",
+                "            Rectangle {\n                // Separator",
+                "            EverythingMenus {\n"
+                "                visible: root.searchingText.startsWith(Config.options.search.prefix.files) && (FileSearch.sortMenuOpen || FileSearch.filterMenuOpen)\n"
+                "                Layout.fillWidth: true\n"
+                "            }\n\n"
+                "            Rectangle {\n                // Separator",
+            ),
+            (
                 "Config.options.search.prefix.files",
                 "Config.options.search.prefix.emojis, Config.options.search.prefix.math",
                 "Config.options.search.prefix.emojis, Config.options.search.prefix.files, Config.options.search.prefix.math",
+            ),
+        ],
+    )
+
+    # 4b. SearchItem.qml: elide long itemType (directory path + metadata) so action buttons never overflow
+    ok &= patch_file(
+        ii / "modules/ii/overview/SearchItem.qml",
+        [
+            (
+                "elide: Text.ElideMiddle",
+                "                visible: root.itemType && root.itemType != Translation.tr(\"App\")\n"
+                "                text: root.itemType",
+                "                Layout.fillWidth: true\n"
+                "                elide: Text.ElideMiddle\n"
+                "                visible: root.itemType && root.itemType != Translation.tr(\"App\")\n"
+                "                text: root.itemType",
             ),
         ],
     )
@@ -152,20 +185,22 @@ def main() -> int:
                 "    }",
             ),
             (
-                "FileSearch.fileName",
+                "item.kind",
                 "        }\n\n        ////////////////// Init ///////////////////",
                 "        } else if (root.query.startsWith(Config.options.search.prefix.files)) {\n"
                 "            // Everything-style file search\n"
                 "            const searchString = StringUtils.cleanPrefix(root.query, Config.options.search.prefix.files);\n"
                 "            if (searchString.trim() === \"\")\n"
                 "                return [];\n"
-                "            return FileSearch.results.map(filePath => {\n"
+                "            return FileSearch.results.map(item => {\n"
+                "                const filePath = item.path ?? \"\";\n"
+                "                const meta = [item.dir, item.kind, item.size, item.mtime].filter(Boolean).join(\"  •  \");\n"
                 "                return resultComp.createObject(null, {\n"
                 "                    rawValue: filePath,\n"
-                "                    name: FileSearch.fileName(filePath),\n"
-                "                    type: FileSearch.displayDir(filePath),\n"
+                "                    name: item.name ?? \"\",\n"
+                "                    type: meta,\n"
                 "                    verb: Translation.tr(\"Open\"),\n"
-                "                    iconName: \"description\",\n"
+                "                    iconName: item.icon ?? (item.isDir ? \"folder\" : \"description\"),\n"
                 "                    iconType: LauncherSearchResult.IconType.Material,\n"
                 "                    execute: () => {\n"
                 "                        FileSearch.openFile(filePath);\n"

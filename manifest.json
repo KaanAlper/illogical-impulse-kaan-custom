@@ -12,6 +12,7 @@
       "executable": [
         "apply.sh",
         "audio-mono-toggle.sh",
+        "everything-query.py",
         "everything-update.sh",
         "patch-everything.py",
         "patch-lock-howdy.py",
@@ -141,8 +142,8 @@
     },
     {
       "id": "autologin-lock",
-      "title": "SDDM yerine doğrudan Super+L kilit ekranı",
-      "desc": "SDDM'i kapatıp tty1 autologin ile Hyprland'i açar ve açılışta hemen Super+L kilit ekranına düşer (Howdy yüz tanıma ile). Yönetici parolası ister.",
+      "title": "Diğer giriş ekranlarını kapatıp doğrudan ii Super+L ile aç",
+      "desc": "SDDM/GDM/LightDM/Greetd vb. tüm giriş ekranlarını devre dışı bırakır (SDDM'i kaldırır), tty1 autologin ile Hyprland'i açıp doğrudan ii Super+L kilit ekranına düşer. Yönetici parolası ister.",
       "kind": "check",
       "check": [
         {
