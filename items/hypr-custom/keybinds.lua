@@ -21,3 +21,6 @@ hl.bind("ALT_R", hl.dsp.global("alttab:alt"), { ignore_mods = true, transparent 
 -- MSI fan toggle — SUPER+F12 yedek, F12 alone başka uygulamalarda kalabilir
 -- (Fn+F12 ve F12 Linux'ta aynı keysym üretiyor — donanım Fn'i yutuyor)
 hl.bind("SUPER + F12", hl.dsp.exec_cmd("/home/kaanalper/.local/bin/msi-fan-toggle"), { description = "MSI Fan: Toggle Max/Auto" })
+
+-- Everything-style file search: Super+H opens Super menu with # prefix
+hl.bind("SUPER + H", hl.dsp.global("quickshell:overviewFilesToggle"), { description = "Search: Files (Everything)" })

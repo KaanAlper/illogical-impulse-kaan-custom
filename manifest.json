@@ -12,6 +12,8 @@
       "executable": [
         "apply.sh",
         "audio-mono-toggle.sh",
+        "everything-update.sh",
+        "patch-everything.py",
         "patch-lock-howdy.py",
         "sleep-inhibit-toggle.sh"
       ],
@@ -26,6 +28,12 @@
           "file_has": [
             "~/.config/quickshell/ii/modules/ii/lock/LockSurface.qml",
             "faceState"
+          ]
+        },
+        {
+          "file_has": [
+            "~/.config/quickshell/ii/modules/ii/overview/Overview.qml",
+            "overviewFilesToggle"
           ]
         }
       ],

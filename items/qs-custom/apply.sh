@@ -33,6 +33,9 @@ cp "$CUSTOM_DIR/AudioMonoToggle.qml" "$BAR/AudioMonoToggle.qml"
 cp "$CUSTOM_DIR/AudioOutputSwitcher.qml" "$BAR/AudioOutputSwitcher.qml"
 cp "$CUSTOM_DIR/sleep-inhibit-toggle.sh" "$II/scripts/sleep-inhibit-toggle.sh"
 chmod +x "$II/scripts/sleep-inhibit-toggle.sh"
+cp "$CUSTOM_DIR/everything-update.sh" "$II/scripts/everything-update.sh"
+chmod +x "$II/scripts/everything-update.sh"
+cp "$CUSTOM_DIR/FileSearch.qml" "$II/services/FileSearch.qml"
 cp "$CUSTOM_DIR/SleepInhibitToggle.qml" "$BAR/SleepInhibitToggle.qml"
 cp "$CUSTOM_DIR/AppVolumeMixer.qml" "$BAR/AppVolumeMixer.qml"
 
@@ -153,6 +156,42 @@ if [ -d "$LOCK" ]; then
     python3 "$CUSTOM_DIR/patch-lock-howdy.py" "$II" || rc=1
 else
     echo "  UYARI: $LOCK yok, howdy yaması atlandı."
+fi
+
+# 2d) Everything-style (#) file search in Overview (Win+H / # prefix).
+python3 "$CUSTOM_DIR/patch-everything.py" "$II" || rc=1
+
+# 2e) User systemd timer to keep the plocate Everything index fresh.
+SYSTEMD_USER="$HOME/.config/systemd/user"
+if command -v systemctl >/dev/null 2>&1; then
+    mkdir -p "$SYSTEMD_USER"
+    cat > "$SYSTEMD_USER/everything-index.service" <<EOF
+[Unit]
+Description=Update user plocate database for Everything (#) search
+
+[Service]
+Type=oneshot
+ExecStart=$II/scripts/everything-update.sh
+Nice=19
+IOSchedulingClass=idle
+EOF
+    cat > "$SYSTEMD_USER/everything-index.timer" <<EOF
+[Unit]
+Description=Periodically update user plocate database for Everything (#) search
+
+[Timer]
+OnBootSec=30s
+OnUnitActiveSec=15min
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+EOF
+    systemctl --user daemon-reload >/dev/null 2>&1 || true
+    systemctl --user enable --now everything-index.timer >/dev/null 2>&1 || true
+    if [ ! -s "${XDG_CACHE_HOME:-$HOME/.cache}/everything/plocate.db" ]; then
+        systemctl --user start --no-block everything-index.service >/dev/null 2>&1 || true
+    fi
 fi
 
 # 3) Reload Quickshell.
