@@ -1,9 +1,11 @@
+import qs
 import qs.modules.common
 import qs.modules.common.widgets
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
 import Quickshell
+import Quickshell.Io
 import Quickshell.Wayland
 
 PanelWindow {
@@ -11,6 +13,7 @@ PanelWindow {
     required property string sourceUrl
     property string previewUrl: ""
     property string tags: ""
+    property string localSource: ""
     signal closeRequested()
 
     WlrLayershell.namespace: "quickshell:animeViewer"
@@ -24,11 +27,49 @@ PanelWindow {
     }
     color: "transparent"
 
+    Component.onCompleted: {
+        GlobalStates.animeViewerOpen = true;
+        keyScope.forceActiveFocus();
+        if (root.sourceUrl.startsWith("http://") || root.sourceUrl.startsWith("https://")) {
+            fetchProc.running = true;
+        } else {
+            root.localSource = root.sourceUrl;
+        }
+    }
+
+    Component.onDestruction: {
+        GlobalStates.animeViewerOpen = false;
+        if (fetchProc.running) fetchProc.running = false;
+    }
+
+    Process {
+        id: fetchProc
+        command: [
+            "python3",
+            Quickshell.shellPath("scripts/ai/parallel-fetch-image.py"),
+            root.sourceUrl,
+            "8"
+        ]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const out = text.trim();
+                if (out.startsWith("file://")) {
+                    root.localSource = out;
+                }
+            }
+        }
+        onExited: (exitCode, exitStatus) => {
+            if (root.localSource === "") {
+                // Fallback to direct Qt fetch if parallel download failed
+                root.localSource = root.sourceUrl;
+            }
+        }
+    }
+
     Item {
         id: keyScope
         anchors.fill: parent
         focus: true
-        Component.onCompleted: keyScope.forceActiveFocus()
         Keys.onPressed: event => {
             if (event.key === Qt.Key_Escape) {
                 event.accepted = true;
@@ -46,7 +87,7 @@ PanelWindow {
             }
         }
 
-        // Preview image shown underneath while full-res loads
+        // Preview image shown underneath while full-res downloads
         Image {
             id: previewImg
             anchors.centerIn: parent
@@ -59,29 +100,28 @@ PanelWindow {
             visible: root.previewUrl !== "" && fullImg.status !== Image.Ready
         }
 
-        // Full-size image
+        // Full-size image loaded from parallel-fetched local cache
         Image {
             id: fullImg
             anchors.centerIn: parent
             width: parent.width * 0.92
             height: parent.height * 0.92
-            source: root.sourceUrl
+            source: root.localSource
             fillMode: Image.PreserveAspectFit
             asynchronous: true
             smooth: true
-            cache: true
+            cache: false
 
             MouseArea {
                 anchors.fill: parent
-                // Consume clicks on the image area so only backdrop/Esc/Close dismisses
                 onClicked: mouse => mouse.accepted = true
             }
         }
 
-        // Loading indicator while full-size image is fetching
+        // Loading indicator while parallel download or image decode runs
         Rectangle {
             anchors.centerIn: parent
-            visible: fullImg.status === Image.Loading
+            visible: fetchProc.running || fullImg.status === Image.Loading
             color: "#aa000000"
             radius: Appearance.rounding.full
             implicitWidth: loadingRow.implicitWidth + 24

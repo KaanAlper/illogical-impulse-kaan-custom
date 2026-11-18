@@ -961,6 +961,60 @@ def main() -> int:
         ],
     )
 
+    # 8. GlobalStates.qml: track animeViewerOpen so SidebarLeft ignores Esc/focus-grab while viewing
+    ok &= patch_file(
+        ii / "GlobalStates.qml",
+        [
+            (
+                "property bool animeViewerOpen: false",
+                "    property bool sidebarLeftOpen: false",
+                "    property bool sidebarLeftOpen: false\n"
+                "    property bool animeViewerOpen: false",
+            ),
+        ],
+    )
+
+    # 9. SidebarLeft.qml: don't dismiss SidebarLeft when AnimeImageViewer takes focus or Esc is pressed
+    ok &= patch_file(
+        ii / "modules/ii/sidebarLeft/SidebarLeft.qml",
+        [
+            (
+                "if (!GlobalStates.animeViewerOpen) panelWindow.hide();",
+                "            Connections {\n"
+                "                target: GlobalFocusGrab\n"
+                "                function onDismissed() {\n"
+                "                    panelWindow.hide();\n"
+                "                }\n"
+                "            }",
+                "            Connections {\n"
+                "                target: GlobalFocusGrab\n"
+                "                function onDismissed() {\n"
+                "                    if (!GlobalStates.animeViewerOpen) panelWindow.hide();\n"
+                "                }\n"
+                "            }\n"
+                "            Connections {\n"
+                "                target: GlobalStates\n"
+                "                function onAnimeViewerOpenChanged() {\n"
+                "                    if (!GlobalStates.animeViewerOpen && panelWindow.visible) {\n"
+                "                        GlobalFocusGrab.addDismissable(panelWindow);\n"
+                "                    }\n"
+                "                }\n"
+                "            }",
+            ),
+            (
+                "if (event.key === Qt.Key_Escape && !GlobalStates.animeViewerOpen)",
+                "                Keys.onPressed: (event) => {\n"
+                "                    if (event.key === Qt.Key_Escape) {\n"
+                "                        panelWindow.hide();\n"
+                "                    }",
+                "                Keys.onPressed: (event) => {\n"
+                "                    if (event.key === Qt.Key_Escape && !GlobalStates.animeViewerOpen) {\n"
+                "                        panelWindow.hide();\n"
+                "                    }",
+            ),
+        ],
+    )
+
     return 0 if ok else 1
 
 
