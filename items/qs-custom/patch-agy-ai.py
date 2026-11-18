@@ -235,7 +235,8 @@ def main() -> int:
                 '    property bool modelPickerOpen: false',
                 '    property string commandPrefix: "/"',
                 '    property string commandPrefix: "/"\n'
-                '    property bool modelPickerOpen: false',
+                '    property bool modelPickerOpen: false\n'
+                '    property bool configPickerOpen: false',
             ),
             (
                 'Ai.getModel()?.api_format === "agy" && inputText.startsWith(root.commandPrefix)',
@@ -243,7 +244,8 @@ def main() -> int:
                 '        if (Ai.getModel()?.api_format === "agy" && inputText.startsWith(root.commandPrefix)) {\n'
                 '            const parts = inputText.trim().split(/\\s+/);\n'
                 '            const cmd = parts[0].substring(1);\n'
-                '            if (cmd === "model") { root.modelPickerOpen = true; return; }\n'
+                '            if (cmd === "model" || cmd === "effort") { root.configPickerOpen = false; root.modelPickerOpen = true; return; }\n'
+                '            if (cmd === "config" || cmd === "settings") { root.modelPickerOpen = false; root.configPickerOpen = true; return; }\n'
                 '            if (cmd === "login") {\n'
                 '                const agyBin = FileUtils.trimFileProtocol(`${Directories.home}/.local/bin/agy`);\n'
                 '                Quickshell.execDetached([Config.options.apps.terminal, "-e", agyBin]);\n'
@@ -396,12 +398,17 @@ def main() -> int:
                 "            }",
             ),
             (
-                "AgyModelPicker {",
+                "AgyConfigPicker {",
                 "        Rectangle { // Input area",
                 "        AgyModelPicker {\n"
                 "            visible: root.modelPickerOpen\n"
                 "            Layout.fillWidth: true\n"
                 "            onCloseRequested: root.modelPickerOpen = false\n"
+                "        }\n\n"
+                "        AgyConfigPicker {\n"
+                "            visible: root.configPickerOpen\n"
+                "            Layout.fillWidth: true\n"
+                "            onCloseRequested: root.configPickerOpen = false\n"
                 "        }\n\n"
                 "        Rectangle { // Input area",
             ),
@@ -427,19 +434,20 @@ def main() -> int:
                 '                }',
             ),
             (
-                "onActiveFocusChanged: if (activeFocus) root.modelPickerOpen = false;",
+                "onActiveFocusChanged: if (activeFocus) { root.modelPickerOpen = false; root.configPickerOpen = false; }",
                 '                    StyledTextArea { // The actual TextArea (inside ScrollView to enable scrolling)\n                        id: messageInputField',
-                '                    StyledTextArea { // The actual TextArea (inside ScrollView to enable scrolling)\n                        id: messageInputField\n                        onActiveFocusChanged: if (activeFocus) root.modelPickerOpen = false;',
+                '                    StyledTextArea { // The actual TextArea (inside ScrollView to enable scrolling)\n                        id: messageInputField\n                        onActiveFocusChanged: if (activeFocus) { root.modelPickerOpen = false; root.configPickerOpen = false; }',
             ),
             (
-                "visible: root.modelPickerOpen\n                z: 5",
+                "visible: root.modelPickerOpen || root.configPickerOpen\n                z: 5",
                 "            StyledListView { // Message list",
                 "            MouseArea {\n"
                 "                anchors.fill: parent\n"
-                "                visible: root.modelPickerOpen\n"
+                "                visible: root.modelPickerOpen || root.configPickerOpen\n"
                 "                z: 5\n"
                 "                onPressed: mouse => {\n"
                 "                    root.modelPickerOpen = false;\n"
+                "                    root.configPickerOpen = false;\n"
                 "                    mouse.accepted = false;\n"
                 "                }\n"
                 "            }\n"
@@ -449,6 +457,72 @@ def main() -> int:
                 'visible: Ai.getModel()?.api_format !== "agy"\n                    // Tool indicator',
                 '                ApiInputBoxIndicator {\n                    // Tool indicator',
                 '                ApiInputBoxIndicator {\n                    visible: Ai.getModel()?.api_format !== "agy"\n                    // Tool indicator',
+            ),
+        ],
+    )
+
+    # 3. AiMessage.qml: clean Claude Code / CLI flat style for agy messages
+    ok &= patch_file(
+        ii / "modules/ii/sidebarLeft/aiChat/AiMessage.qml",
+        [
+            (
+                "readonly property bool cliStyle:",
+                "    property bool editing: false",
+                "    property bool editing: false\n"
+                "    readonly property bool cliStyle: (Ai.models[root.messageData?.model]?.api_format === \"agy\") || (Ai.getModel()?.api_format === \"agy\")",
+            ),
+            (
+                "color: root.cliStyle ?",
+                "    radius: Appearance.rounding.normal\n"
+                "    color: Appearance.colors.colLayer1",
+                "    radius: root.cliStyle ? Appearance.rounding.small : Appearance.rounding.normal\n"
+                "    color: root.cliStyle ? (messageData?.role === \"user\" ? ColorUtils.transparentize(Appearance.colors.colLayer2, 0.45) : \"transparent\") : Appearance.colors.colLayer1",
+            ),
+            (
+                "color: root.cliStyle ? \"transparent\" : Appearance.colors.colSecondaryContainer",
+                "        Rectangle {\n"
+                "            Layout.fillWidth: true\n"
+                "            implicitWidth: headerRowLayout.implicitWidth + 4 * 2\n"
+                "            implicitHeight: headerRowLayout.implicitHeight + 4 * 2\n"
+                "            color: Appearance.colors.colSecondaryContainer",
+                "        Rectangle {\n"
+                "            Layout.fillWidth: true\n"
+                "            implicitWidth: headerRowLayout.implicitWidth + 4 * 2\n"
+                "            implicitHeight: root.cliStyle ? (headerRowLayout.implicitHeight + 2) : (headerRowLayout.implicitHeight + 4 * 2)\n"
+                "            color: root.cliStyle ? \"transparent\" : Appearance.colors.colSecondaryContainer",
+            ),
+            (
+                "id: editButton\n                        visible: !root.cliStyle",
+                "                    AiMessageControlButton {\n                        id: editButton",
+                "                    AiMessageControlButton {\n                        id: editButton\n                        visible: !root.cliStyle",
+            ),
+            (
+                "id: toggleMarkdownButton\n                        visible: !root.cliStyle",
+                "                    AiMessageControlButton {\n                        id: toggleMarkdownButton",
+                "                    AiMessageControlButton {\n                        id: toggleMarkdownButton\n                        visible: !root.cliStyle",
+            ),
+        ],
+    )
+
+    # 4. MessageCodeBlock.qml: green/red diff highlighting for diff blocks
+    ok &= patch_file(
+        ii / "modules/ii/sidebarLeft/aiChat/MessageCodeBlock.qml",
+        [
+            (
+                "function formatDiffHtml(raw)",
+                "                        text: segmentContent",
+                "                        function formatDiffHtml(raw) {\n"
+                "                            const esc = s => s.replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\");\n"
+                "                            return raw.split(\"\\n\").map(ln => {\n"
+                "                                if (ln.startsWith(\"+\") && !ln.startsWith(\"+++\")) return `<font color=\"#a6e3a1\">${esc(ln)}</font>`;\n"
+                "                                if (ln.startsWith(\"-\") && !ln.startsWith(\"---\")) return `<font color=\"#f38ba8\">${esc(ln)}</font>`;\n"
+                "                                if (ln.startsWith(\"@@\")) return `<font color=\"#89b4fa\">${esc(ln)}</font>`;\n"
+                "                                return esc(ln);\n"
+                "                            }).join(\"<br>\");\n"
+                "                        }\n"
+                "                        readonly property bool isDiffBlock: !editing && (segmentLang === \"diff\" || (/^\\+[^+]/m.test(segmentContent) && /^-[^-]/m.test(segmentContent)))\n"
+                "                        textFormat: isDiffBlock ? TextEdit.RichText : TextEdit.PlainText\n"
+                "                        text: isDiffBlock ? formatDiffHtml(segmentContent) : segmentContent",
             ),
         ],
     )

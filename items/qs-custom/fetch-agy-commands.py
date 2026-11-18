@@ -38,7 +38,7 @@ def main() -> int:
                 commands.append({
                     "name": name,
                     "description": c.get("description", ""),
-                    "instant": name in ("model", "help", "usage", "credits", "agents", "skills", "changelog"),
+                    "instant": name in ("model", "effort", "config", "help", "usage", "credits", "agents", "skills", "changelog"),
                 })
 
     # Sidebar-specific helpers (login in terminal, clear local conversation)

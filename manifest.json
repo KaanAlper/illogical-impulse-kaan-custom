@@ -10,6 +10,7 @@
       "src": "items/qs-custom",
       "dest": "~/.config/quickshell-custom",
       "executable": [
+        "agy-config.py",
         "apply.sh",
         "audio-mono-toggle.sh",
         "everything-query.py",
