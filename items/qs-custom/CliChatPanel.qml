@@ -18,6 +18,7 @@ Item {
     property bool busy: false
     property bool modelPickerOpen: false
     property bool cliInstalled: true
+    property bool cliLoggedIn: true
     property bool installing: false
     property bool needsPassword: false
     property real installProgress: 0.0
@@ -126,6 +127,7 @@ Item {
                 try {
                     const data = JSON.parse(text);
                     root.cliInstalled = !!data.installed;
+                    root.cliLoggedIn = data.loggedIn !== undefined ? !!data.loggedIn : true;
                     root.modelCatalog = data.models ?? [];
                     root.cliCommands = data.commands ?? [];
                     if (!root.selectedModel && data.defaultModel)
@@ -430,6 +432,66 @@ Item {
                             color: Appearance.m3colors.m3onPrimary
                             text: Translation.tr("Install")
                         }
+                    }
+                }
+            }
+        }
+
+        // Auth prompt banner when CLI is installed but not logged in
+        Rectangle {
+            visible: root.cliInstalled && !root.cliLoggedIn
+            Layout.fillWidth: true
+            implicitHeight: authRow.implicitHeight + 16
+            radius: Appearance.rounding.normal
+            color: Appearance.colors.colLayer2
+            border.width: 1
+            border.color: Appearance.colors.colOutlineVariant
+
+            RowLayout {
+                id: authRow
+                anchors.fill: parent
+                anchors.margins: 8
+                spacing: 8
+
+                MaterialSymbol {
+                    text: "passkey"
+                    iconSize: 20
+                    color: Appearance.colors.colPrimary
+                }
+                StyledText {
+                    Layout.fillWidth: true
+                    font.pixelSize: Appearance.font.pixelSize.smaller
+                    color: Appearance.m3colors.m3onSurface
+                    elide: Text.ElideRight
+                    text: Translation.tr("Sign in required to use %1").arg(root.backend === "codex" ? "Codex" : "Claude")
+                }
+                RippleButton {
+                    implicitWidth: loginBtnTxt.implicitWidth + 20
+                    implicitHeight: 28
+                    buttonRadius: Appearance.rounding.full
+                    colBackground: Appearance.colors.colPrimary
+                    onClicked: root.openLogin()
+                    contentItem: StyledText {
+                        id: loginBtnTxt
+                        anchors.centerIn: parent
+                        font.pixelSize: Appearance.font.pixelSize.smaller
+                        font.weight: Font.Medium
+                        color: Appearance.m3colors.m3onPrimary
+                        text: Translation.tr("Sign in")
+                    }
+                }
+                RippleButton {
+                    implicitWidth: 28
+                    implicitHeight: 28
+                    buttonRadius: Appearance.rounding.full
+                    colBackground: "transparent"
+                    colBackgroundHover: Appearance.colors.colSurfaceContainerHigh
+                    onClicked: root.refreshMeta()
+                    contentItem: MaterialSymbol {
+                        anchors.centerIn: parent
+                        text: "refresh"
+                        iconSize: 16
+                        color: Appearance.colors.colSubtext
                     }
                 }
             }

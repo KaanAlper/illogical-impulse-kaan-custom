@@ -107,6 +107,10 @@ def fetch_codex() -> dict:
     if not bin_path:
         return {"installed": False, "models": [], "commands": []}
 
+    # Check login status
+    login_res = subprocess.run([bin_path, "login", "status"], capture_output=True, text=True, timeout=5, check=False)
+    logged_in = login_res.returncode == 0 and "not logged in" not in (login_res.stdout + login_res.stderr).lower()
+
     # Read configured model from ~/.codex/config.toml if present
     cfg_path = pathlib.Path.home() / ".codex/config.toml"
     default_model = ""
@@ -131,13 +135,27 @@ def fetch_codex() -> dict:
         except Exception:
             pass
 
+    # Fallback: extract model IDs directly from installed codex binary
+    if not models:
+        try:
+            raw = pathlib.Path(bin_path).resolve().read_bytes()
+            slugs = sorted(
+                {m.decode() for m in re.findall(rb"gpt-5\.[0-9]+(?:-codex(?:-(?:mini|max))?)?", raw)},
+                reverse=True,
+            )
+            for slug in slugs:
+                if not any(m["id"] == slug for m in models):
+                    models.append({"id": slug, "name": slug, "efforts": ["low", "medium", "high"]})
+        except OSError:
+            pass
+
     commands = [
         {"name": "/model", "description": "Select model & reasoning effort", "instant": True},
         {"name": "/effort", "description": "Set reasoning effort", "instant": True},
         {"name": "/login", "description": "Sign in / authenticate Codex CLI", "instant": True},
         {"name": "/clear", "description": "Start a new conversation", "instant": True},
     ]
-    return {"installed": True, "defaultModel": default_model or (models[0]["id"] if models else ""), "models": models, "commands": commands}
+    return {"installed": True, "loggedIn": logged_in, "defaultModel": default_model or (models[0]["id"] if models else ""), "models": models, "commands": commands}
 
 
 def main() -> int:
