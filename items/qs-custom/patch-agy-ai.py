@@ -941,7 +941,7 @@ def main() -> int:
                 "    property bool viewerOpen: false",
             ),
             (
-                "sourceComponent: AnimeImageViewer",
+                "sampleUrl: root.imageData.sample_url",
                 "    padding: 0\n"
                 "    implicitWidth: root.rowHeight * modelData.aspect_ratio",
                 "    onClicked: root.viewerOpen = true\n\n"
@@ -950,6 +950,7 @@ def main() -> int:
                 "        active: root.viewerOpen\n"
                 "        sourceComponent: AnimeImageViewer {\n"
                 "            sourceUrl: root.imageData.file_url ?? root.imageData.sample_url ?? root.imageData.preview_url ?? \"\"\n"
+                "            sampleUrl: root.imageData.sample_url ?? \"\"\n"
                 "            previewUrl: root.imageData.preview_url ?? \"\"\n"
                 "            tags: root.imageData.tags ?? \"\"\n"
                 "            onCloseRequested: root.viewerOpen = false\n"

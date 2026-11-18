@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Parallel HTTP Range image downloader (IDM-style multi-connection chunking)."""
+"""Parallel HTTP Range image downloader (zero-HEAD first-chunk + parallel tail)."""
 
 import concurrent.futures
 import hashlib
@@ -13,7 +13,7 @@ USER_AGENT = (
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
     "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36"
 )
-CHUNK_MIN_SIZE = 256 * 1024  # Only split files >= 256 KiB
+FIRST_CHUNK = 512 * 1024  # 512 KiB in the initial GET (0 extra HEAD RTT)
 DEFAULT_WORKERS = 8
 
 
@@ -24,18 +24,6 @@ def guess_ext(url: str) -> str:
     if ext in {".jpg", ".jpeg", ".png", ".webp", ".gif", ".avif", ".bmp"}:
         return ext
     return ".img"
-
-
-def probe(url: str) -> tuple[int | None, bool]:
-    req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": USER_AGENT})
-    try:
-        with urllib.request.urlopen(req, timeout=15) as resp:
-            length_hdr = resp.headers.get("Content-Length")
-            ranges_hdr = (resp.headers.get("Accept-Ranges") or "").lower()
-            total = int(length_hdr) if length_hdr and length_hdr.isdigit() else None
-            return total, ("bytes" in ranges_hdr)
-    except Exception:
-        return None, False
 
 
 def download_range(url: str, fd: int, start: int, end: int) -> None:
@@ -59,16 +47,6 @@ def download_range(url: str, fd: int, start: int, end: int) -> None:
             offset += len(buf)
 
 
-def download_single(url: str, part_path: str) -> None:
-    req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(req, timeout=30) as resp, open(part_path, "wb") as f:
-        while True:
-            buf = resp.read(65536)
-            if not buf:
-                break
-            f.write(buf)
-
-
 def main() -> int:
     if len(sys.argv) < 2 or not sys.argv[1]:
         return 1
@@ -85,25 +63,51 @@ def main() -> int:
 
     part = f"{dest}.{os.getpid()}.part"
     try:
-        total, supports_ranges = probe(url)
-        if supports_ranges and total and total >= CHUNK_MIN_SIZE:
+        req = urllib.request.Request(
+            url,
+            headers={
+                "User-Agent": USER_AGENT,
+                "Range": f"bytes=0-{FIRST_CHUNK - 1}",
+            },
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            status = getattr(resp, "status", 200)
+            content_range = resp.headers.get("Content-Range", "")
+            first_data = resp.read()
+
+            total = None
+            if status == 206 and "/" in content_range:
+                tail = content_range.rsplit("/", 1)[-1].strip()
+                if tail.isdigit():
+                    total = int(tail)
+
             fd = os.open(part, os.O_CREAT | os.O_RDWR | os.O_TRUNC, 0o644)
             try:
-                os.ftruncate(fd, total)
-                step = (total + workers - 1) // workers
-                ranges = [
-                    (i * step, min(total - 1, (i + 1) * step - 1))
-                    for i in range(workers)
-                    if i * step < total
-                ]
-                with concurrent.futures.ThreadPoolExecutor(max_workers=len(ranges)) as ex:
-                    futs = [ex.submit(download_range, url, fd, s, e) for s, e in ranges]
-                    for fut in concurrent.futures.as_completed(futs):
-                        fut.result()
+                written = 0
+                while written < len(first_data):
+                    written += os.pwrite(fd, first_data[written:], written)
+
+                if status == 206 and total and total > len(first_data):
+                    os.ftruncate(fd, total)
+                    rem_start = len(first_data)
+                    rem_len = total - rem_start
+                    step = max(256 * 1024, (rem_len + workers - 1) // workers)
+                    ranges = []
+                    pos = rem_start
+                    while pos < total:
+                        end = min(total - 1, pos + step - 1)
+                        ranges.append((pos, end))
+                        pos = end + 1
+
+                    with concurrent.futures.ThreadPoolExecutor(max_workers=len(ranges)) as ex:
+                        futs = [ex.submit(download_range, url, fd, s, e) for s, e in ranges]
+                        for fut in concurrent.futures.as_completed(futs):
+                            fut.result()
+                elif status == 200:
+                    # Server ignored Range and sent full body; first_data already has it all.
+                    pass
             finally:
                 os.close(fd)
-        else:
-            download_single(url, part)
 
         os.replace(part, dest)
         print(f"file://{dest}", flush=True)

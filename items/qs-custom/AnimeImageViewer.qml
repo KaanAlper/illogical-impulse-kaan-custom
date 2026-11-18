@@ -11,6 +11,7 @@ import Quickshell.Wayland
 PanelWindow {
     id: root
     required property string sourceUrl
+    property string sampleUrl: ""
     property string previewUrl: ""
     property string tags: ""
     property string localSource: ""
@@ -30,20 +31,52 @@ PanelWindow {
     Component.onCompleted: {
         GlobalStates.animeViewerOpen = true;
         keyScope.forceActiveFocus();
-        if (root.sourceUrl.startsWith("http://") || root.sourceUrl.startsWith("https://")) {
-            fetchProc.running = true;
+        const fastUrl = root.sampleUrl !== "" ? root.sampleUrl : root.sourceUrl;
+        if (fastUrl.startsWith("http://") || fastUrl.startsWith("https://")) {
+            sampleFetchProc.urlToFetch = fastUrl;
+            sampleFetchProc.running = true;
         } else {
-            root.localSource = root.sourceUrl;
+            root.localSource = fastUrl;
+        }
+        if (root.sourceUrl !== "" && root.sourceUrl !== fastUrl &&
+                (root.sourceUrl.startsWith("http://") || root.sourceUrl.startsWith("https://"))) {
+            fullFetchProc.running = true;
         }
     }
 
     Component.onDestruction: {
         GlobalStates.animeViewerOpen = false;
-        if (fetchProc.running) fetchProc.running = false;
+        if (sampleFetchProc.running) sampleFetchProc.running = false;
+        if (fullFetchProc.running) fullFetchProc.running = false;
     }
 
     Process {
-        id: fetchProc
+        id: sampleFetchProc
+        property string urlToFetch: ""
+        command: [
+            "python3",
+            Quickshell.shellPath("scripts/ai/parallel-fetch-image.py"),
+            sampleFetchProc.urlToFetch,
+            "8"
+        ]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const out = text.trim();
+                if (out.startsWith("file://") && !fullFetchProc.ready) {
+                    root.localSource = out;
+                }
+            }
+        }
+        onExited: (exitCode, exitStatus) => {
+            if (root.localSource === "") {
+                root.localSource = sampleFetchProc.urlToFetch;
+            }
+        }
+    }
+
+    Process {
+        id: fullFetchProc
+        property bool ready: false
         command: [
             "python3",
             Quickshell.shellPath("scripts/ai/parallel-fetch-image.py"),
@@ -54,14 +87,9 @@ PanelWindow {
             onStreamFinished: {
                 const out = text.trim();
                 if (out.startsWith("file://")) {
+                    fullFetchProc.ready = true;
                     root.localSource = out;
                 }
-            }
-        }
-        onExited: (exitCode, exitStatus) => {
-            if (root.localSource === "") {
-                // Fallback to direct Qt fetch if parallel download failed
-                root.localSource = root.sourceUrl;
             }
         }
     }
@@ -121,7 +149,7 @@ PanelWindow {
         // Loading indicator while parallel download or image decode runs
         Rectangle {
             anchors.centerIn: parent
-            visible: fetchProc.running || fullImg.status === Image.Loading
+            visible: sampleFetchProc.running || fullImg.status === Image.Loading
             color: "#aa000000"
             radius: Appearance.rounding.full
             implicitWidth: loadingRow.implicitWidth + 24
