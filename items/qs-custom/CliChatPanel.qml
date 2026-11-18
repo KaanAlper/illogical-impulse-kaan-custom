@@ -176,6 +176,18 @@ Item {
         msgModel.clear();
     }
 
+    function stopPrompt() {
+        if (!root.busy && !runner.running)
+            return;
+        runner.running = false;
+        root.busy = false;
+        if (msgModel.count > 0) {
+            const idx = msgModel.count - 1;
+            if (msgModel.get(idx).role === "assistant" && msgModel.get(idx).content.trim() === "")
+                root.updateLastAssistant("[Stopped]", true);
+        }
+    }
+
     function sendPrompt(rawText: string) {
         const text = rawText.trim();
         if (!text || root.busy)
@@ -762,6 +774,9 @@ Item {
                                     inputField.clear();
                                     event.accepted = true;
                                 }
+                            } else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && root.busy && inputField.selectedText.length === 0) {
+                                root.stopPrompt();
+                                event.accepted = true;
                             } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return) && !(event.modifiers & Qt.ShiftModifier)) {
                                 if (cliSuggestions.visible) {
                                     const sel = cliSuggestions.currentItem();
@@ -783,16 +798,20 @@ Item {
                         implicitWidth: 36
                         implicitHeight: 36
                         buttonRadius: Appearance.rounding.small
-                        enabled: inputField.text.length > 0 && !root.busy
+                        enabled: root.busy || inputField.text.length > 0
                         toggled: enabled
                         onClicked: {
-                            const t = inputField.text;
-                            inputField.clear();
-                            root.sendPrompt(t);
+                            if (root.busy) {
+                                root.stopPrompt();
+                            } else {
+                                const t = inputField.text;
+                                inputField.clear();
+                                root.sendPrompt(t);
+                            }
                         }
                         contentItem: MaterialSymbol {
                             anchors.centerIn: parent
-                            text: root.busy ? "hourglass_top" : "arrow_upward"
+                            text: root.busy ? "stop" : "arrow_upward"
                             iconSize: 20
                             color: enabled ? Appearance.m3colors.m3onPrimary : Appearance.colors.colOnLayer2Disabled
                         }

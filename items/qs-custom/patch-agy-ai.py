@@ -120,8 +120,17 @@ def main() -> int:
                 "    }",
             ),
             (
-                'root.agyConversationId = "";',
+                "function stopGeneration()",
                 "    function clearMessages() {",
+                "    readonly property bool isGenerating: requester.running\n\n"
+                "    function stopGeneration() {\n"
+                "        if (!requester.running) return;\n"
+                "        requester.running = false;\n"
+                "        if (requester.message) {\n"
+                "            requester.message.thinking = false;\n"
+                "            requester.markDone();\n"
+                "        }\n"
+                "    }\n\n"
                 "    function clearMessages() {\n"
                 "        root.agyConversationId = \"\";",
             ),
@@ -474,6 +483,57 @@ def main() -> int:
                 '                                        return;\n'
                 '                                    }\n'
                 '                                } else {',
+            ),
+            (
+                "Ai.stopGeneration()",
+                '                    enabled: messageInputField.text.length > 0\n'
+                '                    toggled: enabled\n\n'
+                '                    MouseArea {\n'
+                '                        anchors.fill: parent\n'
+                '                        cursorShape: sendButton.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor\n'
+                '                        onClicked: {\n'
+                '                            const inputText = messageInputField.text;\n'
+                '                            root.handleInput(inputText);\n'
+                '                            messageInputField.clear();\n'
+                '                        }\n'
+                '                    }\n\n'
+                '                    contentItem: MaterialSymbol {\n'
+                '                        anchors.centerIn: parent\n'
+                '                        horizontalAlignment: Text.AlignHCenter\n'
+                '                        iconSize: 22\n'
+                '                        color: sendButton.enabled ? Appearance.m3colors.m3onPrimary : Appearance.colors.colOnLayer2Disabled\n'
+                '                        text: "arrow_upward"\n'
+                '                    }',
+                '                    enabled: Ai.isGenerating || messageInputField.text.length > 0\n'
+                '                    toggled: enabled\n\n'
+                '                    MouseArea {\n'
+                '                        anchors.fill: parent\n'
+                '                        cursorShape: sendButton.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor\n'
+                '                        onClicked: {\n'
+                '                            if (Ai.isGenerating) {\n'
+                '                                Ai.stopGeneration();\n'
+                '                            } else {\n'
+                '                                const inputText = messageInputField.text;\n'
+                '                                root.handleInput(inputText);\n'
+                '                                messageInputField.clear();\n'
+                '                            }\n'
+                '                        }\n'
+                '                    }\n\n'
+                '                    contentItem: MaterialSymbol {\n'
+                '                        anchors.centerIn: parent\n'
+                '                        horizontalAlignment: Text.AlignHCenter\n'
+                '                        iconSize: 22\n'
+                '                        color: sendButton.enabled ? Appearance.m3colors.m3onPrimary : Appearance.colors.colOnLayer2Disabled\n'
+                '                        text: Ai.isGenerating ? "stop" : "arrow_upward"\n'
+                '                    }',
+            ),
+            (
+                "if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && Ai.isGenerating",
+                '                            } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)) {',
+                '                            } else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && Ai.isGenerating && messageInputField.selectedText.length === 0) {\n'
+                '                                Ai.stopGeneration();\n'
+                '                                event.accepted = true;\n'
+                '                            } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)) {',
             ),
             (
                 "visible: root.modelPickerOpen || root.configPickerOpen\n                z: 5",
