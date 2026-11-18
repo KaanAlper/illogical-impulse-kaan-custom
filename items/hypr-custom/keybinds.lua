@@ -7,9 +7,9 @@ hl.unbind("SUPER + Q")
 hl.unbind("ALT + F4")
 hl.bind("ALT + F4", hl.dsp.window.close(), { description = "Window: Close" })
 
--- Screenshot: PrintScreen → bölge seç (slurp) + swappy (floating editör). Flameshot/Spectacle Wayland'de sorunlu.
+-- Screenshot: PrintScreen → Flameshot GUI
 hl.unbind("Print")
-hl.bind("Print", hl.dsp.exec_cmd("grim -g \"$(slurp)\" - | swappy -f -"), { description = "Utilities: Screenshot (slurp+swappy)" })
+hl.bind("Print", hl.dsp.exec_cmd("flameshot gui"), { description = "Screenshot: Flameshot GUI" })
 
 -- Alt+Tab window switcher (custom/alttab/shell.qml): hold Alt, Tab moves forward, Shift+Tab back,
 -- releasing Alt switches to the selection. Alt itself is bound transparently, so applications still get it.

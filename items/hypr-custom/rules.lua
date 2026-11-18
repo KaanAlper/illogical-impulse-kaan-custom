@@ -34,3 +34,28 @@ hl.window_rule({
     no_initial_focus = true,
     opacity = "1.0 1.0"
 })
+
+-- Portal & Share Picker Dialogs (Floating)
+hl.window_rule({match = {class = "hyprland-share-picker"}, float = true})
+hl.window_rule({match = {class = "hyprland-share-picker"}, center = true})
+hl.window_rule({match = {class = "hyprland-share-picker"}, pin = true})
+
+hl.window_rule({match = {class = ".*share-picker.*"}, float = true})
+hl.window_rule({match = {class = ".*share-picker.*"}, center = true})
+
+hl.window_rule({match = {class = "org.freedesktop.impl.portal.desktop.gtk"}, float = true})
+hl.window_rule({match = {class = "org.freedesktop.impl.portal.desktop.gtk"}, center = true})
+
+hl.window_rule({match = {class = ".*portal.*"}, float = true})
+hl.window_rule({match = {class = ".*portal.*"}, center = true})
+
+-- Flameshot rules (Floating, ortalanmış, kenarlıksız)
+hl.window_rule({
+    match = {class = "flameshot"},
+    float = true,
+    pin = true,
+    center = true,
+    border_size = 0,
+    rounding = 0,
+    no_shadow = true
+})

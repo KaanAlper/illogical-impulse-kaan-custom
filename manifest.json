@@ -42,7 +42,20 @@
       "dest": "~/.config/hypr/custom",
       "executable": [
         "scripts/__restore_video_wallpaper.sh"
+      ],
+      "requires": [
+        "flameshot"
       ]
+    },
+    {
+      "id": "flameshot",
+      "title": "Flameshot ekran görüntüsü aracı",
+      "desc": "Ekran dondurmalı, ok ve etiketleme araçlı ekran görüntüsü aracı. Wayland üzerinde yüzen pencere (floating) kurallarıyla çalışır.",
+      "kind": "pkgs",
+      "pkgs": [
+        "flameshot"
+      ],
+      "install": "bash {repo}/items/flameshot/install.sh"
     },
     {
       "id": "fish-settings",
