@@ -25,3 +25,7 @@ hl.bind("SUPER + F12", hl.dsp.exec_cmd("/home/kaanalper/.local/bin/msi-fan-toggl
 -- Everything-style file search: Super+B opens Super menu with # prefix (AI sidebar already uses Super+A)
 hl.unbind("SUPER + B")
 hl.bind("SUPER + B", hl.dsp.global("quickshell:overviewFilesToggle"), { description = "Search: Files (Everything)" })
+
+-- All installed apps (A-Z): Super+P opens Super menu with ! prefix
+hl.unbind("SUPER + P")
+hl.bind("SUPER + P", hl.dsp.global("quickshell:overviewAllAppsToggle"), { description = "Search: All apps (A-Z)" })

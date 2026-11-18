@@ -75,23 +75,14 @@
       "dest": "~/.config/fish"
     },
     {
-      "id": "howdy-packages",
-      "title": "Howdy paketleri",
-      "desc": "Yüz tanıma: python-dlib (CPU, CUDA'sız derlenir) ve howdy-git. Derleme birkaç dakika sürer, terminalde çalışır.",
-      "kind": "pkgs",
-      "pkgs": [
-        "python-dlib",
-        "howdy-git"
-      ],
-      "terminal": true,
-      "install": "bash {repo}/items/howdy-packages/install.sh"
-    },
-    {
-      "id": "howdy-config",
-      "title": "Howdy IR kamera ayarı",
-      "desc": "IR kamerayı bulup howdy'ye tanıtır ve vtk ile çakışan cv2 sorunu için kendi cv2'sini koyar. Yönetici parolası ister.",
+      "id": "howdy",
+      "title": "Howdy kızılötesi (IR) yüz tanıma",
+      "desc": "Yüz tanıma paketlerini (python-dlib, howdy-git) kurar, IR kamerayı ve cv2 düzeltmesini ayarlar, açılır pencere bastırıcı ~/.local/bin/howdy-gtk'yı yerleştirir. Yönetici parolası ister.",
       "kind": "check",
       "check": [
+        {
+          "exists": "/usr/bin/howdy"
+        },
         {
           "exists": "/usr/lib/howdy/cv2"
         },
@@ -100,24 +91,13 @@
             "/etc/howdy/config.ini",
             "device_path = none"
           ]
+        },
+        {
+          "exists": "~/.local/bin/howdy-gtk"
         }
       ],
-      "requires": [
-        "howdy-packages"
-      ],
       "terminal": true,
-      "install": "sudo bash {repo}/items/howdy-config/setup.sh"
-    },
-    {
-      "id": "howdy-stub",
-      "title": "Howdy açılır pencere bastırıcı",
-      "desc": "Howdy her taramada 'Howdy Authentication' penceresi açar; kilit ekranı yeniden denemeleriyle masaüstünde birikiyordu. ~/.local/bin/howdy-gtk yer tutucusu bunu sessizce yutar.",
-      "kind": "files",
-      "src": "items/howdy-stub",
-      "dest": "~/.local/bin",
-      "executable": [
-        "howdy-gtk"
-      ]
+      "install": "bash {repo}/items/howdy/install.sh"
     },
     {
       "id": "sddm-face",
@@ -133,8 +113,7 @@
         }
       ],
       "requires": [
-        "howdy-packages",
-        "howdy-config"
+        "howdy"
       ],
       "terminal": true,
       "default": false,

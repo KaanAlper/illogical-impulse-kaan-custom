@@ -35,7 +35,7 @@ def main() -> int:
     ii = pathlib.Path(sys.argv[1])
     ok = True
 
-    # 1. Config.qml: add search.prefix.files = "#"
+    # 1. Config.qml: add search.prefix.files = "#" and search.prefix.allApps = "!"
     ok &= patch_file(
         ii / "modules/common/Config.qml",
         [
@@ -44,10 +44,15 @@ def main() -> int:
                 'property string emojis: ":"',
                 'property string emojis: ":"\n                    property string files: "#"',
             ),
+            (
+                'property string allApps: "!"',
+                'property string action: "/"',
+                'property string action: "/"\n                    property string allApps: "!"',
+            ),
         ],
     )
 
-    # 2. Overview.qml: toggleFiles(), IPC filesToggle(), GlobalShortcut overviewFilesToggle
+    # 2. Overview.qml: toggleFiles(), toggleAllApps(), IPC, GlobalShortcuts
     ok &= patch_file(
         ii / "modules/ii/overview/Overview.qml",
         [
@@ -66,10 +71,30 @@ def main() -> int:
                 "    function toggleEmojis() {",
             ),
             (
+                "function toggleAllApps()",
+                "    function toggleEmojis() {",
+                "    function toggleAllApps() {\n"
+                "        if (GlobalStates.overviewOpen && overviewScope.dontAutoCancelSearch) {\n"
+                "            GlobalStates.overviewOpen = false;\n"
+                "            return;\n"
+                "        }\n"
+                "        overviewScope.dontAutoCancelSearch = true;\n"
+                "        panelWindow.setSearchingText(Config.options.search.prefix.allApps);\n"
+                "        GlobalStates.overviewOpen = true;\n"
+                "    }\n\n"
+                "    function toggleEmojis() {",
+            ),
+            (
                 "function filesToggle()",
                 "        function clipboardToggle() {\n            overviewScope.toggleClipboard();\n        }",
                 "        function clipboardToggle() {\n            overviewScope.toggleClipboard();\n        }\n"
                 "        function filesToggle() {\n            overviewScope.toggleFiles();\n        }",
+            ),
+            (
+                "function allAppsToggle()",
+                "        function clipboardToggle() {\n            overviewScope.toggleClipboard();\n        }",
+                "        function clipboardToggle() {\n            overviewScope.toggleClipboard();\n        }\n"
+                "        function allAppsToggle() {\n            overviewScope.toggleAllApps();\n        }",
             ),
             (
                 'name: "overviewFilesToggle"',
@@ -83,10 +108,22 @@ def main() -> int:
                 "    }\n\n"
                 "    GlobalShortcut {\n        name: \"overviewEmojiToggle\"",
             ),
+            (
+                'name: "overviewAllAppsToggle"',
+                "    GlobalShortcut {\n        name: \"overviewEmojiToggle\"",
+                "    GlobalShortcut {\n"
+                "        name: \"overviewAllAppsToggle\"\n"
+                "        description: \"Toggle all apps (A-Z) on overview widget\"\n\n"
+                "        onPressed: {\n"
+                "            overviewScope.toggleAllApps();\n"
+                "        }\n"
+                "    }\n\n"
+                "    GlobalShortcut {\n        name: \"overviewEmojiToggle\"",
+            ),
         ],
     )
 
-    # 3. SearchBar.qml: SearchPrefixType.Files + shape + material icon
+    # 3. SearchBar.qml: SearchPrefixType.Files + AllApps + shape + material icon
     ok &= patch_file(
         ii / "modules/ii/overview/SearchBar.qml",
         [
@@ -96,10 +133,21 @@ def main() -> int:
                 "enum SearchPrefixType { Action, App, Clipboard, Emojis, Files, Math, ShellCommand, WebSearch, DefaultSearch }",
             ),
             (
+                "AllApps,",
+                "enum SearchPrefixType { Action, ",
+                "enum SearchPrefixType { Action, AllApps, ",
+            ),
+            (
                 "SearchBar.SearchPrefixType.Files;",
                 "if (root.searchingText.startsWith(Config.options.search.prefix.emojis)) return SearchBar.SearchPrefixType.Emojis;",
                 "if (root.searchingText.startsWith(Config.options.search.prefix.emojis)) return SearchBar.SearchPrefixType.Emojis;\n"
                 "        if (root.searchingText.startsWith(Config.options.search.prefix.files)) return SearchBar.SearchPrefixType.Files;",
+            ),
+            (
+                "SearchBar.SearchPrefixType.AllApps;",
+                "if (root.searchingText.startsWith(Config.options.search.prefix.emojis)) return SearchBar.SearchPrefixType.Emojis;",
+                "if (root.searchingText.startsWith(Config.options.search.prefix.allApps)) return SearchBar.SearchPrefixType.AllApps;\n"
+                "        if (root.searchingText.startsWith(Config.options.search.prefix.emojis)) return SearchBar.SearchPrefixType.Emojis;",
             ),
             (
                 "case SearchBar.SearchPrefixType.Files: return MaterialShape.Shape.Pentagon;",
@@ -108,10 +156,22 @@ def main() -> int:
                 "            case SearchBar.SearchPrefixType.Files: return MaterialShape.Shape.Pentagon;",
             ),
             (
+                "case SearchBar.SearchPrefixType.AllApps:",
+                "case SearchBar.SearchPrefixType.Emojis: return MaterialShape.Shape.Sunny;",
+                "case SearchBar.SearchPrefixType.AllApps: return MaterialShape.Shape.Clover4Leaf;\n"
+                "            case SearchBar.SearchPrefixType.Emojis: return MaterialShape.Shape.Sunny;",
+            ),
+            (
                 'case SearchBar.SearchPrefixType.Files: return "folder_open";',
                 'case SearchBar.SearchPrefixType.Emojis: return "add_reaction";',
                 'case SearchBar.SearchPrefixType.Emojis: return "add_reaction";\n'
                 '            case SearchBar.SearchPrefixType.Files: return "folder_open";',
+            ),
+            (
+                'case SearchBar.SearchPrefixType.AllApps: return "apps";',
+                'case SearchBar.SearchPrefixType.Emojis: return "add_reaction";',
+                'case SearchBar.SearchPrefixType.AllApps: return "apps";\n'
+                '            case SearchBar.SearchPrefixType.Emojis: return "add_reaction";',
             ),
             (
                 "EverythingToolbar {",
@@ -142,6 +202,11 @@ def main() -> int:
                 "Config.options.search.prefix.emojis, Config.options.search.prefix.math",
                 "Config.options.search.prefix.emojis, Config.options.search.prefix.files, Config.options.search.prefix.math",
             ),
+            (
+                "Config.options.search.prefix.allApps",
+                "Config.options.search.prefix.emojis,",
+                "Config.options.search.prefix.allApps, Config.options.search.prefix.emojis,",
+            ),
         ],
     )
 
@@ -169,6 +234,11 @@ def main() -> int:
                 "Config.options.search.prefix.files, Config.options.search.prefix.math",
                 "Config.options.search.prefix.emojis, Config.options.search.prefix.math",
                 "Config.options.search.prefix.emojis, Config.options.search.prefix.files, Config.options.search.prefix.math",
+            ),
+            (
+                "Config.options.search.prefix.allApps",
+                "Config.options.search.prefix.emojis,",
+                "Config.options.search.prefix.allApps, Config.options.search.prefix.emojis,",
             ),
             (
                 "onQueryChanged:",
@@ -226,6 +296,54 @@ def main() -> int:
                 "                    ]\n"
                 "                });\n"
                 "            }).filter(Boolean);\n"
+                "        }\n\n"
+                "        ////////////////// Init ///////////////////",
+            ),
+            (
+                "AppSearch.list",
+                "        }\n\n        ////////////////// Init ///////////////////",
+                "        } else if (root.query.startsWith(Config.options.search.prefix.allApps)) {\n"
+                "            // All installed applications sorted A-Z\n"
+                "            const searchString = StringUtils.cleanPrefix(root.query, Config.options.search.prefix.allApps).trim().toLowerCase();\n"
+                "            return AppSearch.list\n"
+                "                .filter(entry => !searchString || (entry.name ?? \"\").toLowerCase().includes(searchString))\n"
+                "                .slice()\n"
+                "                .sort((a, b) => (a.name ?? \"\").localeCompare(b.name ?? \"\"))\n"
+                "                .map(entry => {\n"
+                "                    return resultComp.createObject(null, {\n"
+                "                        type: Translation.tr(\"App\"),\n"
+                "                        id: entry.id,\n"
+                "                        name: entry.name,\n"
+                "                        iconName: entry.icon,\n"
+                "                        iconType: LauncherSearchResult.IconType.System,\n"
+                "                        verb: Translation.tr(\"Open\"),\n"
+                "                        execute: () => {\n"
+                "                            if (!entry.runInTerminal)\n"
+                "                                entry.execute();\n"
+                "                            else {\n"
+                "                                Quickshell.execDetached([\"bash\", '-c', `${Config.options.apps.terminal} -e '${StringUtils.shellSingleQuoteEscape(entry.command.join(' '))}'`]);\n"
+                "                            }\n"
+                "                        },\n"
+                "                        comment: entry.comment,\n"
+                "                        runInTerminal: entry.runInTerminal,\n"
+                "                        genericName: entry.genericName,\n"
+                "                        keywords: entry.keywords,\n"
+                "                        actions: entry.actions.map(action => {\n"
+                "                            return resultComp.createObject(null, {\n"
+                "                                name: action.name,\n"
+                "                                iconName: action.icon,\n"
+                "                                iconType: LauncherSearchResult.IconType.System,\n"
+                "                                execute: () => {\n"
+                "                                    if (!action.runInTerminal)\n"
+                "                                        action.execute();\n"
+                "                                    else {\n"
+                "                                        Quickshell.execDetached([\"bash\", '-c', `${Config.options.apps.terminal} -e '${StringUtils.shellSingleQuoteEscape(action.command.join(' '))}'`]);\n"
+                "                                    }\n"
+                "                                }\n"
+                "                            });\n"
+                "                        })\n"
+                "                    });\n"
+                "                });\n"
                 "        }\n\n"
                 "        ////////////////// Init ///////////////////",
             ),
