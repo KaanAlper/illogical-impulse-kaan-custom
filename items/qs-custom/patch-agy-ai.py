@@ -659,11 +659,7 @@ def main() -> int:
                 "            visible: root.suggestionList.length > 0 && tagInputField.text.length > 0\n"
                 "            Layout.fillWidth: true\n"
                 "            model: root.suggestionList\n"
-                "            onItemAccepted: item => tagSuggestions.acceptTag(item.name)\n"
-                "            function acceptSelectedTag() {\n"
-                "                const item = currentItem();\n"
-                "                if (item) acceptTag(item.name);\n"
-                "            }",
+                "            onItemAccepted: item => tagSuggestions.acceptTag(item.name)",
             ),
             (
                 "visible: root.providerPickerOpen\n                z: 5",
