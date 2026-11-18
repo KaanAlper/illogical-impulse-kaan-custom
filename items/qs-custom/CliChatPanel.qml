@@ -226,8 +226,8 @@ Item {
             if (m.efforts && m.efforts.length > 0) {
                 args.push("-c", `model_reasoning_effort="${root.selectedEffort}"`);
             }
-            args.push(text);
-            runner.command = args;
+            args.push("--skip-git-repo-check", text);
+            runner.command = ["bash", "-c", 'exec "$@" </dev/null', "_", ...args];
         }
         runner.running = true;
     }
@@ -269,13 +269,7 @@ Item {
             }
         }
         stderr: SplitParser {
-            onRead: data => {
-                if (data && data.trim().length > 0 && msgModel.count > 0) {
-                    const idx = msgModel.count - 1;
-                    if (msgModel.get(idx).content === "")
-                        root.updateLastAssistant(data, false);
-                }
-            }
+            onRead: data => {}
         }
         onExited: (code, status) => {
             root.busy = false;
