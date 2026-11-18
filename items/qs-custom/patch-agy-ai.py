@@ -65,7 +65,7 @@ def main() -> int:
                 "    }\n\n"
                 "    Process {\n"
                 "        id: getAgyModelsProc\n"
-                "        command: [\"python3\", FileUtils.trimFileProtocol(`${Directories.scriptPath}/ai/fetch-agy-models.py`)]\n"
+                "        command: [\"python3\", CF.FileUtils.trimFileProtocol(`${Directories.scriptPath}/ai/fetch-agy-models.py`)]\n"
                 "        running: true\n"
                 "        stdout: StdioCollector {\n"
                 "            onStreamFinished: {\n"
@@ -138,7 +138,7 @@ def main() -> int:
                 '                const id = idForMessage(requester.message);\n'
                 '                root.messageIDs = [...root.messageIDs, id];\n'
                 '                root.messageByID[id] = requester.message;\n'
-                '                const agyBin = FileUtils.trimFileProtocol(`${Directories.home}/.local/bin/agy`);\n'
+                '                const agyBin = CF.FileUtils.trimFileProtocol(`${Directories.home}/.local/bin/agy`);\n'
                 '                const modelArgs = (model.model && model.model !== "antigravity") ? ["--model", model.model] : [];\n'
                 '                const convArgs = root.agyConversationId ? ["--conversation", root.agyConversationId] : [];\n'
                 '                requester.command = [agyBin, "-p", promptText, ...modelArgs, ...convArgs, "--output-format", "stream-json", "--disable-slash-commands"];\n'

@@ -128,7 +128,7 @@ Rectangle {
                         colBackground: "transparent"
                         colBackgroundHover: famCard.selected ? "transparent" : Appearance.colors.colSurfaceContainerHigh
                         onClicked: {
-                            Ai.setModel(famCard.modelData.defaultId);
+                            Ai.setModel(famCard.modelData.defaultId, false);
                             if (!famCard.hasEfforts)
                                 root.closeRequested();
                         }
@@ -183,7 +183,7 @@ Rectangle {
                                 const idx = Math.round(value);
                                 const target = famCard.modelData.efforts[idx];
                                 if (target)
-                                    Ai.setModel(target.id);
+                                    Ai.setModel(target.id, false);
                             }
                         }
 
@@ -197,7 +197,7 @@ Rectangle {
                                     Layout.fillWidth: true
                                     implicitHeight: effortLbl.implicitHeight
                                     cursorShape: Qt.PointingHandCursor
-                                    onClicked: Ai.setModel(modelData.id)
+                                    onClicked: Ai.setModel(modelData.id, false)
 
                                     StyledText {
                                         id: effortLbl
