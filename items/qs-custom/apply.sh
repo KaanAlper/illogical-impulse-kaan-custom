@@ -113,6 +113,15 @@ if inserted:
 if skipped:
     print("  BarContent.qml: zaten yamalı -> " + ", ".join(skipped))
 
+# Raise shorten threshold to 1366 so 1280px secondary monitors don't overlap bar icons.
+old_thresh = "(Appearance.sizes.barShortenScreenWidthThreshold >= screen?.width) ? 1 : 0"
+new_thresh = "(Math.max(Appearance.sizes.barShortenScreenWidthThreshold, 1366) >= screen?.width) ? 1 : 0"
+if new_thresh not in src and old_thresh in src:
+    src = src.replace(old_thresh, new_thresh, 1)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(src)
+    print("  BarContent.qml: kucuk monitor esigi -> 1366px")
+
 sys.exit(1 if missing else 0)
 PY
 rc=$?
