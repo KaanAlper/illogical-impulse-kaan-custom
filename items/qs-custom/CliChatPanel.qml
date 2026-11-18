@@ -17,15 +17,15 @@ Item {
     property string sessionId: ""
     property bool busy: false
     property bool modelPickerOpen: false
-    property string selectedModel: backend === "claude" ? "sonnet" : "gpt-5.4"
+    property string selectedModel: backend === "claude" ? "claude-sonnet-5-5" : "gpt-5.4"
     property string selectedEffort: "medium"
     property var suggestionList: []
 
     readonly property var modelCatalog: backend === "claude"
         ? [
-            { id: "sonnet", name: "Claude Sonnet", efforts: ["low", "medium", "high", "max"] },
-            { id: "opus",   name: "Claude Opus",   efforts: ["low", "medium", "high", "max"] },
-            { id: "haiku",  name: "Claude Haiku",  efforts: [] }
+            { id: "claude-sonnet-5-5", name: "Claude Sonnet 5.5", efforts: ["low", "medium", "high", "max"] },
+            { id: "claude-opus-5-5",   name: "Claude Opus 5.5",   efforts: ["low", "medium", "high", "max"] },
+            { id: "haiku",             name: "Claude Haiku 4.5",  efforts: [] }
           ]
         : [
             { id: "gpt-5.4",       name: "GPT-5.4",       efforts: ["low", "medium", "high"] },
@@ -487,7 +487,7 @@ Item {
                         id: inputField
                         Layout.fillWidth: true
                         wrapMode: TextArea.Wrap
-                        placeholderText: root.backend === "claude"
+                        placeholderText: (root?.backend ?? "") === "claude"
                             ? Translation.tr("Message Claude... \"/\" for commands")
                             : Translation.tr("Message Codex... \"/\" for commands")
                         onActiveFocusChanged: if (activeFocus) root.modelPickerOpen = false
