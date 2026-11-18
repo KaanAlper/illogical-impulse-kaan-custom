@@ -49,6 +49,7 @@ cp "$CUSTOM_DIR/agy-config.py" "$II/scripts/ai/agy-config.py"
 chmod +x "$II/scripts/ai/agy-config.py"
 cp "$CUSTOM_DIR/AgyModelPicker.qml" "$II/modules/ii/sidebarLeft/AgyModelPicker.qml"
 cp "$CUSTOM_DIR/AgyConfigPicker.qml" "$II/modules/ii/sidebarLeft/AgyConfigPicker.qml"
+cp "$CUSTOM_DIR/CliChatPanel.qml" "$II/modules/ii/sidebarLeft/CliChatPanel.qml"
 cp "$CUSTOM_DIR/SleepInhibitToggle.qml" "$BAR/SleepInhibitToggle.qml"
 cp "$CUSTOM_DIR/AppVolumeMixer.qml" "$BAR/AppVolumeMixer.qml"
 
