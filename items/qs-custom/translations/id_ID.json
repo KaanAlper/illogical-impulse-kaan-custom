@@ -36,5 +36,6 @@
   "No apps are playing sound": "Tidak ada aplikasi yang memutar suara",
   "Scanning face…": "Memindai wajah…",
   "Not recognized, move closer · retrying (%1/%2)": "Tidak dikenali, mendekat · mencoba lagi (%1/%2)",
-  "Face not recognized · click icon or enter password": "Wajah tidak dikenali · klik ikon atau masukkan kata sandi"
+  "Face not recognized · click icon or enter password": "Wajah tidak dikenali · klik ikon atau masukkan kata sandi",
+  "Local CLI | Antigravity agent (no API key needed)": "CLI Lokal | Agen Antigravity (tanpa kunci API)"
 }

@@ -174,6 +174,24 @@ fi
 # 2d) Everything-style (#) file search in Overview (Super+B / # prefix).
 python3 "$CUSTOM_DIR/patch-everything.py" "$II" || rc=1
 
+# 2d-ai) Antigravity (agy) as default no-key AI backend in Super+A sidebar.
+python3 "$CUSTOM_DIR/patch-agy-ai.py" "$II" || rc=1
+STATES_JSON="$HOME/.local/state/quickshell/states.json"
+if [ -f "$STATES_JSON" ]; then
+    python3 - "$STATES_JSON" <<'PY_AI'
+import json, pathlib, sys
+p = pathlib.Path(sys.argv[1])
+try:
+    d = json.loads(p.read_text(encoding="utf-8"))
+except Exception:
+    sys.exit(0)
+if d.get("ai", {}).get("model") == "gemini-2.5-flash":
+    d["ai"]["model"] = "antigravity"
+    p.write_text(json.dumps(d, indent=4) + "\n", encoding="utf-8")
+    print("  states.json: varsayilan AI modeli -> antigravity")
+PY_AI
+fi
+
 # 2d-tr) Merge custom multi-language translations into ~/.config/illogical-impulse/translations/*.json
 TR_DIR="$HOME/.config/illogical-impulse/translations"
 mkdir -p "$TR_DIR"

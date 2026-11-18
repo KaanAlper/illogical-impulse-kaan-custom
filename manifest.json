@@ -14,6 +14,7 @@
         "audio-mono-toggle.sh",
         "everything-query.py",
         "everything-update.sh",
+        "patch-agy-ai.py",
         "patch-everything.py",
         "patch-lock-howdy.py",
         "sleep-inhibit-toggle.sh"
@@ -35,6 +36,12 @@
           "file_has": [
             "~/.config/quickshell/ii/modules/ii/overview/Overview.qml",
             "overviewFilesToggle"
+          ]
+        },
+        {
+          "file_has": [
+            "~/.config/quickshell/ii/services/Ai.qml",
+            "\"antigravity\""
           ]
         }
       ],

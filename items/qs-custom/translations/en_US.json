@@ -36,5 +36,6 @@
   "No apps are playing sound": "No apps are playing sound",
   "Scanning face…": "Scanning face…",
   "Not recognized, move closer · retrying (%1/%2)": "Not recognized, move closer · retrying (%1/%2)",
-  "Face not recognized · click icon or enter password": "Face not recognized · click icon or enter password"
+  "Face not recognized · click icon or enter password": "Face not recognized · click icon or enter password",
+  "Local CLI | Antigravity agent (no API key needed)": "Local CLI | Antigravity agent (no API key needed)"
 }

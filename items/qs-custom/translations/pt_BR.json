@@ -36,5 +36,6 @@
   "No apps are playing sound": "Nenhum aplicativo está reproduzindo som",
   "Scanning face…": "Escaneando rosto…",
   "Not recognized, move closer · retrying (%1/%2)": "Não reconhecido, aproxime-se · tentando novamente (%1/%2)",
-  "Face not recognized · click icon or enter password": "Rosto não reconhecido · clique no ícone ou digite a senha"
+  "Face not recognized · click icon or enter password": "Rosto não reconhecido · clique no ícone ou digite a senha",
+  "Local CLI | Antigravity agent (no API key needed)": "CLI local | Agente Antigravity (sem necessidade de chave API)"
 }

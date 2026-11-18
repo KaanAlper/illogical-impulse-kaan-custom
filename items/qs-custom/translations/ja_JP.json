@@ -36,5 +36,6 @@
   "No apps are playing sound": "音声を再生中のアプリはありません",
   "Scanning face…": "顔をスキャン中…",
   "Not recognized, move closer · retrying (%1/%2)": "認識できませんでした。近づいてください · 再試行中 (%1/%2)",
-  "Face not recognized · click icon or enter password": "顔が認識されません · アイコンをクリックするかパスワードを入力"
+  "Face not recognized · click icon or enter password": "顔が認識されません · アイコンをクリックするかパスワードを入力",
+  "Local CLI | Antigravity agent (no API key needed)": "ローカル CLI | Antigravity エージェント (API キー不要)"
 }
