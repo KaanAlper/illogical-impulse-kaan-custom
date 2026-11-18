@@ -37,5 +37,6 @@
   "Scanning face…": "Yüz taranıyor…",
   "Not recognized, move closer · retrying (%1/%2)": "Tanınamadı, biraz yaklaş · tekrar deneniyor (%1/%2)",
   "Face not recognized · click icon or enter password": "Yüz tanınamadı · simgeye tıkla ya da şifre gir",
-  "Local CLI | Antigravity agent (no API key needed)": "Yerel CLI | Antigravity ajanı (API anahtarı gerekmez)"
+  "Local CLI | Antigravity agent (no API key needed)": "Yerel CLI | Antigravity ajanı (API anahtarı gerekmez)",
+  "Antigravity Models": "Antigravity Modelleri"
 }

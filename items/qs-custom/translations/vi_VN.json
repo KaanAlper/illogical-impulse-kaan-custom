@@ -37,5 +37,6 @@
   "Scanning face…": "Đang quét khuôn mặt…",
   "Not recognized, move closer · retrying (%1/%2)": "Không nhận diện được, lại gần hơn · thử lại (%1/%2)",
   "Face not recognized · click icon or enter password": "Không nhận diện được khuôn mặt · nhấn biểu tượng hoặc nhập mật khẩu",
-  "Local CLI | Antigravity agent (no API key needed)": "CLI cục bộ | Tác nhân Antigravity (không cần khóa API)"
+  "Local CLI | Antigravity agent (no API key needed)": "CLI cục bộ | Tác nhân Antigravity (không cần khóa API)",
+  "Antigravity Models": "Mô hình Antigravity"
 }

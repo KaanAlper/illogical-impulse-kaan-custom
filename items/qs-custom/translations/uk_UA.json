@@ -37,5 +37,6 @@
   "Scanning face…": "Сканування обличчя…",
   "Not recognized, move closer · retrying (%1/%2)": "Не розпізнано, підійдіть ближче · повтор (%1/%2)",
   "Face not recognized · click icon or enter password": "Обличчя не розпізнано · натисніть значок або введіть пароль",
-  "Local CLI | Antigravity agent (no API key needed)": "Локальна CLI | Агент Antigravity (API-ключ не потрібен)"
+  "Local CLI | Antigravity agent (no API key needed)": "Локальна CLI | Агент Antigravity (API-ключ не потрібен)",
+  "Antigravity Models": "Моделі Antigravity"
 }

@@ -37,5 +37,6 @@
   "Scanning face…": "סורק פנים…",
   "Not recognized, move closer · retrying (%1/%2)": "לא זוהה, התקרב מעט · מנסה שוב (%1/%2)",
   "Face not recognized · click icon or enter password": "הפנים לא זוהו · לחץ על הסמל או הזן סיסמה",
-  "Local CLI | Antigravity agent (no API key needed)": "CLI מקומי | סוכן Antigravity (ללא צורך במפתח API)"
+  "Local CLI | Antigravity agent (no API key needed)": "CLI מקומי | סוכן Antigravity (ללא צורך במפתח API)",
+  "Antigravity Models": "מודלים של Antigravity"
 }

@@ -37,5 +37,6 @@
   "Scanning face…": "正在扫描人脸…",
   "Not recognized, move closer · retrying (%1/%2)": "未识别，请靠近一点 · 重试中 (%1/%2)",
   "Face not recognized · click icon or enter password": "未能识别人脸 · 点击图标或输入密码",
-  "Local CLI | Antigravity agent (no API key needed)": "本地 CLI | Antigravity 智能体（无需 API 密钥）"
+  "Local CLI | Antigravity agent (no API key needed)": "本地 CLI | Antigravity 智能体（无需 API 密钥）",
+  "Antigravity Models": "Antigravity 模型"
 }

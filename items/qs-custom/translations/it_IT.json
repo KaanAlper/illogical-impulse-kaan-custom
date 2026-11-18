@@ -37,5 +37,6 @@
   "Scanning face…": "Scansione del volto…",
   "Not recognized, move closer · retrying (%1/%2)": "Non riconosciuto, avvicinati · nuovo tentativo (%1/%2)",
   "Face not recognized · click icon or enter password": "Volto non riconosciuto · clicca sull'icona o inserisci la password",
-  "Local CLI | Antigravity agent (no API key needed)": "CLI locale | Agente Antigravity (nessuna chiave API richiesta)"
+  "Local CLI | Antigravity agent (no API key needed)": "CLI locale | Agente Antigravity (nessuna chiave API richiesta)",
+  "Antigravity Models": "Modelli Antigravity"
 }
