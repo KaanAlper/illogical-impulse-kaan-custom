@@ -434,6 +434,21 @@ def main() -> int:
                 '                }',
             ),
             (
+                "root.modelPickerOpen = false;\n                                    root.configPickerOpen = false;",
+                '                            } else if (event.key === Qt.Key_Escape) {\n'
+                '                                // Esc to detach file\n'
+                '                                if (Ai.pendingFilePath.length > 0) {',
+                '                            } else if (event.key === Qt.Key_Escape) {\n'
+                '                                if (root.modelPickerOpen || root.configPickerOpen) {\n'
+                '                                    root.modelPickerOpen = false;\n'
+                '                                    root.configPickerOpen = false;\n'
+                '                                    event.accepted = true;\n'
+                '                                } else if (suggestions.visible) {\n'
+                '                                    messageInputField.clear();\n'
+                '                                    event.accepted = true;\n'
+                '                                } else if (Ai.pendingFilePath.length > 0) {',
+            ),
+            (
                 "onActiveFocusChanged: if (activeFocus) { root.modelPickerOpen = false; root.configPickerOpen = false; }",
                 '                    StyledTextArea { // The actual TextArea (inside ScrollView to enable scrolling)\n                        id: messageInputField',
                 '                    StyledTextArea { // The actual TextArea (inside ScrollView to enable scrolling)\n                        id: messageInputField\n                        onActiveFocusChanged: if (activeFocus) { root.modelPickerOpen = false; root.configPickerOpen = false; }',
