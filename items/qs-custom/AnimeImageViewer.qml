@@ -15,7 +15,7 @@ PanelWindow {
 
     WlrLayershell.namespace: "quickshell:animeViewer"
     WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+    WlrLayershell.keyboardFocus: WlrKeyboardFocus.Exclusive
     anchors {
         top: true
         bottom: true
@@ -28,7 +28,13 @@ PanelWindow {
         id: keyScope
         anchors.fill: parent
         focus: true
-        Keys.onEscapePressed: root.closeRequested()
+        Component.onCompleted: keyScope.forceActiveFocus()
+        Keys.onPressed: event => {
+            if (event.key === Qt.Key_Escape) {
+                event.accepted = true;
+                root.closeRequested();
+            }
+        }
 
         Rectangle {
             anchors.fill: parent

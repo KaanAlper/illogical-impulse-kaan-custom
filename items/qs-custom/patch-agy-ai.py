@@ -860,7 +860,7 @@ def main() -> int:
                 '                    },',
             ),
             (
-                "} else if (tagSuggestions.visible) {",
+                "enter sends selected",
                 "                        } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)) {\n"
                 "                            if (event.modifiers & Qt.ShiftModifier) {\n"
                 "                                // Insert newline\n"
@@ -878,8 +878,11 @@ def main() -> int:
                 "                                // Insert newline\n"
                 "                                tagInputField.insert(tagInputField.cursorPosition, \"\\n\")\n"
                 "                                event.accepted = true\n"
-                "                            } else if (tagSuggestions.visible) {\n"
+                "                            } else if (tagSuggestions.visible) { // enter sends selected\n"
                 "                                tagSuggestions.acceptSelectedTag();\n"
+                "                                const inputText = tagInputField.text.trim();\n"
+                "                                if (inputText.length > 0) root.handleInput(inputText);\n"
+                "                                tagInputField.clear();\n"
                 "                                event.accepted = true;\n"
                 "                            } else { // Accept text\n"
                 "                                const inputText = tagInputField.text\n"
