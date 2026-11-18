@@ -41,9 +41,9 @@ Item {
         const npmPkg = root.backend === "claude" ? "@anthropic-ai/claude-code" : "@openai/codex";
         installProc.command = [
             "bash", "-c",
-            `if command -v npm >/dev/null 2>&1; then npm install -g ${npmPkg}; ` +
-            `elif command -v paru >/dev/null 2>&1; then paru -S --needed --noconfirm ${pkg}; ` +
-            `else echo "ERR: npm or paru not found" >&2; exit 1; fi`
+            `if command -v paru >/dev/null 2>&1; then paru --sudoflags="-S" -S --needed --noconfirm ${pkg}; ` +
+            `elif command -v npm >/dev/null 2>&1; then npm install -g --prefix "$HOME/.local" ${npmPkg}; ` +
+            `else echo "ERR: paru or npm not found" >&2; exit 1; fi`
         ];
         installProc.running = true;
     }
@@ -54,6 +54,17 @@ Item {
         root.needsPassword = false;
         root.installStatus = Translation.tr("Authenticating & installing…");
         installProc.write(pwd + "\n");
+    }
+
+    Timer {
+        id: installProgressTimer
+        interval: 900
+        repeat: true
+        running: root.installing && !root.needsPassword
+        onTriggered: {
+            if (root.installProgress < 0.88)
+                root.installProgress = Math.min(0.88, root.installProgress + 0.04);
+        }
     }
 
     Process {
@@ -524,13 +535,18 @@ Item {
                     text: root.backend === "claude" ? "Claude Models" : "Codex Models"
                 }
 
-                Repeater {
+                ListView {
+                    id: modelListView
+                    Layout.fillWidth: true
+                    implicitHeight: Math.min(220, contentHeight)
+                    clip: true
+                    spacing: 3
                     model: root.modelCatalog
                     delegate: Rectangle {
                         required property var modelData
                         readonly property bool selected: root.selectedModel === modelData.id
                         readonly property bool hasEfforts: (modelData.efforts?.length ?? 0) > 1
-                        Layout.fillWidth: true
+                        width: modelListView.width
                         implicitHeight: mCol.implicitHeight + 6
                         radius: Appearance.rounding.small
                         color: selected ? Appearance.colors.colPrimaryContainer : "transparent"

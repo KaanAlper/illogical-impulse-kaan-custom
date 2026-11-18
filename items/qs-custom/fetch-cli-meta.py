@@ -69,29 +69,34 @@ def fetch_claude() -> dict:
     except OSError:
         pass
 
-    # Extract latest (major, minor) per family (opus, sonnet, haiku) directly from installed binary
-    latest = {}
+    # Extract all (family, major, minor) models directly from installed binary, sorted newest first
+    found = {}
     try:
         raw = real_bin.read_bytes()
-        for fam_b, maj_b, min_b in re.findall(rb"claude-(opus|sonnet|haiku)-(\d+)-(\d+)(?!\d)", raw):
+        for fam_b, maj_b, min_b in re.findall(rb"claude-(fable|opus|sonnet|haiku)-(\d+)-(\d+)(?!\d)", raw):
             fam = fam_b.decode()
             ver = (int(maj_b), int(min_b))
             if len(str(ver[0])) > 2 or len(str(ver[1])) > 2:
                 continue
-            if fam not in latest or ver > latest[fam][0]:
-                latest[fam] = (ver, f"claude-{fam}-{ver[0]}-{ver[1]}")
+            mid = f"claude-{fam}-{ver[0]}-{ver[1]}"
+            found[mid] = (fam, ver)
     except OSError:
         pass
 
+    fam_order = {"sonnet": 0, "opus": 1, "fable": 2, "haiku": 3}
+    sorted_items = sorted(
+        found.items(),
+        key=lambda kv: (-kv[1][1][0], -kv[1][1][1], fam_order.get(kv[1][0], 9)),
+    )
     models = []
-    for fam in ("opus", "sonnet", "haiku"):
-        if fam in latest:
-            ver, mid = latest[fam]
-            label = f"Claude {fam.capitalize()} {ver[0]}.{ver[1]}"
-            models.append({"id": mid, "name": label, "efforts": [] if fam == "haiku" else ["low", "medium", "high", "max"]})
+    for mid, (fam, ver) in sorted_items:
+        if ver[0] < 4:
+            continue
+        label = f"Claude {fam.capitalize()} {ver[0]}.{ver[1]}"
+        models.append({"id": mid, "name": label, "efforts": [] if fam == "haiku" else ["low", "medium", "high", "max"]})
 
     if not models:
-        for fam in ("opus", "sonnet", "haiku"):
+        for fam in ("opus", "sonnet", "fable", "haiku"):
             models.append({"id": fam, "name": f"Claude {fam.capitalize()}", "efforts": [] if fam == "haiku" else ["low", "medium", "high", "max"]})
 
     return {"installed": True, "defaultModel": default_model or models[0]["id"], "models": models, "commands": commands}
