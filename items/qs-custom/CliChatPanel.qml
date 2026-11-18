@@ -17,37 +17,45 @@ Item {
     property string sessionId: ""
     property bool busy: false
     property bool modelPickerOpen: false
-    property string selectedModel: backend === "claude" ? "claude-sonnet-5-5" : "gpt-5.4"
+    property bool cliInstalled: true
+    property string selectedModel: ""
     property string selectedEffort: "medium"
+    property var modelCatalog: []
+    property var cliCommands: []
     property var suggestionList: []
 
-    readonly property var modelCatalog: backend === "claude"
-        ? [
-            { id: "claude-sonnet-5-5", name: "Claude Sonnet 5.5", efforts: ["low", "medium", "high", "max"] },
-            { id: "claude-opus-5-5",   name: "Claude Opus 5.5",   efforts: ["low", "medium", "high", "max"] },
-            { id: "haiku",             name: "Claude Haiku 4.5",  efforts: [] }
-          ]
-        : [
-            { id: "gpt-5.4",       name: "GPT-5.4",       efforts: ["low", "medium", "high"] },
-            { id: "gpt-5.3-codex", name: "GPT-5.3 Codex", efforts: ["low", "medium", "high"] },
-            { id: "o3",            name: "o3",            efforts: ["low", "medium", "high"] },
-            { id: "o4-mini",       name: "o4-mini",       efforts: [] }
-          ]
+    readonly property string metaScript: FileUtils.trimFileProtocol(`${Directories.scriptPath}/ai/fetch-cli-meta.py`)
 
-    readonly property var cliCommands: [
-        { name: "/model",   instant: true,  description: Translation.tr("Select model & reasoning effort") },
-        { name: "/effort",  instant: true,  description: Translation.tr("Set reasoning effort") },
-        { name: "/login",   instant: true,  description: backend === "claude" ? "Sign in / authenticate Claude CLI" : "Sign in / authenticate Codex CLI" },
-        { name: "/compact", instant: true,  description: Translation.tr("Compact conversation context") },
-        { name: "/clear",   instant: true,  description: Translation.tr("Start a new conversation") }
-    ]
+    function refreshMeta() {
+        metaProc.running = false;
+        metaProc.running = true;
+    }
+
+    Component.onCompleted: root.refreshMeta()
+
+    Process {
+        id: metaProc
+        command: ["python3", root.metaScript, root.backend]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    const data = JSON.parse(text);
+                    root.cliInstalled = !!data.installed;
+                    root.modelCatalog = data.models ?? [];
+                    root.cliCommands = data.commands ?? [];
+                    if (!root.selectedModel && data.defaultModel)
+                        root.selectedModel = data.defaultModel;
+                } catch (e) {}
+            }
+        }
+    }
 
     function currentModelObj() {
         for (let i = 0; i < modelCatalog.length; i++) {
             if (modelCatalog[i].id === root.selectedModel)
                 return modelCatalog[i];
         }
-        return modelCatalog[0];
+        return modelCatalog[0] ?? { id: root.selectedModel, name: root.selectedModel || root.backend, efforts: [] };
     }
 
     function currentModelLabel(): string {
@@ -291,7 +299,9 @@ Item {
 
             ColumnLayout {
                 id: pickerCol
-                anchors.fill: parent
+                anchors.left: parent.left
+                anchors.right: parent.right
+                anchors.top: parent.top
                 anchors.margins: 8
                 spacing: 4
 
@@ -403,66 +413,14 @@ Item {
             }
         }
 
-        // Scrollable / command list
-        Rectangle {
+        // Shared scrollable / command list
+        CliSlashList {
             id: cliSuggestions
-            visible: root.suggestionList.length > 0 && inputField.text.startsWith("/")
-            property int selectedIndex: 0
             Layout.fillWidth: true
-            implicitHeight: Math.min(180, cliSugList.contentHeight + 12)
-            clip: true
-            radius: Appearance.rounding.normal
-            color: Appearance.colors.colLayer2
-            border.width: 1
-            border.color: Appearance.colors.colOutlineVariant
-
-            ListView {
-                id: cliSugList
-                anchors.fill: parent
-                anchors.margins: 6
-                clip: true
-                spacing: 2
-                currentIndex: cliSuggestions.selectedIndex
-                highlightFollowsCurrentItem: true
-                onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)
-                model: root.suggestionList
-
-                delegate: RippleButton {
-                    required property var modelData
-                    required property int index
-                    readonly property bool active: cliSuggestions.selectedIndex === index
-                    width: cliSugList.width
-                    implicitHeight: 30
-                    buttonRadius: Appearance.rounding.small
-                    colBackground: active ? Appearance.colors.colPrimaryContainer : "transparent"
-                    colBackgroundHover: active ? Appearance.colors.colPrimaryContainer : Appearance.colors.colSurfaceContainerHigh
-                    onHoveredChanged: if (hovered) cliSuggestions.selectedIndex = index
-                    onClicked: {
-                        inputField.clear();
-                        root.sendPrompt(modelData.name);
-                    }
-                    contentItem: RowLayout {
-                        anchors.fill: parent
-                        anchors.leftMargin: 8
-                        anchors.rightMargin: 8
-                        spacing: 8
-                        StyledText {
-                            font.pixelSize: Appearance.font.pixelSize.small
-                            font.family: Appearance.font.family.monospace
-                            color: active ? Appearance.colors.colPrimary : Appearance.m3colors.m3onSurface
-                            text: modelData.name
-                        }
-                        StyledText {
-                            Layout.fillWidth: true
-                            font.pixelSize: Appearance.font.pixelSize.smaller
-                            color: active ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colSubtext
-                            horizontalAlignment: Text.AlignRight
-                            maximumLineCount: 1
-                            elide: Text.ElideRight
-                            text: modelData.description
-                        }
-                    }
-                }
+            model: inputField.text.startsWith("/") ? root.suggestionList : []
+            onItemAccepted: item => {
+                inputField.clear();
+                root.sendPrompt(item.name);
             }
         }
 
@@ -502,10 +460,10 @@ Item {
                         }
                         Keys.onPressed: event => {
                             if (event.key === Qt.Key_Up && cliSuggestions.visible) {
-                                cliSuggestions.selectedIndex = Math.max(0, cliSuggestions.selectedIndex - 1);
+                                cliSuggestions.moveUp();
                                 event.accepted = true;
                             } else if (event.key === Qt.Key_Down && cliSuggestions.visible) {
-                                cliSuggestions.selectedIndex = Math.min(root.suggestionList.length - 1, cliSuggestions.selectedIndex + 1);
+                                cliSuggestions.moveDown();
                                 event.accepted = true;
                             } else if (event.key === Qt.Key_Escape) {
                                 if (root.modelPickerOpen) {
@@ -516,10 +474,12 @@ Item {
                                     event.accepted = true;
                                 }
                             } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return) && !(event.modifiers & Qt.ShiftModifier)) {
-                                if (cliSuggestions.visible && root.suggestionList.length > 0) {
-                                    const sel = root.suggestionList[cliSuggestions.selectedIndex] ?? root.suggestionList[0];
-                                    inputField.clear();
-                                    root.sendPrompt(sel.name);
+                                if (cliSuggestions.visible) {
+                                    const sel = cliSuggestions.currentItem();
+                                    if (sel) {
+                                        inputField.clear();
+                                        root.sendPrompt(sel.name);
+                                    }
                                 } else {
                                     const t = inputField.text;
                                     inputField.clear();

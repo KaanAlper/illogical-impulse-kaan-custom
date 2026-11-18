@@ -17,6 +17,7 @@
         "everything-update.sh",
         "fetch-agy-commands.py",
         "fetch-agy-models.py",
+        "fetch-cli-meta.py",
         "patch-agy-ai.py",
         "patch-everything.py",
         "patch-lock-howdy.py",
