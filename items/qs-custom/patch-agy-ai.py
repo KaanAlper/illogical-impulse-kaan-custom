@@ -662,7 +662,7 @@ def main() -> int:
                 "            onItemAccepted: item => tagSuggestions.acceptTag(item.name)",
             ),
             (
-                "visible: root.providerPickerOpen\n                z: 5",
+                "id: animeProviderPicker",
                 "        Rectangle { // Tag input area",
                 "        MouseArea {\n"
                 "            anchors.fill: parent\n"
