@@ -56,25 +56,45 @@ def fetch_claude() -> dict:
         if extra["name"] not in seen and extra["name"].lstrip("/") not in seen:
             commands.append(extra)
 
-    # Extract available claude model aliases/IDs dynamically from settings + init
+    # Resolve actual claude binary (follow shell wrappers like /usr/bin/claude -> /opt/claude-code/bin/claude)
+    real_bin = pathlib.Path(bin_path).resolve()
+    try:
+        head = real_bin.read_bytes()[:512]
+        if head.startswith(b"#!"):
+            m_exec = re.search(rb'exec\s+([^\s"\']+)', head)
+            if m_exec:
+                cand = pathlib.Path(m_exec.group(1).decode("utf-8", "ignore"))
+                if cand.exists():
+                    real_bin = cand.resolve()
+    except OSError:
+        pass
+
+    # Extract latest (major, minor) per family (opus, sonnet, haiku) directly from installed binary
+    latest = {}
+    try:
+        raw = real_bin.read_bytes()
+        for fam_b, maj_b, min_b in re.findall(rb"claude-(opus|sonnet|haiku)-(\d+)-(\d+)(?!\d)", raw):
+            fam = fam_b.decode()
+            ver = (int(maj_b), int(min_b))
+            if len(str(ver[0])) > 2 or len(str(ver[1])) > 2:
+                continue
+            if fam not in latest or ver > latest[fam][0]:
+                latest[fam] = (ver, f"claude-{fam}-{ver[0]}-{ver[1]}")
+    except OSError:
+        pass
+
     models = []
-    if default_model:
-        models.append({"id": default_model, "name": default_model, "efforts": ["low", "medium", "high", "max"]})
-    # Check ~/.claude/cache or claude --help for model aliases, plus standard aliases supported by installed CLI
-    for alias in ("sonnet", "opus", "haiku"):
-        if alias != default_model and not default_model.startswith(f"claude-{alias}"):
-            models.append({"id": alias, "name": alias, "efforts": [] if alias == "haiku" else ["low", "medium", "high", "max"]})
-        elif alias != default_model:
-            # Keep other families alongside default_model
-            continue
-
-    # Ensure opus & haiku are also selectable alongside default sonnet (or vice versa)
-    have_families = {m["id"] for m in models}
     for fam in ("opus", "sonnet", "haiku"):
-        if not any(fam in x for x in have_families):
-            models.append({"id": fam, "name": fam, "efforts": [] if fam == "haiku" else ["low", "medium", "high", "max"]})
+        if fam in latest:
+            ver, mid = latest[fam]
+            label = f"Claude {fam.capitalize()} {ver[0]}.{ver[1]}"
+            models.append({"id": mid, "name": label, "efforts": [] if fam == "haiku" else ["low", "medium", "high", "max"]})
 
-    return {"installed": True, "defaultModel": default_model or "sonnet", "models": models, "commands": commands}
+    if not models:
+        for fam in ("opus", "sonnet", "haiku"):
+            models.append({"id": fam, "name": f"Claude {fam.capitalize()}", "efforts": [] if fam == "haiku" else ["low", "medium", "high", "max"]})
+
+    return {"installed": True, "defaultModel": default_model or models[0]["id"], "models": models, "commands": commands}
 
 
 def fetch_codex() -> dict:
