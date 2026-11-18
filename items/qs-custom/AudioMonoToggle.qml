@@ -46,8 +46,8 @@ MouseArea {
     PopupToolTip {
         id: tooltip
         text: root.isMono
-            ? "Ses çıkışı: Mono — stereo'ya geçmek için tıkla"
-            : "Ses çıkışı: Stereo — mono'ya geçmek için tıkla"
+            ? Translation.tr("Audio output: Mono — click to switch to stereo")
+            : Translation.tr("Audio output: Stereo — click to switch to mono")
         extraVisibleCondition: root.containsMouse
         alternativeVisibleCondition: extraVisibleCondition
         anchorEdges: (!Config.options.bar.bottom && !Config.options.bar.vertical) ? Edges.Bottom : Edges.Top

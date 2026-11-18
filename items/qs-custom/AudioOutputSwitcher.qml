@@ -142,7 +142,7 @@ MouseArea {
                 Layout.leftMargin: 8
                 Layout.rightMargin: 8
                 Layout.bottomMargin: 2
-                text: "Ses çıkışı"
+                text: Translation.tr("Audio output")
                 font.weight: Font.Medium
                 color: Appearance.colors.colOnLayer1
             }

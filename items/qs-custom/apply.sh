@@ -165,24 +165,28 @@ fi
 # 2d) Everything-style (#) file search in Overview (Super+B / # prefix).
 python3 "$CUSTOM_DIR/patch-everything.py" "$II" || rc=1
 
-# 2d-tr) Merge custom Turkish translations into ~/.config/illogical-impulse/translations/tr_TR.json
+# 2d-tr) Merge custom multi-language translations into ~/.config/illogical-impulse/translations/*.json
 TR_DIR="$HOME/.config/illogical-impulse/translations"
 mkdir -p "$TR_DIR"
-python3 - "$CUSTOM_DIR/tr_TR.json" "$TR_DIR/tr_TR.json" <<'PY_TR'
+python3 - "$CUSTOM_DIR/translations" "$TR_DIR" <<'PY_TR'
 import json, pathlib, sys
-src_p, dst_p = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
-if not src_p.exists():
+src_dir, dst_dir = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
+if not src_dir.is_dir():
     sys.exit(0)
-src_data = json.loads(src_p.read_text(encoding="utf-8"))
-dst_data = {}
-if dst_p.exists():
-    try:
-        dst_data = json.loads(dst_p.read_text(encoding="utf-8"))
-    except Exception:
-        dst_data = {}
-dst_data.update(src_data)
-dst_p.write_text(json.dumps(dst_data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
-print(f"  tr_TR.json: {len(src_data)} ceviri eklendi/guncellendi")
+count = 0
+for src_p in sorted(src_dir.glob("*.json")):
+    dst_p = dst_dir / src_p.name
+    src_data = json.loads(src_p.read_text(encoding="utf-8"))
+    dst_data = {}
+    if dst_p.exists():
+        try:
+            dst_data = json.loads(dst_p.read_text(encoding="utf-8"))
+        except Exception:
+            dst_data = {}
+    dst_data.update(src_data)
+    dst_p.write_text(json.dumps(dst_data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    count += 1
+print(f"  translations: {count} dil dosyasi guncellendi")
 PY_TR
 
 # 2e) User systemd timer to keep the plocate Everything index fresh.

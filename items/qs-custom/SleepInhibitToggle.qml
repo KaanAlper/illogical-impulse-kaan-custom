@@ -100,7 +100,9 @@ MouseArea {
 
     PopupToolTip {
         id: tooltip
-        text: root.inhibited ? "Uyku modu KAPALI — ekran kapanmaz, sistem uyumaz (geri açmak için tıkla)" : "Uyku modu açık — kapatmak için tıkla"
+        text: root.inhibited
+            ? Translation.tr("Sleep mode OFF — screen won't turn off, system won't sleep (click to re-enable)")
+            : Translation.tr("Sleep mode ON — click to disable")
         extraVisibleCondition: root.containsMouse
         alternativeVisibleCondition: extraVisibleCondition
         anchorEdges: (!Config.options.bar.bottom && !Config.options.bar.vertical) ? Edges.Bottom : Edges.Top

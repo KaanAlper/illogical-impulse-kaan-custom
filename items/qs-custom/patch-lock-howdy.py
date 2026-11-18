@@ -198,9 +198,9 @@ SURFACE_OLD_PLACEHOLDER = (
 SURFACE_NEW_PLACEHOLDER = (
     '            placeholderText: {\n'
     '                if (GlobalStates.screenUnlockFailed) return Translation.tr("Incorrect password");\n'
-    '                if (root.context.faceState === "scanning") return "Yüz taranıyor…";\n'
-    '                if (root.context.faceState === "retrying") return "Tanınamadı, biraz yaklaş · tekrar deneniyor (" + (root.context.faceAttempts + 1) + "/" + root.context.faceMaxAttempts + ")";\n'
-    '                if (root.context.faceState === "failed") return "Yüz tanınamadı · simgeye tıkla ya da şifre gir";\n'
+    '                if (root.context.faceState === "scanning") return Translation.tr("Scanning face…");\n'
+    '                if (root.context.faceState === "retrying") return Translation.tr("Not recognized, move closer · retrying (%1/%2)").arg(root.context.faceAttempts + 1).arg(root.context.faceMaxAttempts);\n'
+    '                if (root.context.faceState === "failed") return Translation.tr("Face not recognized · click icon or enter password");\n'
     '                return Translation.tr("Enter password");\n'
     '            }\n'
 )
