@@ -44,7 +44,7 @@
     {
       "id": "hypr-custom",
       "title": "Hyprland özel ayarlar",
-      "desc": "Kısayollar, pencere kuralları, hypridle (90 dk uyku), açılış komutları ve Alt+Tab pencere değiştirici. Var olan dosyaların üzerine yazılmaz.",
+      "desc": "Kısayollar (Win+H Everything dahil), pencere kuralları, hypridle (uyku kapalı, sadece kilit/ekran), açılış komutları ve Alt+Tab pencere değiştirici. Var olan dosyaların üzerine yazılmaz.",
       "kind": "files",
       "src": "items/hypr-custom",
       "dest": "~/.config/hypr/custom",
@@ -138,6 +138,24 @@
       "terminal": true,
       "default": false,
       "install": "sudo bash {repo}/items/sddm-face/enable.sh"
+    },
+    {
+      "id": "autologin-lock",
+      "title": "SDDM yerine doğrudan Super+L kilit ekranı",
+      "desc": "SDDM'i kapatıp tty1 autologin ile Hyprland'i açar ve açılışta hemen Super+L kilit ekranına düşer (Howdy yüz tanıma ile). Yönetici parolası ister.",
+      "kind": "check",
+      "check": [
+        {
+          "exists": "/etc/systemd/system/getty@tty1.service.d/autologin.conf"
+        }
+      ],
+      "requires": [
+        "fish-settings",
+        "hypr-custom"
+      ],
+      "terminal": true,
+      "default": false,
+      "install": "sudo bash {repo}/items/autologin-lock/enable.sh"
     }
   ]
 }

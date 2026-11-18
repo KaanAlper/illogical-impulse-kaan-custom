@@ -112,9 +112,10 @@ Singleton {
         // Use plocate if DB exists; otherwise trigger background index build and fall back to fd in $HOME.
         searchProc.command = [
             "bash", "-c",
-            "if [ -s \"$1\" ]; then shift; exec plocate -d \"$1\" -i -l 200 -- \"${@:2}\"; " +
-            "else [ -x \"$2\" ] && nohup \"$2\" >/dev/null 2>&1 & " +
-            "exec fd -i -L --max-results 100 -- \"$3\" \"$HOME\"; fi",
+            "db=\"$1\"; script=\"$2\"; shift 2; " +
+            "if [ -s \"$db\" ]; then exec plocate -d \"$db\" -i -l 200 -- \"$@\"; " +
+            "else [ -x \"$script\" ] && nohup \"$script\" >/dev/null 2>&1 & " +
+            "exec fd -i -L --max-results 100 -- \"$1\" \"$HOME\"; fi",
             "_", root.dbPath, root.updateScript, ...terms
         ];
         searchProc.running = true;

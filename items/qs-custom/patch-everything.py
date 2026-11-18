@@ -128,7 +128,7 @@ def main() -> int:
         ],
     )
 
-    # 5. LauncherSearch.qml: ensurePrefix + # file search branch
+    # 5. LauncherSearch.qml: ensurePrefix + onQueryChanged trigger + # file search branch
     ok &= patch_file(
         ii / "services/LauncherSearch.qml",
         [
@@ -138,16 +138,27 @@ def main() -> int:
                 "Config.options.search.prefix.emojis, Config.options.search.prefix.files, Config.options.search.prefix.math",
             ),
             (
-                "FileSearch.updateQuery",
+                "onQueryChanged:",
+                "    property string query: \"\"",
+                "    property string query: \"\"\n\n"
+                "    onQueryChanged: {\n"
+                "        if (root.query.startsWith(Config.options.search.prefix.files)) {\n"
+                "            const q = StringUtils.cleanPrefix(root.query, Config.options.search.prefix.files);\n"
+                "            if (q.trim() === \"\")\n"
+                "                FileSearch.ensureIndex();\n"
+                "            else\n"
+                "                FileSearch.updateQuery(q);\n"
+                "        }\n"
+                "    }",
+            ),
+            (
+                "FileSearch.fileName",
                 "        }\n\n        ////////////////// Init ///////////////////",
                 "        } else if (root.query.startsWith(Config.options.search.prefix.files)) {\n"
                 "            // Everything-style file search\n"
                 "            const searchString = StringUtils.cleanPrefix(root.query, Config.options.search.prefix.files);\n"
-                "            if (searchString.trim() === \"\") {\n"
-                "                FileSearch.ensureIndex();\n"
+                "            if (searchString.trim() === \"\")\n"
                 "                return [];\n"
-                "            }\n"
-                "            FileSearch.updateQuery(searchString);\n"
                 "            return FileSearch.results.map(filePath => {\n"
                 "                return resultComp.createObject(null, {\n"
                 "                    rawValue: filePath,\n"
