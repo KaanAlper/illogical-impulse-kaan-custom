@@ -685,6 +685,8 @@ def main() -> int:
                 "        }\n"
                 "        ScrollEdgeFade {",
             ),
+            (
+                "id: animeProviderPicker",
                 "        Rectangle { // Tag input area",
                 "        Rectangle { // Inline Anime Provider Picker\n"
                 "            id: animeProviderPicker\n"
