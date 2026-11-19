@@ -143,9 +143,10 @@ MouseArea {
     Connections {
         target: Audio
         function onOutputAppNodesChanged() {
-            if (root.popupOpen) root.refreshAncestry();
+            root.refreshAncestry();
         }
     }
+    Component.onCompleted: Qt.callLater(root.refreshAncestry)
 
     function iconFor(node) {
         const p = node?.properties ?? {};
