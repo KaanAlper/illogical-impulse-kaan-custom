@@ -1086,7 +1086,6 @@ def main() -> int:
                 "            buttonIcon: \"splitscreen_left\"\n"
                 "            from: 0\n"
                 "            to: 9\n"
-                "            stepSize: 1\n"
                 "            stopIndicatorValues: [0, 3, 5]\n"
                 "            onValueChanged: {\n"
                 "                const v = Math.round(value);\n"
