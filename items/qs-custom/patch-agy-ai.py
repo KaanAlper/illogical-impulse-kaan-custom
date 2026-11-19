@@ -1107,7 +1107,7 @@ def main() -> int:
                 "    }",
             ),
             (
-                "barConfigPage.getMonitorSplits()",
+                "Split workspaces by monitor",
                 "        ConfigSpinBox {\n"
                 "            icon: \"view_column\"\n"
                 "            text: Translation.tr(\"Workspaces shown\")",
