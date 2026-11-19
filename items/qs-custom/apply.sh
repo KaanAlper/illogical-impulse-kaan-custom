@@ -35,6 +35,8 @@ cp "$CUSTOM_DIR/sleep-inhibit-toggle.sh" "$II/scripts/sleep-inhibit-toggle.sh"
 chmod +x "$II/scripts/sleep-inhibit-toggle.sh"
 cp "$CUSTOM_DIR/apply-workspace-split.py" "$II/scripts/apply-workspace-split.py"
 chmod +x "$II/scripts/apply-workspace-split.py"
+cp "$CUSTOM_DIR/pw-app-ancestry.py" "$II/scripts/pw-app-ancestry.py"
+chmod +x "$II/scripts/pw-app-ancestry.py"
 if [ -f /usr/share/icons/hicolor/128x128/apps/zen-browser.png ]; then
     mkdir -p "$HOME/.local/share/icons/hicolor/128x128/apps"
     ln -sf /usr/share/icons/hicolor/128x128/apps/zen-browser.png "$HOME/.local/share/icons/hicolor/128x128/apps/zen-browser.png"
