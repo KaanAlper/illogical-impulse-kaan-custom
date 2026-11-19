@@ -47,25 +47,24 @@ def main() -> int:
     with open(WORKSPACES_LUA, "w", encoding="utf-8") as f:
         f.writelines(lines)
 
-    if left_count == 0:
-        subprocess.run(["hyprctl", "reload"], check=False)
-        return 0
+    subprocess.run(["hyprctl", "reload"], check=False)
 
-    batch: list[str] = []
-    for i in range(1, TOTAL_WORKSPACES + 1):
-        mon = left_mon if i <= left_count else right_mon
-        default_part = ",default:true" if (i == 1 or i == left_count + 1) else ""
-        batch.append(f"keyword workspace {i},monitor:{mon}{default_part}")
+    if left_count > 0:
+        existing = hyprctl_json(["workspaces"])
+        for ws in existing:
+            wid = ws.get("id", -1)
+            if 1 <= wid <= TOTAL_WORKSPACES:
+                target = left_mon if wid <= left_count else right_mon
+                if ws.get("monitor") != target:
+                    subprocess.run(
+                        [
+                            "hyprctl",
+                            "dispatch",
+                            f'hl.dsp.workspace.move({{ workspace = {wid}, monitor = "{target}" }})',
+                        ],
+                        check=False,
+                    )
 
-    existing = hyprctl_json(["workspaces"])
-    for ws in existing:
-        wid = ws.get("id", -1)
-        if 1 <= wid <= TOTAL_WORKSPACES:
-            target = left_mon if wid <= left_count else right_mon
-            if ws.get("monitor") != target:
-                batch.append(f"dispatch moveworkspacetomonitor {wid} {target}")
-
-    subprocess.run(["hyprctl", "--batch", " ; ".join(batch)], check=False)
     return 0
 
 
