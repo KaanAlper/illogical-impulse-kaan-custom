@@ -1016,6 +1016,93 @@ def main() -> int:
         ],
     )
 
+    # 10. Config.qml: store leftMonitorCount (0 = shared, 1..9 = 1..N left, N+1..10 right primary)
+    ok &= patch_file(
+        ii / "modules/common/Config.qml",
+        [
+            (
+                "property int leftMonitorCount:",
+                "                property JsonObject workspaces: JsonObject {\n"
+                "                    property bool monochromeIcons: true",
+                "                property JsonObject workspaces: JsonObject {\n"
+                "                    property int leftMonitorCount: 5\n"
+                "                    property bool monochromeIcons: true",
+            ),
+        ],
+    )
+
+    # 11. BarConfig.qml: live slider for monitor workspace split
+    ok &= patch_file(
+        ii / "modules/settings/BarConfig.qml",
+        [
+            (
+                "import Quickshell.Io",
+                "import QtQuick\n"
+                "import QtQuick.Layouts\n"
+                "import qs.services",
+                "import QtQuick\n"
+                "import QtQuick.Layouts\n"
+                "import Quickshell\n"
+                "import Quickshell.Io\n"
+                "import qs.services",
+            ),
+            (
+                "id: wsSplitApplyTimer",
+                "ContentPage {\n"
+                "    forceWidth: true",
+                "ContentPage {\n"
+                "    forceWidth: true\n\n"
+                "    Timer {\n"
+                "        id: wsSplitApplyTimer\n"
+                "        interval: 120\n"
+                "        repeat: false\n"
+                "        onTriggered: {\n"
+                "            wsSplitProc.running = false;\n"
+                "            wsSplitProc.running = true;\n"
+                "        }\n"
+                "    }\n\n"
+                "    Process {\n"
+                "        id: wsSplitProc\n"
+                "        command: [\n"
+                "            \"python3\",\n"
+                "            Quickshell.shellPath(\"scripts/apply-workspace-split.py\"),\n"
+                "            String(Config.options.bar.workspaces.leftMonitorCount)\n"
+                "        ]\n"
+                "    }",
+            ),
+            (
+                "buttonIcon: \"splitscreen_left\"",
+                "        ConfigSpinBox {\n"
+                "            icon: \"view_column\"\n"
+                "            text: Translation.tr(\"Workspaces shown\")",
+                "        ConfigSlider {\n"
+                "            text: Config.options.bar.workspaces.leftMonitorCount === 0\n"
+                "                ? Translation.tr(\"Left monitor workspaces (0 = shared)\")\n"
+                "                : Translation.tr(\"Left monitor: 1–%1 · Right (primary): %2–10\")\n"
+                "                    .arg(Config.options.bar.workspaces.leftMonitorCount)\n"
+                "                    .arg(Config.options.bar.workspaces.leftMonitorCount + 1)\n"
+                "            value: Config.options.bar.workspaces.leftMonitorCount\n"
+                "            usePercentTooltip: false\n"
+                "            buttonIcon: \"splitscreen_left\"\n"
+                "            from: 0\n"
+                "            to: 9\n"
+                "            stepSize: 1\n"
+                "            stopIndicatorValues: [0, 3, 5]\n"
+                "            onValueChanged: {\n"
+                "                const v = Math.round(value);\n"
+                "                if (Config.options.bar.workspaces.leftMonitorCount !== v) {\n"
+                "                    Config.options.bar.workspaces.leftMonitorCount = v;\n"
+                "                    wsSplitApplyTimer.restart();\n"
+                "                }\n"
+                "            }\n"
+                "        }\n\n"
+                "        ConfigSpinBox {\n"
+                "            icon: \"view_column\"\n"
+                "            text: Translation.tr(\"Workspaces shown\")",
+            ),
+        ],
+    )
+
     return 0 if ok else 1
 
 
