@@ -96,33 +96,33 @@ MouseArea {
         const pids = Audio.outputAppNodes.map(n => parseInt(n?.properties?.["application.process.id"] ?? "")).filter(p => p > 0);
         if (pids.length === 0) return;
         ancestryProc.command = ["python3", "-c",
-            'import os,sys,json\n'
-            'def hint_for(pid):\n'
-            '    try:\n'
-            '        args=[a for a in open(f"/proc/{pid}/cmdline","rb").read().split(b"\\0") if a]\n'
-            '        s=[a.decode("utf-8","ignore") for a in args]\n'
-            '    except Exception: return ""\n'
-            '    if any(x.startswith("--type=") for x in s): return ""\n'
-            '    for a in s:\n'
-            '        if a.startswith("--class=") or a.startswith("--app-id="): return a.split("=",1)[1]\n'
-            '        if "app.asar" in a or a.endswith(".asar"):\n'
-            '            parts=[p for p in os.path.dirname(a).split("/") if p and p not in ("usr","lib","opt","share","resources","app")]\n'
-            '            if parts: return parts[-1]\n'
-            '    if s:\n'
-            '        b=os.path.basename(s[0])\n'
-            '        if not b.startswith(("electron","python","node","bash","sh")): return b\n'
-            '    return ""\n'
-            'res={}\n'
-            'for p in sys.argv[1:]:\n'
-            '    pid=int(p); chain=[pid]; q=pid; h=""\n'
-            '    for _ in range(8):\n'
-            '        if not h: h=hint_for(q)\n'
-            '        try: ppid=int(open(f"/proc/{q}/stat").read().split(")")[1].split()[1])\n'
-            '        except Exception: break\n'
-            '        if ppid<=1: break\n'
-            '        chain.append(ppid); q=ppid\n'
-            '    res[str(pid)]={"pids":chain,"hint":h}\n'
-            'print(json.dumps(res))',
+            "import os,sys,json\n" +
+            "def hint_for(pid):\n" +
+            "    try:\n" +
+            "        args=[a for a in open(f'/proc/{pid}/cmdline','rb').read().split(b'\\0') if a]\n" +
+            "        s=[a.decode('utf-8','ignore') for a in args]\n" +
+            "    except Exception: return ''\n" +
+            "    if any(x.startswith('--type=') for x in s): return ''\n" +
+            "    for a in s:\n" +
+            "        if a.startswith('--class=') or a.startswith('--app-id='): return a.split('=',1)[1]\n" +
+            "        if 'app.asar' in a or a.endswith('.asar'):\n" +
+            "            parts=[p for p in os.path.dirname(a).split('/') if p and p not in ('usr','lib','opt','share','resources','app')]\n" +
+            "            if parts: return parts[-1]\n" +
+            "    if s:\n" +
+            "        b=os.path.basename(s[0])\n" +
+            "        if not b.startswith(('electron','python','node','bash','sh')): return b\n" +
+            "    return ''\n" +
+            "res={}\n" +
+            "for p in sys.argv[1:]:\n" +
+            "    pid=int(p); chain=[pid]; q=pid; h=''\n" +
+            "    for _ in range(8):\n" +
+            "        if not h: h=hint_for(q)\n" +
+            "        try: ppid=int(open(f'/proc/{q}/stat').read().split(')')[1].split()[1])\n" +
+            "        except Exception: break\n" +
+            "        if ppid<=1: break\n" +
+            "        chain.append(ppid); q=ppid\n" +
+            "    res[str(pid)]={'pids':chain,'hint':h}\n" +
+            "print(json.dumps(res))",
             ...pids.map(String)];
         ancestryProc.running = true;
     }
