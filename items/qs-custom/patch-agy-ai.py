@@ -1077,8 +1077,8 @@ def main() -> int:
                 "            text: Translation.tr(\"Workspaces shown\")",
                 "        ConfigSlider {\n"
                 "            text: Config.options.bar.workspaces.leftMonitorCount === 0\n"
-                "                ? Translation.tr(\"Left monitor workspaces (0 = shared)\")\n"
-                "                : Translation.tr(\"Left monitor: 1–%1 · Right (primary): %2–10\")\n"
+                "                ? Translation.tr(\"Split (0 = shared)\")\n"
+                "                : Translation.tr(\"L 1–%1 | R %2–10\")\n"
                 "                    .arg(Config.options.bar.workspaces.leftMonitorCount)\n"
                 "                    .arg(Config.options.bar.workspaces.leftMonitorCount + 1)\n"
                 "            value: Config.options.bar.workspaces.leftMonitorCount\n"
