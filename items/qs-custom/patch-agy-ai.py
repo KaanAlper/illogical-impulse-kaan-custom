@@ -1016,23 +1016,24 @@ def main() -> int:
         ],
     )
 
-    # 10. Config.qml: store splitByMonitor & leftMonitorCount (1..N left, N+1..10 right primary)
+    # 10. Config.qml: store splitByMonitor, leftMonitorCount & monitorSplits (M-1 boundaries for M monitors)
     ok &= patch_file(
         ii / "modules/common/Config.qml",
         [
             (
-                "property bool splitByMonitor:",
+                "property list<int> monitorSplits:",
                 "                property JsonObject workspaces: JsonObject {\n"
                 "                    property bool monochromeIcons: true",
                 "                property JsonObject workspaces: JsonObject {\n"
                 "                    property bool splitByMonitor: true\n"
                 "                    property int leftMonitorCount: 5\n"
+                "                    property list<int> monitorSplits: [5]\n"
                 "                    property bool monochromeIcons: true",
             ),
         ],
     )
 
-    # 11. BarConfig.qml: On/Off switch + live slider for monitor workspace split
+    # 11. BarConfig.qml: On/Off switch + M-1 live sliders for M monitors
     ok &= patch_file(
         ii / "modules/settings/BarConfig.qml",
         [
@@ -1048,13 +1049,43 @@ def main() -> int:
                 "import qs.services",
             ),
             (
-                "hasMultipleMonitors",
+                "function getMonitorSplits()",
                 "ContentPage {\n"
                 "    forceWidth: true",
                 "ContentPage {\n"
                 "    id: barConfigPage\n"
                 "    forceWidth: true\n"
-                "    readonly property bool hasMultipleMonitors: Quickshell.screens.length > 1\n\n"
+                "    readonly property int monitorCount: Quickshell.screens.length\n"
+                "    readonly property bool hasMultipleMonitors: monitorCount > 1\n\n"
+                "    function getMonitorSplits() {\n"
+                "        const needed = Math.max(0, monitorCount - 1);\n"
+                "        if (needed === 0) return [];\n"
+                "        let arr = Array.from(Config.options.bar.workspaces.monitorSplits ?? []);\n"
+                "        if (arr.length !== needed) {\n"
+                "            arr = [];\n"
+                "            for (let i = 0; i < needed; i++) {\n"
+                "                arr.push(Math.round(10 * (i + 1) / monitorCount));\n"
+                "            }\n"
+                "        }\n"
+                "        return arr;\n"
+                "    }\n\n"
+                "    function updateSplit(idx, val) {\n"
+                "        const needed = Math.max(0, monitorCount - 1);\n"
+                "        if (idx < 0 || idx >= needed) return;\n"
+                "        const arr = getMonitorSplits().slice();\n"
+                "        const minV = idx + 1;\n"
+                "        const maxV = 10 - (needed - idx);\n"
+                "        arr[idx] = Math.max(minV, Math.min(maxV, Math.round(val)));\n"
+                "        for (let j = idx - 1; j >= 0; j--) {\n"
+                "            if (arr[j] >= arr[j + 1]) arr[j] = arr[j + 1] - 1;\n"
+                "        }\n"
+                "        for (let j = idx + 1; j < needed; j++) {\n"
+                "            if (arr[j] <= arr[j - 1]) arr[j] = arr[j - 1] + 1;\n"
+                "        }\n"
+                "        Config.options.bar.workspaces.monitorSplits = arr;\n"
+                "        Config.options.bar.workspaces.leftMonitorCount = arr[0];\n"
+                "        wsSplitApplyTimer.restart();\n"
+                "    }\n\n"
                 "    Timer {\n"
                 "        id: wsSplitApplyTimer\n"
                 "        interval: 120\n"
@@ -1069,12 +1100,14 @@ def main() -> int:
                 "        command: [\n"
                 "            \"python3\",\n"
                 "            Quickshell.shellPath(\"scripts/apply-workspace-split.py\"),\n"
-                "            String((barConfigPage.hasMultipleMonitors && Config.options.bar.workspaces.splitByMonitor) ? Config.options.bar.workspaces.leftMonitorCount : 0)\n"
+                "            (barConfigPage.hasMultipleMonitors && Config.options.bar.workspaces.splitByMonitor)\n"
+                "                ? barConfigPage.getMonitorSplits().join(\",\")\n"
+                "                : \"0\"\n"
                 "        ]\n"
                 "    }",
             ),
             (
-                "barConfigPage.hasMultipleMonitors",
+                "barConfigPage.getMonitorSplits()",
                 "        ConfigSpinBox {\n"
                 "            icon: \"view_column\"\n"
                 "            text: Translation.tr(\"Workspaces shown\")",
@@ -1109,22 +1142,29 @@ def main() -> int:
                 "                }\n"
                 "            }\n"
                 "        }\n\n"
-                "        ConfigSlider {\n"
-                "            visible: barConfigPage.hasMultipleMonitors && Config.options.bar.workspaces.splitByMonitor\n"
-                "            text: Translation.tr(\"L 1–%1 | R %2–10\")\n"
-                "                .arg(Config.options.bar.workspaces.leftMonitorCount)\n"
-                "                .arg(Config.options.bar.workspaces.leftMonitorCount + 1)\n"
-                "            value: Config.options.bar.workspaces.leftMonitorCount\n"
-                "            usePercentTooltip: false\n"
-                "            buttonIcon: \"tune\"\n"
-                "            from: 1\n"
-                "            to: 9\n"
-                "            stopIndicatorValues: [3, 5]\n"
-                "            onValueChanged: {\n"
-                "                const v = Math.round(value);\n"
-                "                if (Config.options.bar.workspaces.leftMonitorCount !== v) {\n"
-                "                    Config.options.bar.workspaces.leftMonitorCount = v;\n"
-                "                    wsSplitApplyTimer.restart();\n"
+                "        Repeater {\n"
+                "            model: (barConfigPage.hasMultipleMonitors && Config.options.bar.workspaces.splitByMonitor)\n"
+                "                ? Math.max(0, barConfigPage.monitorCount - 1) : 0\n"
+                "            delegate: ConfigSlider {\n"
+                "                required property int index\n"
+                "                readonly property var splits: barConfigPage.getMonitorSplits()\n"
+                "                readonly property int prevEnd: index === 0 ? 0 : splits[index - 1]\n"
+                "                readonly property int curEnd: splits[index] ?? 5\n"
+                "                readonly property int nextEnd: (index + 1 < splits.length) ? splits[index + 1] : 10\n"
+                "                text: Translation.tr(\"M%1 %2–%3 | M%4 %5–%6\")\n"
+                "                    .arg(index + 1).arg(prevEnd + 1).arg(curEnd)\n"
+                "                    .arg(index + 2).arg(curEnd + 1).arg(nextEnd)\n"
+                "                value: curEnd\n"
+                "                usePercentTooltip: false\n"
+                "                buttonIcon: \"tune\"\n"
+                "                from: index + 1\n"
+                "                to: 10 - (barConfigPage.monitorCount - 1 - index)\n"
+                "                stopIndicatorValues: [Math.round(10 * (index + 1) / barConfigPage.monitorCount)]\n"
+                "                onValueChanged: {\n"
+                "                    const v = Math.round(value);\n"
+                "                    if (v !== curEnd) {\n"
+                "                        barConfigPage.updateSplit(index, v);\n"
+                "                    }\n"
                 "                }\n"
                 "            }\n"
                 "        }\n\n"
