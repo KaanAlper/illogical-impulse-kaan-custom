@@ -24,6 +24,12 @@ hl.unbind("CTRL + SUPER + Right")
 hl.bind("CTRL + SUPER + Left", hl.dsp.focus({ workspace = "-1" }), { description = "Workspace: Focus prev (cross-monitor)" })
 hl.bind("CTRL + SUPER + Right", hl.dsp.focus({ workspace = "+1" }), { description = "Workspace: Focus next (cross-monitor)" })
 
+-- Move focused window across workspaces & monitors (Ctrl+Super+Shift+Left/Right steps -1/+1)
+hl.unbind("CTRL + SUPER + SHIFT + Left")
+hl.unbind("CTRL + SUPER + SHIFT + Right")
+hl.bind("CTRL + SUPER + SHIFT + Left", hl.dsp.window.move({ workspace = "-1" }), { description = "Window: Move to prev workspace (cross-monitor)" })
+hl.bind("CTRL + SUPER + SHIFT + Right", hl.dsp.window.move({ workspace = "+1" }), { description = "Window: Move to next workspace (cross-monitor)" })
+
 -- MSI fan toggle — SUPER+F12 yedek, F12 alone başka uygulamalarda kalabilir
 -- (Fn+F12 ve F12 Linux'ta aynı keysym üretiyor — donanım Fn'i yutuyor)
 hl.bind("SUPER + F12", hl.dsp.exec_cmd("/home/kaanalper/.local/bin/msi-fan-toggle"), { description = "MSI Fan: Toggle Max/Auto" })
