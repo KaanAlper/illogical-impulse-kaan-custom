@@ -1016,22 +1016,23 @@ def main() -> int:
         ],
     )
 
-    # 10. Config.qml: store leftMonitorCount (0 = shared, 1..9 = 1..N left, N+1..10 right primary)
+    # 10. Config.qml: store splitByMonitor & leftMonitorCount (1..N left, N+1..10 right primary)
     ok &= patch_file(
         ii / "modules/common/Config.qml",
         [
             (
-                "property int leftMonitorCount:",
+                "property bool splitByMonitor:",
                 "                property JsonObject workspaces: JsonObject {\n"
                 "                    property bool monochromeIcons: true",
                 "                property JsonObject workspaces: JsonObject {\n"
+                "                    property bool splitByMonitor: true\n"
                 "                    property int leftMonitorCount: 5\n"
                 "                    property bool monochromeIcons: true",
             ),
         ],
     )
 
-    # 11. BarConfig.qml: live slider for monitor workspace split
+    # 11. BarConfig.qml: On/Off switch + live slider for monitor workspace split
     ok &= patch_file(
         ii / "modules/settings/BarConfig.qml",
         [
@@ -1047,7 +1048,7 @@ def main() -> int:
                 "import qs.services",
             ),
             (
-                "id: wsSplitApplyTimer",
+                "splitByMonitor ? Config.options.bar.workspaces.leftMonitorCount : 0",
                 "ContentPage {\n"
                 "    forceWidth: true",
                 "ContentPage {\n"
@@ -1066,27 +1067,37 @@ def main() -> int:
                 "        command: [\n"
                 "            \"python3\",\n"
                 "            Quickshell.shellPath(\"scripts/apply-workspace-split.py\"),\n"
-                "            String(Config.options.bar.workspaces.leftMonitorCount)\n"
+                "            String(Config.options.bar.workspaces.splitByMonitor ? Config.options.bar.workspaces.leftMonitorCount : 0)\n"
                 "        ]\n"
                 "    }",
             ),
             (
-                "buttonIcon: \"splitscreen_left\"",
+                "Split workspaces by monitor",
                 "        ConfigSpinBox {\n"
                 "            icon: \"view_column\"\n"
                 "            text: Translation.tr(\"Workspaces shown\")",
+                "        ConfigSwitch {\n"
+                "            buttonIcon: \"splitscreen_left\"\n"
+                "            text: Translation.tr(\"Split workspaces by monitor\")\n"
+                "            checked: Config.options.bar.workspaces.splitByMonitor\n"
+                "            onCheckedChanged: {\n"
+                "                if (Config.options.bar.workspaces.splitByMonitor !== checked) {\n"
+                "                    Config.options.bar.workspaces.splitByMonitor = checked;\n"
+                "                    wsSplitApplyTimer.restart();\n"
+                "                }\n"
+                "            }\n"
+                "        }\n\n"
                 "        ConfigSlider {\n"
-                "            text: Config.options.bar.workspaces.leftMonitorCount === 0\n"
-                "                ? Translation.tr(\"Split (0 = shared)\")\n"
-                "                : Translation.tr(\"L 1–%1 | R %2–10\")\n"
-                "                    .arg(Config.options.bar.workspaces.leftMonitorCount)\n"
-                "                    .arg(Config.options.bar.workspaces.leftMonitorCount + 1)\n"
+                "            visible: Config.options.bar.workspaces.splitByMonitor\n"
+                "            text: Translation.tr(\"L 1–%1 | R %2–10\")\n"
+                "                .arg(Config.options.bar.workspaces.leftMonitorCount)\n"
+                "                .arg(Config.options.bar.workspaces.leftMonitorCount + 1)\n"
                 "            value: Config.options.bar.workspaces.leftMonitorCount\n"
                 "            usePercentTooltip: false\n"
-                "            buttonIcon: \"splitscreen_left\"\n"
-                "            from: 0\n"
+                "            buttonIcon: \"tune\"\n"
+                "            from: 1\n"
                 "            to: 9\n"
-                "            stopIndicatorValues: [0, 3, 5]\n"
+                "            stopIndicatorValues: [3, 5]\n"
                 "            onValueChanged: {\n"
                 "                const v = Math.round(value);\n"
                 "                if (Config.options.bar.workspaces.leftMonitorCount !== v) {\n"
@@ -1098,6 +1109,19 @@ def main() -> int:
                 "        ConfigSpinBox {\n"
                 "            icon: \"view_column\"\n"
                 "            text: Translation.tr(\"Workspaces shown\")",
+            ),
+        ],
+    )
+
+    # 12. AppSearch.qml: map zen window class -> zen-browser icon
+    ok &= patch_file(
+        ii / "services/AppSearch.qml",
+        [
+            (
+                '"zen": "zen-browser"',
+                '        "footclient": "foot",',
+                '        "footclient": "foot",\n'
+                '        "zen": "zen-browser",',
             ),
         ],
     )
