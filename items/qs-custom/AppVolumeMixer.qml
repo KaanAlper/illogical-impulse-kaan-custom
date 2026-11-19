@@ -28,7 +28,7 @@ MouseArea {
 
     property bool popupOpen: false
     readonly property real wheelStep: 0.05
-    // stream process id -> its process and its ancestors' ids (filled by ancestryProc)
+    // stream process id -> { pids: [...], hint: "..." } (filled by ancestryProc)
     property var ancestry: ({})
 
     // One entry per app: { key, name, icon, nodes: [PwNode] }; playback streams of the default output only
@@ -38,12 +38,17 @@ MouseArea {
         for (const node of Audio.outputAppNodes) {
             const p = node.properties ?? {};
             const win = root.windowFor(node);
-            const key = win ? `pid:${win.pid}` : (p["application.process.binary"] || p["application.name"] || node.name);
+            const entry = win ? null : root.desktopEntryForNode(node);
+            const key = win ? `pid:${win.pid}`
+                : entry ? `app:${entry.id}`
+                : (p["application.process.binary"] || p["application.name"] || node.name);
             if (!groups[key]) {
                 groups[key] = {
                     key: key,
-                    name: win ? root.appNameFor(win) : Audio.appNodeDisplayName(node),
-                    icon: win ? Quickshell.iconPath(AppSearch.guessIcon(win.class), "image-missing") : root.iconFor(node),
+                    name: win ? root.appNameFor(win) : (entry?.name || Audio.appNodeDisplayName(node)),
+                    icon: win ? Quickshell.iconPath(AppSearch.guessIcon(win.class), "image-missing")
+                        : entry ? Quickshell.iconPath(AppSearch.guessIcon(entry.icon || entry.id), "image-missing")
+                        : root.iconFor(node),
                     nodes: []
                 };
                 order.push(key);
@@ -57,12 +62,27 @@ MouseArea {
     function windowFor(node) {
         const pid = parseInt(node?.properties?.["application.process.id"] ?? "");
         if (!pid) return null;
-        const chain = root.ancestry[pid] ?? [pid];
+        const info = root.ancestry[pid];
+        const chain = info?.pids ?? [pid];
         for (const id of chain) {
             const w = HyprlandData.windowList.find(w => w.pid === id);
             if (w) return w;
         }
         return null;
+    }
+
+    function desktopEntryForNode(node) {
+        const pid = parseInt(node?.properties?.["application.process.id"] ?? "");
+        const hint = (pid ? root.ancestry[pid]?.hint : "") ?? "";
+        if (!hint) return null;
+        const h = hint.toLowerCase();
+        return DesktopEntries.applications.values.find(a =>
+            (a.startupClass ?? "").toLowerCase() === h ||
+            (a.icon ?? "").toLowerCase() === h ||
+            (a.id ?? "").toLowerCase() === h ||
+            (a.execString ?? "").toLowerCase().includes(h) ||
+            (a.id ?? "").toLowerCase().includes(h)
+        ) ?? null;
     }
 
     function appNameFor(win) {
@@ -75,9 +95,35 @@ MouseArea {
     function refreshAncestry() {
         const pids = Audio.outputAppNodes.map(n => parseInt(n?.properties?.["application.process.id"] ?? "")).filter(p => p > 0);
         if (pids.length === 0) return;
-        ancestryProc.command = ["bash", "-c",
-            'for p in "$@"; do c="$p"; q=$p; for i in 1 2 3 4 5 6 7 8; do q=$(awk \'{print $4}\' /proc/$q/stat 2>/dev/null); [ -z "$q" ] || [ "$q" -le 1 ] && break; c="$c $q"; done; echo "$c"; done',
-            "ancestry", ...pids.map(String)];
+        ancestryProc.command = ["python3", "-c",
+            'import os,sys,json\n'
+            'def hint_for(pid):\n'
+            '    try:\n'
+            '        args=[a for a in open(f"/proc/{pid}/cmdline","rb").read().split(b"\\0") if a]\n'
+            '        s=[a.decode("utf-8","ignore") for a in args]\n'
+            '    except Exception: return ""\n'
+            '    if any(x.startswith("--type=") for x in s): return ""\n'
+            '    for a in s:\n'
+            '        if a.startswith("--class=") or a.startswith("--app-id="): return a.split("=",1)[1]\n'
+            '        if "app.asar" in a or a.endswith(".asar"):\n'
+            '            parts=[p for p in os.path.dirname(a).split("/") if p and p not in ("usr","lib","opt","share","resources","app")]\n'
+            '            if parts: return parts[-1]\n'
+            '    if s:\n'
+            '        b=os.path.basename(s[0])\n'
+            '        if not b.startswith(("electron","python","node","bash","sh")): return b\n'
+            '    return ""\n'
+            'res={}\n'
+            'for p in sys.argv[1:]:\n'
+            '    pid=int(p); chain=[pid]; q=pid; h=""\n'
+            '    for _ in range(8):\n'
+            '        if not h: h=hint_for(q)\n'
+            '        try: ppid=int(open(f"/proc/{q}/stat").read().split(")")[1].split()[1])\n'
+            '        except Exception: break\n'
+            '        if ppid<=1: break\n'
+            '        chain.append(ppid); q=ppid\n'
+            '    res[str(pid)]={"pids":chain,"hint":h}\n'
+            'print(json.dumps(res))',
+            ...pids.map(String)];
         ancestryProc.running = true;
     }
 
@@ -85,12 +131,9 @@ MouseArea {
         id: ancestryProc
         stdout: StdioCollector {
             onStreamFinished: {
-                const map = {};
-                for (const line of text.trim().split("\n")) {
-                    const ids = line.trim().split(/\s+/).map(Number).filter(n => n > 0);
-                    if (ids.length > 0) map[ids[0]] = ids;
-                }
-                root.ancestry = map;
+                try {
+                    root.ancestry = JSON.parse(text.trim() || "{}");
+                } catch (e) {}
             }
         }
     }
