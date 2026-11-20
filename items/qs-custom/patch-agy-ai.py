@@ -241,14 +241,40 @@ def main() -> int:
         ii / "modules/ii/sidebarLeft/AiChat.qml",
         [
             (
-                '    property bool modelPickerOpen: false',
+                'property bool agyLoggedIn: true',
                 '    property string commandPrefix: "/"',
                 '    property string commandPrefix: "/"\n'
                 '    property bool modelPickerOpen: false\n'
-                '    property bool configPickerOpen: false',
+                '    property bool configPickerOpen: false\n'
+                '    property bool agyLoggedIn: true\n\n'
+                '    function refreshAgyAuth() {\n'
+                '        agyAuthProc.running = false;\n'
+                '        agyAuthProc.running = true;\n'
+                '    }\n\n'
+                '    function openAgyLogin() {\n'
+                '        const agyBin = FileUtils.trimFileProtocol(`${Directories.home}/.local/bin/agy`);\n'
+                '        agyLoginProc.command = ["bash", "-c", `${Config.options.apps.terminal} -e bash -c \'"${0}" -i /login; echo; read -p "Press Enter to close..."\' "${agyBin}"`];\n'
+                '        agyLoginProc.running = false;\n'
+                '        agyLoginProc.running = true;\n'
+                '    }\n\n'
+                '    Process {\n'
+                '        id: agyAuthProc\n'
+                '        command: ["bash", "-c", "[ -s \\"$HOME/.gemini/antigravity-cli/antigravity-oauth-token\\" ] && echo 1 || echo 0"]\n'
+                '        stdout: StdioCollector {\n'
+                '            onStreamFinished: root.agyLoggedIn = (text.trim() === "1")\n'
+                '        }\n'
+                '    }\n\n'
+                '    Process {\n'
+                '        id: agyLoginProc\n'
+                '        onExited: {\n'
+                '            root.refreshAgyAuth();\n'
+                '            Ai.refreshAgyModels();\n'
+                '        }\n'
+                '    }\n\n'
+                '    Component.onCompleted: root.refreshAgyAuth()',
             ),
             (
-                'Ai.getModel()?.api_format === "agy" && inputText.startsWith(root.commandPrefix)',
+                'root.openAgyLogin()',
                 '        if (inputText.startsWith(root.commandPrefix)) {',
                 '        if (Ai.getModel()?.api_format === "agy" && inputText.startsWith(root.commandPrefix)) {\n'
                 '            const parts = inputText.trim().split(/\\s+/);\n'
@@ -256,8 +282,7 @@ def main() -> int:
                 '            if (cmd === "model" || cmd === "effort") { root.configPickerOpen = false; root.modelPickerOpen = true; return; }\n'
                 '            if (cmd === "config" || cmd === "settings") { root.modelPickerOpen = false; root.configPickerOpen = true; return; }\n'
                 '            if (cmd === "login") {\n'
-                '                const agyBin = FileUtils.trimFileProtocol(`${Directories.home}/.local/bin/agy`);\n'
-                '                Quickshell.execDetached(["bash", "-c", `${Config.options.apps.terminal} -e "${agyBin}"`]);\n'
+                '                root.openAgyLogin();\n'
                 '                return;\n'
                 '            }\n'
                 '            if (cmd === "clear") { Ai.clearMessages(); return; }\n'
@@ -407,8 +432,62 @@ def main() -> int:
                 "            }",
             ),
             (
-                "AgyConfigPicker {",
+                "id: agyAuthRow",
                 "        Rectangle { // Input area",
+                "        Rectangle {\n"
+                "            visible: (Ai.getModel()?.api_format === \"agy\") && !root.agyLoggedIn\n"
+                "            Layout.fillWidth: true\n"
+                "            implicitHeight: agyAuthRow.implicitHeight + 16\n"
+                "            radius: Appearance.rounding.normal\n"
+                "            color: Appearance.colors.colLayer2\n"
+                "            border.width: 1\n"
+                "            border.color: Appearance.colors.colOutlineVariant\n\n"
+                "            RowLayout {\n"
+                "                id: agyAuthRow\n"
+                "                anchors.fill: parent\n"
+                "                anchors.margins: 8\n"
+                "                spacing: 8\n"
+                "                MaterialSymbol {\n"
+                "                    text: \"passkey\"\n"
+                "                    iconSize: 20\n"
+                "                    color: Appearance.colors.colPrimary\n"
+                "                }\n"
+                "                StyledText {\n"
+                "                    Layout.fillWidth: true\n"
+                "                    font.pixelSize: Appearance.font.pixelSize.smaller\n"
+                "                    color: Appearance.m3colors.m3onSurface\n"
+                "                    elide: Text.ElideRight\n"
+                "                    text: Translation.tr(\"Sign in required to use Agy\")\n"
+                "                }\n"
+                "                RippleButton {\n"
+                "                    implicitWidth: agyLoginBtnTxt.implicitWidth + 20\n"
+                "                    implicitHeight: 28\n"
+                "                    buttonRadius: Appearance.rounding.full\n"
+                "                    colBackground: Appearance.colors.colPrimary\n"
+                "                    onClicked: root.openAgyLogin()\n"
+                "                    contentItem: StyledText {\n"
+                "                        id: agyLoginBtnTxt\n"
+                "                        anchors.centerIn: parent\n"
+                "                        font.pixelSize: Appearance.font.pixelSize.smaller\n"
+                "                        font.weight: Font.Medium\n"
+                "                        color: Appearance.m3colors.m3onPrimary\n"
+                "                        text: Translation.tr(\"Sign in\")\n"
+                "                    }\n"
+                "                }\n"
+                "                RippleButton {\n"
+                "                    implicitWidth: 28\n"
+                "                    implicitHeight: 28\n"
+                "                    buttonRadius: Appearance.rounding.full\n"
+                "                    onClicked: root.refreshAgyAuth()\n"
+                "                    contentItem: MaterialSymbol {\n"
+                "                        anchors.centerIn: parent\n"
+                "                        text: \"refresh\"\n"
+                "                        iconSize: 16\n"
+                "                        color: Appearance.m3colors.m3onSurface\n"
+                "                    }\n"
+                "                }\n"
+                "            }\n"
+                "        }\n\n"
                 "        AgyModelPicker {\n"
                 "            visible: root.modelPickerOpen\n"
                 "            Layout.fillWidth: true\n"
@@ -432,8 +511,8 @@ def main() -> int:
                 '                ApiInputBoxIndicator {\n'
                 '                    // Model indicator (clickable -> AgyModelPicker)\n'
                 '                    icon: "api"\n'
-                '                    text: Ai.getModel().name\n'
-                '                    tooltipText: Translation.tr("Current model: %1\\nSet it with %2model MODEL").arg(Ai.getModel().name).arg(root.commandPrefix)\n'
+                '                    text: Ai.getModel()?.name ?? ""\n'
+                '                    tooltipText: Translation.tr("Current model: %1\\nSet it with %2model MODEL").arg(Ai.getModel()?.name ?? "").arg(root.commandPrefix)\n'
                 '                    MouseArea {\n'
                 '                        z: 10\n'
                 '                        anchors.fill: parent\n'

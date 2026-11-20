@@ -15,6 +15,18 @@ def fetch_claude() -> dict:
     if not bin_path:
         return {"installed": False, "models": [], "commands": []}
 
+    # Check login status via `claude auth status` (returns JSON with {"loggedIn": bool})
+    logged_in = True
+    try:
+        auth_res = subprocess.run([bin_path, "auth", "status"], capture_output=True, text=True, timeout=5, check=False)
+        auth_data = json.loads(auth_res.stdout or "{}")
+        if "loggedIn" in auth_data:
+            logged_in = bool(auth_data["loggedIn"])
+        elif auth_res.returncode != 0:
+            logged_in = False
+    except Exception:
+        pass
+
     # Query claude init event (no LLM turn needed when passing /help or reading init)
     res = subprocess.run(
         [bin_path, "-p", "/help", "--output-format", "stream-json", "--verbose"],
@@ -99,7 +111,7 @@ def fetch_claude() -> dict:
         for fam in ("opus", "sonnet", "fable", "haiku"):
             models.append({"id": fam, "name": f"Claude {fam.capitalize()}", "efforts": [] if fam == "haiku" else ["low", "medium", "high", "max"]})
 
-    return {"installed": True, "defaultModel": default_model or models[0]["id"], "models": models, "commands": commands}
+    return {"installed": True, "loggedIn": logged_in, "defaultModel": default_model or models[0]["id"], "models": models, "commands": commands}
 
 
 def fetch_codex() -> dict:

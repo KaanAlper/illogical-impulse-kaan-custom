@@ -166,9 +166,16 @@ Item {
         Qt.callLater(() => msgList.positionViewAtEnd());
     }
 
+    Process {
+        id: loginProc
+        onExited: root.refreshMeta()
+    }
+
     function openLogin() {
-        const cmd = root.backend === "claude" ? "claude" : "codex login";
-        Quickshell.execDetached(["bash", "-c", `${Config.options.apps.terminal} -e bash -c '${cmd}; echo; read -p "Press Enter to close..."'`]);
+        const cmd = root.backend === "claude" ? "claude auth login" : "codex login";
+        loginProc.command = ["bash", "-c", `${Config.options.apps.terminal} -e bash -c '${cmd}; echo; read -p "Press Enter to close..."'`];
+        loginProc.running = false;
+        loginProc.running = true;
     }
 
     function clearChat() {
@@ -280,20 +287,30 @@ Item {
                 } catch (e) {}
             }
         }
+        property string errBuf: ""
         stderr: SplitParser {
-            onRead: data => {}
+            onRead: data => {
+                runner.errBuf += data + "\n";
+            }
         }
         onExited: (code, status) => {
             root.busy = false;
             if (msgModel.count > 0) {
                 const idx = msgModel.count - 1;
                 if (msgModel.get(idx).content.trim() === "" && code !== 0) {
+                    const err = runner.errBuf.trim();
                     root.updateLastAssistant(
-                        (root.backend === "codex" ? "codex" : "claude") + ` CLI error (exit ${code}). Run /login or check installation.`,
+                        err !== "" ? err : (
+                            (root.backend === "codex" ? "codex" : "claude") + ` CLI error (exit ${code}). Run /login or check installation.`
+                        ),
                         true
                     );
+                    if (/login|auth|unauthorized|401|credential|token/i.test(err)) {
+                        root.refreshMeta();
+                    }
                 }
             }
+            runner.errBuf = "";
         }
     }
 
