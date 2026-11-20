@@ -40,6 +40,11 @@ ContentPage {
         ]
     }
 
+    Process {
+        id: previewProc
+        command: ["qs", "ipc", "-c", "ii", "call", "screensaver", "show"]
+    }
+
     FileDialog {
         id: mediaPicker
         title: Translation.tr("Select screensaver media or .scr")
@@ -75,7 +80,7 @@ ContentPage {
 
         ConfigSpinBox {
             icon: "timer"
-            text: Translation.tr("Wait time before screensaver (minutes)")
+            text: Translation.tr("Idle timeout (minutes)")
             value: Config.options.screensaver.timeoutMinutes
             from: 1
             to: 60
@@ -89,7 +94,7 @@ ContentPage {
         }
 
         ConfigSlider {
-            text: Translation.tr("Animation speed (%1x)").arg((Config.options.screensaver.speed ?? 1.0).toFixed(1))
+            text: Translation.tr("Speed: %1x").arg((Config.options.screensaver.speed ?? 1.0).toFixed(1))
             value: Config.options.screensaver.speed ?? 1.0
             usePercentTooltip: false
             buttonIcon: "speed"
@@ -105,22 +110,27 @@ ContentPage {
         }
 
         RippleButton {
-            Layout.fillWidth: true
-            implicitHeight: 40
-            buttonRadius: Appearance.rounding.normal
+            Layout.alignment: Qt.AlignLeft
+            implicitWidth: previewRow.implicitWidth + 28
+            implicitHeight: 36
+            buttonRadius: Appearance.rounding.full
             colBackground: Appearance.colors.colPrimary
             colBackgroundHover: Appearance.colors.colPrimaryHover
-            onClicked: Quickshell.execDetached(["qs", "ipc", "-c", "ii", "call", "screensaver", "show"])
+            onClicked: {
+                previewProc.running = false;
+                previewProc.running = true;
+            }
             contentItem: RowLayout {
+                id: previewRow
                 anchors.centerIn: parent
-                spacing: 8
+                spacing: 6
                 MaterialSymbol {
                     text: "play_arrow"
-                    iconSize: 20
+                    iconSize: 18
                     color: Appearance.m3colors.m3onPrimary
                 }
                 StyledText {
-                    text: Translation.tr("Preview Screensaver")
+                    text: Translation.tr("Preview")
                     color: Appearance.m3colors.m3onPrimary
                     font.pixelSize: Appearance.font.pixelSize.small
                     font.weight: Font.Medium
@@ -131,7 +141,7 @@ ContentPage {
 
     ContentSection {
         icon: "style"
-        title: Translation.tr("Screensaver Style")
+        title: Translation.tr("Style")
 
         ConfigSelectionArray {
             currentValue: Config.options.screensaver.mode
@@ -139,12 +149,12 @@ ContentPage {
                 Config.options.screensaver.mode = newValue;
             }
             options: [
-                { displayName: "DVD Bounce", icon: "album", value: "dvd" },
-                { displayName: "Matrix Rain", icon: "terminal", value: "matrix" },
+                { displayName: "DVD", icon: "album", value: "dvd" },
+                { displayName: "Matrix", icon: "terminal", value: "matrix" },
                 { displayName: "Starfield", icon: "auto_awesome", value: "starfield" },
                 { displayName: "Mystify", icon: "polyline", value: "mystify" },
                 { displayName: "XANA", icon: "adjust", value: "xana" },
-                { displayName: Translation.tr("Custom File"), icon: "folder_open", value: "custom" }
+                { displayName: Translation.tr("Custom"), icon: "folder_open", value: "custom" }
             ]
         }
     }
@@ -196,7 +206,7 @@ ContentPage {
                     { displayName: "Breathe", icon: "air", value: "breathe" },
                     { displayName: "Knight Rider", icon: "linear_scale", value: "knightrider" },
                     { displayName: "Spin", icon: "rotate_right", value: "spin" },
-                    { displayName: "DVD Bounce", icon: "open_with", value: "dvd" },
+                    { displayName: "DVD", icon: "open_with", value: "dvd" },
                     { displayName: "Float", icon: "waves", value: "float" },
                     { displayName: "None", icon: "block", value: "none" }
                 ]

@@ -284,7 +284,7 @@ Scope {
                         loops: MediaPlayer.Infinite
                         audioOutput: AudioOutput { muted: true }
                         videoOutput: vidOut
-                        onSourceChanged: if (source != "") play()
+                        onSourceChanged: if (source !== "") play()
                     }
                     VideoOutput {
                         id: vidOut
@@ -358,14 +358,28 @@ Scope {
                     }
                 }
 
-                // Dismiss on click, key, or deliberate mouse movement (>300ms after arming)
+                // Dismiss on click, key, or deliberate mouse movement (>12px after 600ms grace)
                 MouseArea {
                     anchors.fill: parent
                     hoverEnabled: true
                     cursorShape: Qt.BlankCursor
+                    property real startX: -1
+                    property real startY: -1
                     onPressed: root.hide()
-                    onPositionChanged: {
-                        if (Date.now() - root.armedAt > 350) root.hide();
+                    onPositionChanged: mouse => {
+                        if (Date.now() - root.armedAt < 600) {
+                            startX = mouse.x;
+                            startY = mouse.y;
+                            return;
+                        }
+                        if (startX < 0) {
+                            startX = mouse.x;
+                            startY = mouse.y;
+                            return;
+                        }
+                        if (Math.hypot(mouse.x - startX, mouse.y - startY) > 12) {
+                            root.hide();
+                        }
                     }
                 }
             }
