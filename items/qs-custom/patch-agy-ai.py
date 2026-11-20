@@ -1553,6 +1553,45 @@ def main() -> int:
         ],
     )
 
+    # 18. Workspaces.qml: dim active workspace indicator on unfocused monitors
+    ok &= patch_file(
+        ii / "modules/ii/bar/Workspaces.qml",
+        [
+            (
+                "monitorIsFocused",
+                "    readonly property HyprlandMonitor monitor: Hyprland.monitorFor(root.QsWindow.window?.screen)",
+                "    readonly property HyprlandMonitor monitor: Hyprland.monitorFor(root.QsWindow.window?.screen)\n"
+                "    readonly property bool monitorIsFocused: (Hyprland.focusedMonitor?.id == monitor?.id)",
+            ),
+            (
+                "root.monitorIsFocused ? Appearance.colors.colPrimary",
+                "        TrailingIndicator {\n"
+                "            id: activeIndicator\n"
+                "            anchors.fill: parent\n"
+                "            z: 2\n\n"
+                "            index: root.workspaceIndexInGroup\n"
+                "        }",
+                "        TrailingIndicator {\n"
+                "            id: activeIndicator\n"
+                "            anchors.fill: parent\n"
+                "            z: 2\n\n"
+                "            index: root.workspaceIndexInGroup\n"
+                "            color: root.monitorIsFocused ? Appearance.colors.colPrimary : ColorUtils.transparentize(Appearance.colors.colSecondary, 0.55)\n"
+                "        }",
+            ),
+            (
+                "Behavior on color { ColorAnimation",
+                "            contentLayer: StyledRectangle.ContentLayer.Group\n"
+                "            radius: indicatorThickness / 2\n"
+                "            color: Appearance.colors.colPrimary",
+                "            contentLayer: StyledRectangle.ContentLayer.Group\n"
+                "            radius: indicatorThickness / 2\n"
+                "            color: Appearance.colors.colPrimary\n"
+                "            Behavior on color { ColorAnimation { duration: 150 } }",
+            ),
+        ],
+    )
+
     return 0 if ok else 1
 
 
