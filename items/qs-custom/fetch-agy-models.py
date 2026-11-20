@@ -6,6 +6,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 
 EFFORT_ORDER = {"Low": 0, "Medium": 1, "High": 2, "XHigh": 3, "Max": 4}
 ANSI_RE = re.compile(r"\x1b\[[0-9;?]*[A-Za-z]|\r")
@@ -26,15 +27,21 @@ def main() -> int:
     env = dict(os.environ)
     env["BROWSER"] = "true"
     try:
-        res = subprocess.run(
-            [agy_bin, "models"],
-            capture_output=True,
-            text=True,
-            stdin=subprocess.DEVNULL,
-            timeout=8,
-            env=env,
-            check=False,
-        )
+        with tempfile.TemporaryDirectory() as tmpbin:
+            noop = os.path.join(tmpbin, "xdg-open")
+            with open(noop, "w", encoding="utf-8") as f:
+                f.write("#!/bin/sh\nexit 0\n")
+            os.chmod(noop, 0o755)
+            env["PATH"] = f"{tmpbin}:{env.get('PATH', '')}"
+            res = subprocess.run(
+                [agy_bin, "models"],
+                capture_output=True,
+                text=True,
+                stdin=subprocess.DEVNULL,
+                timeout=8,
+                env=env,
+                check=False,
+            )
     except subprocess.TimeoutExpired:
         print(json.dumps({"loggedIn": False, "models": [], "families": []}))
         return 0

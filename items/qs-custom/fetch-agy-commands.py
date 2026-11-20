@@ -4,23 +4,48 @@
 import json
 import os
 import subprocess
+import tempfile
 
 
 def main() -> int:
+    token_path = os.path.expanduser("~/.gemini/antigravity-cli/antigravity-oauth-token")
+    if not os.path.exists(token_path) or os.path.getsize(token_path) == 0:
+        print(json.dumps([
+            {"name": "login", "description": "Sign in / authenticate Antigravity CLI", "instant": True},
+            {"name": "clear", "description": "Start a new conversation", "instant": True},
+        ], ensure_ascii=False))
+        return 0
+
     agy_bin = os.path.expanduser("~/.local/bin/agy")
     if not os.path.exists(agy_bin):
         agy_bin = "agy"
 
-    res = subprocess.run(
-        [agy_bin, "-p", "/help", "--output-format", "stream-json"],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    env = dict(os.environ)
+    env["BROWSER"] = "true"
+    stdout = ""
+    try:
+        with tempfile.TemporaryDirectory() as tmpbin:
+            noop = os.path.join(tmpbin, "xdg-open")
+            with open(noop, "w", encoding="utf-8") as f:
+                f.write("#!/bin/sh\nexit 0\n")
+            os.chmod(noop, 0o755)
+            env["PATH"] = f"{tmpbin}:{env.get('PATH', '')}"
+            res = subprocess.run(
+                [agy_bin, "-p", "/help", "--output-format", "stream-json"],
+                capture_output=True,
+                text=True,
+                stdin=subprocess.DEVNULL,
+                timeout=8,
+                env=env,
+                check=False,
+            )
+            stdout = res.stdout
+    except subprocess.TimeoutExpired:
+        stdout = ""
 
     commands = []
     seen = set()
-    for line in res.stdout.splitlines():
+    for line in stdout.splitlines():
         line = line.strip()
         if not line.startswith("{"):
             continue
