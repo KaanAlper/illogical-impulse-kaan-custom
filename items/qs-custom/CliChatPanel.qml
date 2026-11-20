@@ -532,27 +532,7 @@ Item {
                     }
                 }
 
-                // Indeterminate progress bar while login terminal is active
-                Rectangle {
-                    visible: loginProc.running
-                    Layout.fillWidth: true
-                    implicitHeight: 4
-                    radius: Appearance.rounding.full
-                    color: Appearance.colors.colLayer3
-                    clip: true
-
-                    Rectangle {
-                        width: parent.width * 0.35
-                        height: parent.height
-                        radius: Appearance.rounding.full
-                        color: Appearance.colors.colPrimary
-                        SequentialAnimation on x {
-                            running: loginProc.running
-                            loops: Animation.Infinite
-                            NumberAnimation { from: -width; to: parent.width; duration: 1100; easing.type: Easing.InOutCubic }
-                        }
-                    }
-                }
+                // Clean spinner + status in RowLayout above (no extra bar needed)
             }
         }
 
