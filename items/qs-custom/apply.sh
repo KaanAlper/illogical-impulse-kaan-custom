@@ -19,84 +19,120 @@ set -u
 CUSTOM_DIR="$HOME/.config/quickshell-custom"
 II="$HOME/.config/quickshell/ii"
 BAR="$II/modules/ii/bar"
+FEATS="${DOTSYNC_FEATURES:-all}"
+
+has_feat() {
+    [ "$FEATS" = "all" ] && return 0
+    case ",$FEATS," in
+        *,"$1",*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
 
 if [ ! -d "$II" ]; then
     echo "✗ $II yok — quickshell ii config bulunamadı." >&2
     exit 1
 fi
 
-# 1) Restore the toggle script and the bar widgets into the dots tree.
+# 1) Restore selected files/scripts into the dots tree.
 mkdir -p "$II/scripts" "$BAR"
-cp "$CUSTOM_DIR/audio-mono-toggle.sh" "$II/scripts/audio-mono-toggle.sh"
-chmod +x "$II/scripts/audio-mono-toggle.sh"
-cp "$CUSTOM_DIR/AudioMonoToggle.qml" "$BAR/AudioMonoToggle.qml"
-cp "$CUSTOM_DIR/AudioOutputSwitcher.qml" "$BAR/AudioOutputSwitcher.qml"
-cp "$CUSTOM_DIR/sleep-inhibit-toggle.sh" "$II/scripts/sleep-inhibit-toggle.sh"
-chmod +x "$II/scripts/sleep-inhibit-toggle.sh"
-cp "$CUSTOM_DIR/apply-workspace-split.py" "$II/scripts/apply-workspace-split.py"
-chmod +x "$II/scripts/apply-workspace-split.py"
-cp "$CUSTOM_DIR/pw-app-ancestry.py" "$II/scripts/pw-app-ancestry.py"
-chmod +x "$II/scripts/pw-app-ancestry.py"
-cp "$CUSTOM_DIR/apply-screensaver-idle.py" "$II/scripts/apply-screensaver-idle.py"
-chmod +x "$II/scripts/apply-screensaver-idle.py"
-cp "$CUSTOM_DIR/apply-plymouth-logo.sh" "$II/scripts/apply-plymouth-logo.sh"
-chmod +x "$II/scripts/apply-plymouth-logo.sh"
-mkdir -p "$II/modules/ii/screensaver" "$II/modules/settings"
-cp "$CUSTOM_DIR/ScreensaverOverlay.qml" "$II/modules/ii/screensaver/ScreensaverOverlay.qml"
-cp "$CUSTOM_DIR/xana-logo.png" "$II/modules/ii/screensaver/xana-logo.png"
-cp "$CUSTOM_DIR/ScreensaverConfig.qml" "$II/modules/settings/ScreensaverConfig.qml"
-mkdir -p "$HOME/.local/share/icons/hicolor/128x128/apps"
-if [ -f /usr/share/icons/hicolor/128x128/apps/zen-browser.png ]; then
-    ln -sf /usr/share/icons/hicolor/128x128/apps/zen-browser.png "$HOME/.local/share/icons/hicolor/128x128/apps/zen-browser.png"
-    ln -sf /usr/share/icons/hicolor/128x128/apps/zen-browser.png "$HOME/.local/share/icons/hicolor/128x128/apps/zen.png"
+if has_feat "bar-widgets" || has_feat "audio-mono-toggle"; then
+    cp "$CUSTOM_DIR/audio-mono-toggle.sh" "$II/scripts/audio-mono-toggle.sh"
+    chmod +x "$II/scripts/audio-mono-toggle.sh"
+    cp "$CUSTOM_DIR/AudioMonoToggle.qml" "$BAR/AudioMonoToggle.qml"
 fi
-if [ -f /usr/share/icons/hicolor/128x128/apps/ai.storyteller.artcraft-launcher.png ]; then
-    ln -sf /usr/share/icons/hicolor/128x128/apps/ai.storyteller.artcraft-launcher.png "$HOME/.local/share/icons/hicolor/128x128/apps/ai.storyteller.artcraft-launcher.png"
-    ln -sf /usr/share/icons/hicolor/128x128/apps/ai.storyteller.artcraft-launcher.png "$HOME/.local/share/icons/hicolor/128x128/apps/artcraft-launcher.png"
+if has_feat "bar-widgets" || has_feat "audio-output-switcher"; then
+    cp "$CUSTOM_DIR/AudioOutputSwitcher.qml" "$BAR/AudioOutputSwitcher.qml"
 fi
-if [ -f /usr/share/icons/hicolor/index.theme ]; then
-    ln -sf /usr/share/icons/hicolor/index.theme "$HOME/.local/share/icons/hicolor/index.theme"
+if has_feat "bar-widgets" || has_feat "sleep-inhibit-toggle"; then
+    cp "$CUSTOM_DIR/sleep-inhibit-toggle.sh" "$II/scripts/sleep-inhibit-toggle.sh"
+    chmod +x "$II/scripts/sleep-inhibit-toggle.sh"
+    cp "$CUSTOM_DIR/SleepInhibitToggle.qml" "$BAR/SleepInhibitToggle.qml"
 fi
-if command -v gtk-update-icon-cache >/dev/null 2>&1; then
-    gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" >/dev/null 2>&1 || true
+if has_feat "bar-widgets" || has_feat "app-volume-mixer"; then
+    cp "$CUSTOM_DIR/pw-app-ancestry.py" "$II/scripts/pw-app-ancestry.py"
+    chmod +x "$II/scripts/pw-app-ancestry.py"
+    cp "$CUSTOM_DIR/AppVolumeMixer.qml" "$BAR/AppVolumeMixer.qml"
 fi
-cp "$CUSTOM_DIR/everything-update.sh" "$II/scripts/everything-update.sh"
-chmod +x "$II/scripts/everything-update.sh"
-cp "$CUSTOM_DIR/everything-query.py" "$II/scripts/everything-query.py"
-chmod +x "$II/scripts/everything-query.py"
-cp "$CUSTOM_DIR/FileSearch.qml" "$II/services/FileSearch.qml"
-cp "$CUSTOM_DIR/EverythingToolbar.qml" "$II/modules/ii/overview/EverythingToolbar.qml"
-cp "$CUSTOM_DIR/EverythingMenus.qml" "$II/modules/ii/overview/EverythingMenus.qml"
-mkdir -p "$II/scripts/ai" "$II/modules/ii/sidebarLeft" "$II/modules/ii/sidebarLeft/anime"
-cp "$CUSTOM_DIR/fetch-agy-models.py" "$II/scripts/ai/fetch-agy-models.py"
-chmod +x "$II/scripts/ai/fetch-agy-models.py"
-cp "$CUSTOM_DIR/fetch-agy-commands.py" "$II/scripts/ai/fetch-agy-commands.py"
-chmod +x "$II/scripts/ai/fetch-agy-commands.py"
-cp "$CUSTOM_DIR/fetch-cli-meta.py" "$II/scripts/ai/fetch-cli-meta.py"
-chmod +x "$II/scripts/ai/fetch-cli-meta.py"
-cp "$CUSTOM_DIR/agy-config.py" "$II/scripts/ai/agy-config.py"
-chmod +x "$II/scripts/ai/agy-config.py"
-cp "$CUSTOM_DIR/parallel-fetch-image.py" "$II/scripts/ai/parallel-fetch-image.py"
-chmod +x "$II/scripts/ai/parallel-fetch-image.py"
-cp "$CUSTOM_DIR/AgyModelPicker.qml" "$II/modules/ii/sidebarLeft/AgyModelPicker.qml"
-cp "$CUSTOM_DIR/AgyConfigPicker.qml" "$II/modules/ii/sidebarLeft/AgyConfigPicker.qml"
-cp "$CUSTOM_DIR/CliSlashList.qml" "$II/modules/ii/sidebarLeft/CliSlashList.qml"
-cp "$CUSTOM_DIR/CliChatPanel.qml" "$II/modules/ii/sidebarLeft/CliChatPanel.qml"
-cp "$CUSTOM_DIR/AnimeImageViewer.qml" "$II/modules/ii/sidebarLeft/anime/AnimeImageViewer.qml"
-cp "$CUSTOM_DIR/SleepInhibitToggle.qml" "$BAR/SleepInhibitToggle.qml"
-cp "$CUSTOM_DIR/AppVolumeMixer.qml" "$BAR/AppVolumeMixer.qml"
+if has_feat "workspace-split"; then
+    cp "$CUSTOM_DIR/apply-workspace-split.py" "$II/scripts/apply-workspace-split.py"
+    chmod +x "$II/scripts/apply-workspace-split.py"
+fi
+if has_feat "screensaver" || has_feat "lock-power"; then
+    cp "$CUSTOM_DIR/apply-screensaver-idle.py" "$II/scripts/apply-screensaver-idle.py"
+    chmod +x "$II/scripts/apply-screensaver-idle.py"
+fi
+if has_feat "lock-power"; then
+    cp "$CUSTOM_DIR/apply-plymouth-logo.sh" "$II/scripts/apply-plymouth-logo.sh"
+    chmod +x "$II/scripts/apply-plymouth-logo.sh"
+fi
+if has_feat "screensaver"; then
+    mkdir -p "$II/modules/ii/screensaver" "$II/modules/settings"
+    cp "$CUSTOM_DIR/ScreensaverOverlay.qml" "$II/modules/ii/screensaver/ScreensaverOverlay.qml"
+    cp "$CUSTOM_DIR/xana-logo.png" "$II/modules/ii/screensaver/xana-logo.png"
+    cp "$CUSTOM_DIR/ScreensaverConfig.qml" "$II/modules/settings/ScreensaverConfig.qml"
+fi
+if has_feat "icon-cache"; then
+    mkdir -p "$HOME/.local/share/icons/hicolor/128x128/apps"
+    if [ -f /usr/share/icons/hicolor/128x128/apps/zen-browser.png ]; then
+        ln -sf /usr/share/icons/hicolor/128x128/apps/zen-browser.png "$HOME/.local/share/icons/hicolor/128x128/apps/zen-browser.png"
+        ln -sf /usr/share/icons/hicolor/128x128/apps/zen-browser.png "$HOME/.local/share/icons/hicolor/128x128/apps/zen.png"
+    fi
+    if [ -f /usr/share/icons/hicolor/128x128/apps/ai.storyteller.artcraft-launcher.png ]; then
+        ln -sf /usr/share/icons/hicolor/128x128/apps/ai.storyteller.artcraft-launcher.png "$HOME/.local/share/icons/hicolor/128x128/apps/ai.storyteller.artcraft-launcher.png"
+        ln -sf /usr/share/icons/hicolor/128x128/apps/ai.storyteller.artcraft-launcher.png "$HOME/.local/share/icons/hicolor/128x128/apps/artcraft-launcher.png"
+    fi
+    if [ -f /usr/share/icons/hicolor/index.theme ]; then
+        ln -sf /usr/share/icons/hicolor/index.theme "$HOME/.local/share/icons/hicolor/index.theme"
+    fi
+    if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+        gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" >/dev/null 2>&1 || true
+    fi
+fi
+if has_feat "everything-search"; then
+    cp "$CUSTOM_DIR/everything-update.sh" "$II/scripts/everything-update.sh"
+    chmod +x "$II/scripts/everything-update.sh"
+    cp "$CUSTOM_DIR/everything-query.py" "$II/scripts/everything-query.py"
+    chmod +x "$II/scripts/everything-query.py"
+    cp "$CUSTOM_DIR/FileSearch.qml" "$II/services/FileSearch.qml"
+    cp "$CUSTOM_DIR/EverythingToolbar.qml" "$II/modules/ii/overview/EverythingToolbar.qml"
+    cp "$CUSTOM_DIR/EverythingMenus.qml" "$II/modules/ii/overview/EverythingMenus.qml"
+fi
+if has_feat "ai-sidebar"; then
+    mkdir -p "$II/scripts/ai" "$II/modules/ii/sidebarLeft" "$II/modules/ii/sidebarLeft/anime"
+    cp "$CUSTOM_DIR/fetch-agy-models.py" "$II/scripts/ai/fetch-agy-models.py"
+    chmod +x "$II/scripts/ai/fetch-agy-models.py"
+    cp "$CUSTOM_DIR/fetch-agy-commands.py" "$II/scripts/ai/fetch-agy-commands.py"
+    chmod +x "$II/scripts/ai/fetch-agy-commands.py"
+    cp "$CUSTOM_DIR/fetch-cli-meta.py" "$II/scripts/ai/fetch-cli-meta.py"
+    chmod +x "$II/scripts/ai/fetch-cli-meta.py"
+    cp "$CUSTOM_DIR/agy-config.py" "$II/scripts/ai/agy-config.py"
+    chmod +x "$II/scripts/ai/agy-config.py"
+    cp "$CUSTOM_DIR/parallel-fetch-image.py" "$II/scripts/ai/parallel-fetch-image.py"
+    chmod +x "$II/scripts/ai/parallel-fetch-image.py"
+    cp "$CUSTOM_DIR/AgyModelPicker.qml" "$II/modules/ii/sidebarLeft/AgyModelPicker.qml"
+    cp "$CUSTOM_DIR/AgyConfigPicker.qml" "$II/modules/ii/sidebarLeft/AgyConfigPicker.qml"
+    cp "$CUSTOM_DIR/CliSlashList.qml" "$II/modules/ii/sidebarLeft/CliSlashList.qml"
+    cp "$CUSTOM_DIR/CliChatPanel.qml" "$II/modules/ii/sidebarLeft/CliChatPanel.qml"
+    cp "$CUSTOM_DIR/AnimeImageViewer.qml" "$II/modules/ii/sidebarLeft/anime/AnimeImageViewer.qml"
+fi
 
 # 2) Idempotently insert each widget into BarContent.qml (right section, before SysTray).
 #    Order ends up: ... SleepInhibitToggle, AudioMonoToggle, AudioOutputSwitcher, AppVolumeMixer, SysTray ...
 python3 - "$BAR/BarContent.qml" <<'PY'
-import sys
+import os, sys
 path = sys.argv[1]
+feats = os.environ.get("DOTSYNC_FEATURES", "all")
+fset = {x.strip() for x in feats.split(",") if x.strip()}
+def want_widget(fid):
+    return feats == "all" or "bar-widgets" in fset or fid in fset
+
 with open(path, encoding="utf-8") as f:
     src = f.read()
 
 # Each widget: name used for the "already patched?" guard, and the block to insert.
 widgets = [
-    ("SleepInhibitToggle",
+    ("sleep-inhibit-toggle", "SleepInhibitToggle",
      "            SleepInhibitToggle {\n"
      "                visible: root.useShortenedForm < 2\n"
      "                Layout.alignment: Qt.AlignVCenter\n"
@@ -104,7 +140,7 @@ widgets = [
      "                Layout.rightMargin: 4\n"
      "            }\n"
      "\n"),
-    ("AudioMonoToggle",
+    ("audio-mono-toggle", "AudioMonoToggle",
      "            AudioMonoToggle {\n"
      "                visible: root.useShortenedForm < 2\n"
      "                Layout.alignment: Qt.AlignVCenter\n"
@@ -112,7 +148,7 @@ widgets = [
      "                Layout.rightMargin: 4\n"
      "            }\n"
      "\n"),
-    ("AudioOutputSwitcher",
+    ("audio-output-switcher", "AudioOutputSwitcher",
      "            AudioOutputSwitcher {\n"
      "                visible: root.useShortenedForm < 2\n"
      "                Layout.alignment: Qt.AlignVCenter\n"
@@ -120,7 +156,7 @@ widgets = [
      "                Layout.rightMargin: 4\n"
      "            }\n"
      "\n"),
-    ("AppVolumeMixer",
+    ("app-volume-mixer", "AppVolumeMixer",
      "            AppVolumeMixer {\n"
      "                visible: root.useShortenedForm < 2\n"
      "                Layout.alignment: Qt.AlignVCenter\n"
@@ -131,7 +167,9 @@ widgets = [
 ]
 
 inserted, skipped, missing = [], [], False
-for name, block in widgets:
+for fid, name, block in widgets:
+    if not want_widget(fid):
+        continue
     if name in src:
         skipped.append(name)
         continue
@@ -205,22 +243,26 @@ PY_CFG
 
 # 2c) Howdy face unlock on the lock screen (pam config + LockContext.qml patch).
 #     LockContext.qml is in installed_listfile, so a dots update reverts it.
-LOCK="$II/modules/common/panels/lock"
-if [ -d "$LOCK" ]; then
-    mkdir -p "$LOCK/pam"
-    cp "$CUSTOM_DIR/pam/howdy.conf" "$LOCK/pam/howdy.conf"
-    python3 "$CUSTOM_DIR/patch-lock-howdy.py" "$II" || rc=1
-else
-    echo "  UYARI: $LOCK yok, howdy yaması atlandı."
+if has_feat "howdy-lock"; then
+    LOCK="$II/modules/common/panels/lock"
+    if [ -d "$LOCK" ]; then
+        mkdir -p "$LOCK/pam"
+        cp "$CUSTOM_DIR/pam/howdy.conf" "$LOCK/pam/howdy.conf"
+        python3 "$CUSTOM_DIR/patch-lock-howdy.py" "$II" || rc=1
+    else
+        echo "  UYARI: $LOCK yok, howdy yaması atlandı."
+    fi
 fi
 
 # 2d) Everything-style (#) file search in Overview (Super+B / # prefix).
-python3 "$CUSTOM_DIR/patch-everything.py" "$II" || rc=1
+if has_feat "everything-search"; then
+    python3 "$CUSTOM_DIR/patch-everything.py" "$II" || rc=1
+fi
 
 # 2d-ai) Antigravity (agy) as default no-key AI backend in Super+A sidebar.
 python3 "$CUSTOM_DIR/patch-agy-ai.py" "$II" || rc=1
 STATES_JSON="$HOME/.local/state/quickshell/states.json"
-if [ -f "$STATES_JSON" ]; then
+if has_feat "ai-sidebar" && [ -f "$STATES_JSON" ]; then
     python3 - "$STATES_JSON" <<'PY_AI'
 import json, pathlib, sys
 p = pathlib.Path(sys.argv[1])
@@ -261,7 +303,7 @@ PY_TR
 
 # 2e) User systemd timer to keep the plocate Everything index fresh.
 SYSTEMD_USER="$HOME/.config/systemd/user"
-if command -v systemctl >/dev/null 2>&1; then
+if has_feat "everything-search" && command -v systemctl >/dev/null 2>&1; then
     mkdir -p "$SYSTEMD_USER"
     cat > "$SYSTEMD_USER/everything-index.service" <<EOF
 [Unit]

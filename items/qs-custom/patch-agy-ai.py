@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
 """Idempotently patch Quickshell ii Ai.qml & AiChat.qml for native Antigravity (agy) CLI integration."""
 
+import os
 import pathlib
 import sys
+
+_FEATS = os.environ.get("DOTSYNC_FEATURES", "all")
+_FEAT_SET = {x.strip() for x in _FEATS.split(",") if x.strip()}
+
+def has_feat(name: str) -> bool:
+    return _FEATS == "all" or name in _FEAT_SET
 
 
 def patch_file(path: pathlib.Path, edits: list[tuple[str, str, str]]) -> bool:
@@ -34,1578 +41,1586 @@ def main() -> int:
     ii = pathlib.Path(sys.argv[1])
     ok = True
 
-    # 1. Ai.qml: dynamic agy models + persistent agyConversationId + stream-json requester
-    ok &= patch_file(
-        ii / "services/Ai.qml",
-        [
-            (
-                '"antigravity": aiModelComponent.createObject',
-                '        "gemini-2.5-flash": aiModelComponent.createObject(this, {',
-                '        "antigravity": aiModelComponent.createObject(this, {\n'
-                '            "name": "Antigravity (agy)",\n'
-                '            "icon": "google-gemini-symbolic",\n'
-                '            "description": Translation.tr("Local CLI | Antigravity agent (no API key needed)"),\n'
-                '            "homepage": "https://antigravity.google",\n'
-                '            "endpoint": "agy",\n'
-                '            "model": "antigravity",\n'
-                '            "requires_key": false,\n'
-                '            "api_format": "agy",\n'
-                '        }),\n'
-                '        "gemini-2.5-flash": aiModelComponent.createObject(this, {',
-            ),
-            (
-                "property string agyConversationId:",
-                "    property var modelList: Object.keys(root.models)",
-                "    property var modelList: Object.keys(root.models)\n"
-                "    property var agyFamilies: []\n"
-                "    property var agyCommands: []\n"
-                "    property string agyConversationId: \"\"\n\n"
-                "    function refreshAgyModels() {\n"
-                "        getAgyModelsProc.running = false;\n"
-                "        getAgyModelsProc.running = true;\n"
-                "    }\n\n"
-                "    Process {\n"
-                "        id: getAgyCommandsProc\n"
-                "        command: [\"python3\", CF.FileUtils.trimFileProtocol(`${Directories.scriptPath}/ai/fetch-agy-commands.py`)]\n"
-                "        running: true\n"
-                "        stdout: StdioCollector {\n"
-                "            onStreamFinished: {\n"
-                "                try {\n"
-                "                    const list = JSON.parse(text);\n"
-                "                    if (Array.isArray(list) && list.length > 0)\n"
-                "                        root.agyCommands = list;\n"
-                "                } catch (e) {\n"
-                "                    console.log(\"[AI] Could not fetch agy commands:\", e);\n"
-                "                }\n"
-                "            }\n"
-                "        }\n"
-                "    }\n\n"
-                "    Process {\n"
-                "        id: getAgyModelsProc\n"
-                "        command: [\"python3\", CF.FileUtils.trimFileProtocol(`${Directories.scriptPath}/ai/fetch-agy-models.py`)]\n"
-                "        running: true\n"
-                "        stdout: StdioCollector {\n"
-                "            onStreamFinished: {\n"
-                "                try {\n"
-                "                    const payload = JSON.parse(text);\n"
-                "                    const list = payload.models ?? [];\n"
-                "                    const updated = {};\n"
-                "                    for (let i = 0; i < list.length; i++) {\n"
-                "                        const m = list[i];\n"
-                "                        updated[m.id] = aiModelComponent.createObject(root, {\n"
-                "                            \"name\": m.name,\n"
-                "                            \"icon\": \"google-gemini-symbolic\",\n"
-                "                            \"description\": Translation.tr(\"Local CLI | Antigravity agent (no API key needed)\"),\n"
-                "                            \"homepage\": \"https://antigravity.google\",\n"
-                "                            \"endpoint\": \"agy\",\n"
-                "                            \"model\": m.id,\n"
-                "                            \"requires_key\": false,\n"
-                "                            \"api_format\": \"agy\",\n"
-                "                        });\n"
-                "                    }\n"
-                "                    if (list.length > 0) {\n"
-                "                        root.models = updated;\n"
-                "                        root.modelList = Object.keys(root.models);\n"
-                "                        root.agyFamilies = payload.families ?? [];\n"
-                "                        if (!root.currentModelId || !(root.currentModelId in root.models)) {\n"
-                "                            const pref = updated[\"gemini-4-hydrogen-medium\"] ? \"gemini-4-hydrogen-medium\" : list[0].id;\n"
-                "                            root.setModel(pref, false);\n"
-                "                        }\n"
-                "                    }\n"
-                "                } catch (e) {\n"
-                "                    console.log(\"[AI] Could not fetch agy models:\", e);\n"
-                "                }\n"
-                "            }\n"
-                "        }\n"
-                "    }",
-            ),
-            (
-                "function stopGeneration()",
-                "    function clearMessages() {",
-                "    readonly property bool isGenerating: requester.running\n\n"
-                "    function stopGeneration() {\n"
-                "        if (!requester.running) return;\n"
-                "        requester.running = false;\n"
-                "        if (requester.message) {\n"
-                "            requester.message.thinking = false;\n"
-                "            requester.markDone();\n"
-                "        }\n"
-                "    }\n\n"
-                "    function clearMessages() {\n"
-                "        root.agyConversationId = \"\";",
-            ),
-            (
-                'model?.api_format === "agy"',
-                '            // Fetch API keys if needed\n'
-                '            if (model?.requires_key && !KeyringStorage.loaded) KeyringStorage.fetchKeyringData();',
-                '            if (model?.api_format === "agy") {\n'
-                '                const messageArray = root.messageIDs.map(id => root.messageByID[id]);\n'
-                '                const filtered = messageArray.filter(m => m.role !== Ai.interfaceRole);\n'
-                '                const lastUser = filtered[filtered.length - 1];\n'
-                '                let promptText = lastUser?.rawContent ?? lastUser?.content ?? "";\n'
-                '                if (!root.agyConversationId && filtered.length > 1) {\n'
-                '                    promptText = filtered.slice(-10).map(m => (m.role === "user" ? "User: " : "Assistant: ") + (m.rawContent || m.content)).join("\\n\\n");\n'
-                '                }\n'
-                '                if (root.pendingFilePath && root.pendingFilePath.length > 0) {\n'
-                '                    promptText += "\\n\\n[Attached file: " + root.pendingFilePath + "]";\n'
-                '                }\n'
-                '                requester.message = root.aiMessageComponent.createObject(root, {\n'
-                '                    "role": "assistant",\n'
-                '                    "model": currentModelId,\n'
-                '                    "content": "",\n'
-                '                    "rawContent": "",\n'
-                '                    "thinking": true,\n'
-                '                    "done": false,\n'
-                '                });\n'
-                '                if (root.pendingFilePath && root.pendingFilePath.length > 0) {\n'
-                '                    requester.message.localFilePath = root.pendingFilePath;\n'
-                '                    root.pendingFilePath = "";\n'
-                '                }\n'
-                '                const id = idForMessage(requester.message);\n'
-                '                root.messageIDs = [...root.messageIDs, id];\n'
-                '                root.messageByID[id] = requester.message;\n'
-                '                const agyBin = CF.FileUtils.trimFileProtocol(`${Directories.home}/.local/bin/agy`);\n'
-                '                const modelArgs = (model.model && model.model !== "antigravity") ? ["--model", model.model] : [];\n'
-                '                const convArgs = root.agyConversationId ? ["--conversation", root.agyConversationId] : [];\n'
-                '                const slashArgs = promptText.trim().startsWith("/") ? [] : ["--disable-slash-commands"];\n'
-                '                requester.command = [agyBin, "-p", promptText, ...modelArgs, ...convArgs, "--output-format", "stream-json", ...slashArgs];\n'
-                '                requester.running = true;\n'
-                '                return;\n'
-                '            }\n\n'
-                '            // Fetch API keys if needed\n'
-                '            if (model?.requires_key && !KeyringStorage.loaded) KeyringStorage.fetchKeyringData();',
-            ),
-            (
-                'models[requester.message.model]?.api_format === "agy"',
-                '                // Handle response line\n'
-                '                try {',
-                '                if (models[requester.message.model]?.api_format === "agy") {\n'
-                '                    try {\n'
-                '                        const ev = JSON.parse(data);\n'
-                '                        if (ev.conversation_id) root.agyConversationId = ev.conversation_id;\n'
-                '                        if (ev.event === "step_update" && ev.step_update?.step_type === "agent_response") {\n'
-                '                            if (ev.step_update.conversation_id) root.agyConversationId = ev.step_update.conversation_id;\n'
-                '                            if (ev.step_update.text_delta) {\n'
-                '                                requester.message.rawContent += ev.step_update.text_delta;\n'
-                '                                requester.message.content += ev.step_update.text_delta;\n'
-                '                            }\n'
-                '                            if (ev.step_update.usage) {\n'
-                '                                root.tokenCount.input = ev.step_update.usage.input_tokens ?? -1;\n'
-                '                                root.tokenCount.output = ev.step_update.usage.output_tokens ?? -1;\n'
-                '                                root.tokenCount.total = ev.step_update.usage.total_tokens ?? -1;\n'
-                '                            }\n'
-                '                        } else if (ev.event === "result" && ev.result) {\n'
-                '                            if (ev.result.conversation_id) root.agyConversationId = ev.result.conversation_id;\n'
-                '                            if (ev.result.response && requester.message.rawContent.length === 0) {\n'
-                '                                requester.message.rawContent = ev.result.response;\n'
-                '                                requester.message.content = ev.result.response;\n'
-                '                            }\n'
-                '                            if (ev.result.usage) {\n'
-                '                                root.tokenCount.input = ev.result.usage.input_tokens ?? -1;\n'
-                '                                root.tokenCount.output = ev.result.usage.output_tokens ?? -1;\n'
-                '                                root.tokenCount.total = ev.result.usage.total_tokens ?? -1;\n'
-                '                            }\n'
-                '                        }\n'
-                '                    } catch (e) {}\n'
-                '                    return;\n'
-                '                }\n\n'
-                '                // Handle response line\n'
-                '                try {',
-            ),
-            (
-                "function addUserModels() { return; }",
-                "    function addUserModels() {\n        (Config?.options.ai?.extraModels ?? []).forEach(model => {",
-                "    function addUserModels() { return; }\n"
-                "    function _unusedAddUserModels() {\n        (Config?.options.ai?.extraModels ?? []).forEach(model => {",
-            ),
-            (
-                'if (models[requester.message.model]?.api_format === "agy") {\n                if (requester.message.thinking)',
-                '        onExited: (exitCode, exitStatus) => {\n'
-                '            const result = requester.currentStrategy.onRequestFinished(requester.message);',
-                '        onExited: (exitCode, exitStatus) => {\n'
-                '            if (models[requester.message.model]?.api_format === "agy") {\n'
-                '                if (requester.message.thinking) requester.message.thinking = false;\n'
-                '                if (exitCode !== 0 && requester.message.content.trim().length === 0) {\n'
-                '                    requester.message.content = "agy CLI error (exit " + exitCode + ")";\n'
-                '                }\n'
-                '                requester.markDone();\n'
-                '                return;\n'
-                '            }\n'
-                '            const result = requester.currentStrategy.onRequestFinished(requester.message);',
-            ),
-            (
-                'models["antigravity"] ?? models[modelList[0]]',
-                '    function getModel() {\n'
-                '        return models[currentModelId];\n'
-                '    }',
-                '    function getModel() {\n'
-                '        return models[currentModelId] ?? models["antigravity"] ?? models[modelList[0]];\n'
-                '    }',
-            ),
-        ],
-    )
+    if has_feat("ai-sidebar"):
+        # 1. Ai.qml: dynamic agy models + persistent agyConversationId + stream-json requester
+        ok &= patch_file(
+            ii / "services/Ai.qml",
+            [
+                (
+                    '"antigravity": aiModelComponent.createObject',
+                    '        "gemini-2.5-flash": aiModelComponent.createObject(this, {',
+                    '        "antigravity": aiModelComponent.createObject(this, {\n'
+                    '            "name": "Antigravity (agy)",\n'
+                    '            "icon": "google-gemini-symbolic",\n'
+                    '            "description": Translation.tr("Local CLI | Antigravity agent (no API key needed)"),\n'
+                    '            "homepage": "https://antigravity.google",\n'
+                    '            "endpoint": "agy",\n'
+                    '            "model": "antigravity",\n'
+                    '            "requires_key": false,\n'
+                    '            "api_format": "agy",\n'
+                    '        }),\n'
+                    '        "gemini-2.5-flash": aiModelComponent.createObject(this, {',
+                ),
+                (
+                    "property string agyConversationId:",
+                    "    property var modelList: Object.keys(root.models)",
+                    "    property var modelList: Object.keys(root.models)\n"
+                    "    property var agyFamilies: []\n"
+                    "    property var agyCommands: []\n"
+                    "    property string agyConversationId: \"\"\n\n"
+                    "    function refreshAgyModels() {\n"
+                    "        getAgyModelsProc.running = false;\n"
+                    "        getAgyModelsProc.running = true;\n"
+                    "    }\n\n"
+                    "    Process {\n"
+                    "        id: getAgyCommandsProc\n"
+                    "        command: [\"python3\", CF.FileUtils.trimFileProtocol(`${Directories.scriptPath}/ai/fetch-agy-commands.py`)]\n"
+                    "        running: true\n"
+                    "        stdout: StdioCollector {\n"
+                    "            onStreamFinished: {\n"
+                    "                try {\n"
+                    "                    const list = JSON.parse(text);\n"
+                    "                    if (Array.isArray(list) && list.length > 0)\n"
+                    "                        root.agyCommands = list;\n"
+                    "                } catch (e) {\n"
+                    "                    console.log(\"[AI] Could not fetch agy commands:\", e);\n"
+                    "                }\n"
+                    "            }\n"
+                    "        }\n"
+                    "    }\n\n"
+                    "    Process {\n"
+                    "        id: getAgyModelsProc\n"
+                    "        command: [\"python3\", CF.FileUtils.trimFileProtocol(`${Directories.scriptPath}/ai/fetch-agy-models.py`)]\n"
+                    "        running: true\n"
+                    "        stdout: StdioCollector {\n"
+                    "            onStreamFinished: {\n"
+                    "                try {\n"
+                    "                    const payload = JSON.parse(text);\n"
+                    "                    const list = payload.models ?? [];\n"
+                    "                    const updated = {};\n"
+                    "                    for (let i = 0; i < list.length; i++) {\n"
+                    "                        const m = list[i];\n"
+                    "                        updated[m.id] = aiModelComponent.createObject(root, {\n"
+                    "                            \"name\": m.name,\n"
+                    "                            \"icon\": \"google-gemini-symbolic\",\n"
+                    "                            \"description\": Translation.tr(\"Local CLI | Antigravity agent (no API key needed)\"),\n"
+                    "                            \"homepage\": \"https://antigravity.google\",\n"
+                    "                            \"endpoint\": \"agy\",\n"
+                    "                            \"model\": m.id,\n"
+                    "                            \"requires_key\": false,\n"
+                    "                            \"api_format\": \"agy\",\n"
+                    "                        });\n"
+                    "                    }\n"
+                    "                    if (list.length > 0) {\n"
+                    "                        root.models = updated;\n"
+                    "                        root.modelList = Object.keys(root.models);\n"
+                    "                        root.agyFamilies = payload.families ?? [];\n"
+                    "                        if (!root.currentModelId || !(root.currentModelId in root.models)) {\n"
+                    "                            const pref = updated[\"gemini-4-hydrogen-medium\"] ? \"gemini-4-hydrogen-medium\" : list[0].id;\n"
+                    "                            root.setModel(pref, false);\n"
+                    "                        }\n"
+                    "                    }\n"
+                    "                } catch (e) {\n"
+                    "                    console.log(\"[AI] Could not fetch agy models:\", e);\n"
+                    "                }\n"
+                    "            }\n"
+                    "        }\n"
+                    "    }",
+                ),
+                (
+                    "function stopGeneration()",
+                    "    function clearMessages() {",
+                    "    readonly property bool isGenerating: requester.running\n\n"
+                    "    function stopGeneration() {\n"
+                    "        if (!requester.running) return;\n"
+                    "        requester.running = false;\n"
+                    "        if (requester.message) {\n"
+                    "            requester.message.thinking = false;\n"
+                    "            requester.markDone();\n"
+                    "        }\n"
+                    "    }\n\n"
+                    "    function clearMessages() {\n"
+                    "        root.agyConversationId = \"\";",
+                ),
+                (
+                    'model?.api_format === "agy"',
+                    '            // Fetch API keys if needed\n'
+                    '            if (model?.requires_key && !KeyringStorage.loaded) KeyringStorage.fetchKeyringData();',
+                    '            if (model?.api_format === "agy") {\n'
+                    '                const messageArray = root.messageIDs.map(id => root.messageByID[id]);\n'
+                    '                const filtered = messageArray.filter(m => m.role !== Ai.interfaceRole);\n'
+                    '                const lastUser = filtered[filtered.length - 1];\n'
+                    '                let promptText = lastUser?.rawContent ?? lastUser?.content ?? "";\n'
+                    '                if (!root.agyConversationId && filtered.length > 1) {\n'
+                    '                    promptText = filtered.slice(-10).map(m => (m.role === "user" ? "User: " : "Assistant: ") + (m.rawContent || m.content)).join("\\n\\n");\n'
+                    '                }\n'
+                    '                if (root.pendingFilePath && root.pendingFilePath.length > 0) {\n'
+                    '                    promptText += "\\n\\n[Attached file: " + root.pendingFilePath + "]";\n'
+                    '                }\n'
+                    '                requester.message = root.aiMessageComponent.createObject(root, {\n'
+                    '                    "role": "assistant",\n'
+                    '                    "model": currentModelId,\n'
+                    '                    "content": "",\n'
+                    '                    "rawContent": "",\n'
+                    '                    "thinking": true,\n'
+                    '                    "done": false,\n'
+                    '                });\n'
+                    '                if (root.pendingFilePath && root.pendingFilePath.length > 0) {\n'
+                    '                    requester.message.localFilePath = root.pendingFilePath;\n'
+                    '                    root.pendingFilePath = "";\n'
+                    '                }\n'
+                    '                const id = idForMessage(requester.message);\n'
+                    '                root.messageIDs = [...root.messageIDs, id];\n'
+                    '                root.messageByID[id] = requester.message;\n'
+                    '                const agyBin = CF.FileUtils.trimFileProtocol(`${Directories.home}/.local/bin/agy`);\n'
+                    '                const modelArgs = (model.model && model.model !== "antigravity") ? ["--model", model.model] : [];\n'
+                    '                const convArgs = root.agyConversationId ? ["--conversation", root.agyConversationId] : [];\n'
+                    '                const slashArgs = promptText.trim().startsWith("/") ? [] : ["--disable-slash-commands"];\n'
+                    '                requester.command = [agyBin, "-p", promptText, ...modelArgs, ...convArgs, "--output-format", "stream-json", ...slashArgs];\n'
+                    '                requester.running = true;\n'
+                    '                return;\n'
+                    '            }\n\n'
+                    '            // Fetch API keys if needed\n'
+                    '            if (model?.requires_key && !KeyringStorage.loaded) KeyringStorage.fetchKeyringData();',
+                ),
+                (
+                    'models[requester.message.model]?.api_format === "agy"',
+                    '                // Handle response line\n'
+                    '                try {',
+                    '                if (models[requester.message.model]?.api_format === "agy") {\n'
+                    '                    try {\n'
+                    '                        const ev = JSON.parse(data);\n'
+                    '                        if (ev.conversation_id) root.agyConversationId = ev.conversation_id;\n'
+                    '                        if (ev.event === "step_update" && ev.step_update?.step_type === "agent_response") {\n'
+                    '                            if (ev.step_update.conversation_id) root.agyConversationId = ev.step_update.conversation_id;\n'
+                    '                            if (ev.step_update.text_delta) {\n'
+                    '                                requester.message.rawContent += ev.step_update.text_delta;\n'
+                    '                                requester.message.content += ev.step_update.text_delta;\n'
+                    '                            }\n'
+                    '                            if (ev.step_update.usage) {\n'
+                    '                                root.tokenCount.input = ev.step_update.usage.input_tokens ?? -1;\n'
+                    '                                root.tokenCount.output = ev.step_update.usage.output_tokens ?? -1;\n'
+                    '                                root.tokenCount.total = ev.step_update.usage.total_tokens ?? -1;\n'
+                    '                            }\n'
+                    '                        } else if (ev.event === "result" && ev.result) {\n'
+                    '                            if (ev.result.conversation_id) root.agyConversationId = ev.result.conversation_id;\n'
+                    '                            if (ev.result.response && requester.message.rawContent.length === 0) {\n'
+                    '                                requester.message.rawContent = ev.result.response;\n'
+                    '                                requester.message.content = ev.result.response;\n'
+                    '                            }\n'
+                    '                            if (ev.result.usage) {\n'
+                    '                                root.tokenCount.input = ev.result.usage.input_tokens ?? -1;\n'
+                    '                                root.tokenCount.output = ev.result.usage.output_tokens ?? -1;\n'
+                    '                                root.tokenCount.total = ev.result.usage.total_tokens ?? -1;\n'
+                    '                            }\n'
+                    '                        }\n'
+                    '                    } catch (e) {}\n'
+                    '                    return;\n'
+                    '                }\n\n'
+                    '                // Handle response line\n'
+                    '                try {',
+                ),
+                (
+                    "function addUserModels() { return; }",
+                    "    function addUserModels() {\n        (Config?.options.ai?.extraModels ?? []).forEach(model => {",
+                    "    function addUserModels() { return; }\n"
+                    "    function _unusedAddUserModels() {\n        (Config?.options.ai?.extraModels ?? []).forEach(model => {",
+                ),
+                (
+                    'if (models[requester.message.model]?.api_format === "agy") {\n                if (requester.message.thinking)',
+                    '        onExited: (exitCode, exitStatus) => {\n'
+                    '            const result = requester.currentStrategy.onRequestFinished(requester.message);',
+                    '        onExited: (exitCode, exitStatus) => {\n'
+                    '            if (models[requester.message.model]?.api_format === "agy") {\n'
+                    '                if (requester.message.thinking) requester.message.thinking = false;\n'
+                    '                if (exitCode !== 0 && requester.message.content.trim().length === 0) {\n'
+                    '                    requester.message.content = "agy CLI error (exit " + exitCode + ")";\n'
+                    '                }\n'
+                    '                requester.markDone();\n'
+                    '                return;\n'
+                    '            }\n'
+                    '            const result = requester.currentStrategy.onRequestFinished(requester.message);',
+                ),
+                (
+                    'models["antigravity"] ?? models[modelList[0]]',
+                    '    function getModel() {\n'
+                    '        return models[currentModelId];\n'
+                    '    }',
+                    '    function getModel() {\n'
+                    '        return models[currentModelId] ?? models["antigravity"] ?? models[modelList[0]];\n'
+                    '    }',
+                ),
+            ],
+        )
 
-    # 2. AiChat.qml: hide useless key/temp/tool pills for agy, native CLI-style / popup, clickable model picker
-    ok &= patch_file(
-        ii / "modules/ii/sidebarLeft/AiChat.qml",
-        [
-            (
-                'property bool agyLoggedIn: true',
-                '    property string commandPrefix: "/"',
-                '    property string commandPrefix: "/"\n'
-                '    property bool modelPickerOpen: false\n'
-                '    property bool configPickerOpen: false\n'
-                '    property bool agyLoggedIn: true\n\n'
-                '    function refreshAgyAuth() {\n'
-                '        agyAuthProc.running = false;\n'
-                '        agyAuthProc.running = true;\n'
-                '    }\n\n'
-                '    function openAgyLogin() {\n'
-                '        const agyBin = FileUtils.trimFileProtocol(`${Directories.home}/.local/bin/agy`);\n'
-                '        agyLoginProc.command = ["bash", "-c", `${Config.options.apps.terminal} -e bash -c \'"${0}" -i /login; echo; read -p "Press Enter to close..."\' "${agyBin}"`];\n'
-                '        agyLoginProc.running = false;\n'
-                '        agyLoginProc.running = true;\n'
-                '    }\n\n'
-                '    Process {\n'
-                '        id: agyAuthProc\n'
-                '        command: ["bash", "-c", "[ -s \\"$HOME/.gemini/antigravity-cli/antigravity-oauth-token\\" ] && echo 1 || echo 0"]\n'
-                '        stdout: StdioCollector {\n'
-                '            onStreamFinished: root.agyLoggedIn = (text.trim() === "1")\n'
-                '        }\n'
-                '    }\n\n'
-                '    Process {\n'
-                '        id: agyLoginProc\n'
-                '        onExited: {\n'
-                '            root.refreshAgyAuth();\n'
-                '            Ai.refreshAgyModels();\n'
-                '        }\n'
-                '    }\n\n'
-                '    Component.onCompleted: root.refreshAgyAuth()\n'
-                '    onVisibleChanged: {\n'
-                '        if (visible) {\n'
-                '            root.refreshAgyAuth();\n'
-                '            if (Ai.agyFamilies.length === 0) Ai.refreshAgyModels();\n'
-                '        }\n'
-                '    }',
-            ),
-            (
-                'root.openAgyLogin()',
-                '        if (inputText.startsWith(root.commandPrefix)) {',
-                '        if (Ai.getModel()?.api_format === "agy" && inputText.startsWith(root.commandPrefix)) {\n'
-                '            const parts = inputText.trim().split(/\\s+/);\n'
-                '            const cmd = parts[0].substring(1);\n'
-                '            if (cmd === "model" || cmd === "effort") { root.configPickerOpen = false; root.modelPickerOpen = true; return; }\n'
-                '            if (cmd === "config" || cmd === "settings") { root.modelPickerOpen = false; root.configPickerOpen = true; return; }\n'
-                '            if (cmd === "login") {\n'
-                '                root.openAgyLogin();\n'
-                '                return;\n'
-                '            }\n'
-                '            if (cmd === "clear") { Ai.clearMessages(); return; }\n'
-                '            Ai.sendUserMessage(inputText);\n'
-                '            return;\n'
-                '        }\n'
-                '        if (inputText.startsWith(root.commandPrefix)) {',
-            ),
-            (
-                "visible: (Ai.getModel()?.api_format !== \"agy\") || Ai.tokenCount.total > 0",
-                '            Rectangle {\n                id: statusBg\n',
-                '            Rectangle {\n                id: statusBg\n                visible: (Ai.getModel()?.api_format !== "agy") || Ai.tokenCount.total > 0\n',
-            ),
-            (
-                "visible: Ai.getModel()?.requires_key ?? true",
-                '                    StatusItem {\n                        icon: Ai.currentModelHasApiKey ? "key" : "key_off"',
-                '                    StatusItem {\n                        visible: Ai.getModel()?.requires_key ?? true\n                        icon: Ai.currentModelHasApiKey ? "key" : "key_off"',
-            ),
-            (
-                'visible: Ai.getModel()?.api_format !== "agy"\n                        icon: "device_thermostat"',
-                '                    StatusSeparator {}\n                    StatusItem {\n                        icon: "device_thermostat"',
-                '                    StatusSeparator { visible: Ai.getModel()?.requires_key ?? true }\n                    StatusItem {\n                        visible: Ai.getModel()?.api_format !== "agy"\n                        icon: "device_thermostat"',
-            ),
-            (
-                'const isAgy = Ai.getModel()?.api_format === "agy";',
-                '                                root.suggestionList = root.allCommands.filter(cmd => cmd.name.startsWith(messageInputField.text.substring(1))).map(cmd => {',
-                '                                const isAgy = Ai.getModel()?.api_format === "agy";\n'
-                '                                if (isAgy) {\n'
-                '                                    const q = messageInputField.text.substring(1).toLowerCase();\n'
-                '                                    root.suggestionList = Ai.agyCommands.filter(cmd => cmd.name.startsWith(q)).map(cmd => ({\n'
-                '                                        name: `${root.commandPrefix}${cmd.name}`,\n'
-                '                                        description: cmd.description,\n'
-                '                                        instant: cmd.instant,\n'
-                '                                    }));\n'
-                '                                    return;\n'
-                '                                }\n'
-                '                                root.suggestionList = root.allCommands.filter(cmd => cmd.name.startsWith(messageInputField.text.substring(1))).map(cmd => {',
-            ),
-            (
-                "if (isInstant && Ai.getModel()?.api_format === \"agy\")",
-                '            function acceptSuggestion(word) {\n'
-                '                const words = messageInputField.text.trim().split(/\\s+/);',
-                '            function acceptSuggestion(word, isInstant = false) {\n'
-                '                if (isInstant && Ai.getModel()?.api_format === "agy") {\n'
-                '                    messageInputField.clear();\n'
-                '                    root.handleInput(word);\n'
-                '                    return;\n'
-                '                }\n'
-                '                const words = messageInputField.text.trim().split(/\\s+/);',
-            ),
-            (
-                "// Native CLI-style command & suggestion palette",
-                "        FlowButtonGroup { // Suggestions\n"
-                "            id: suggestions\n"
-                "            visible: root.suggestionList.length > 0 && messageInputField.text.length > 0\n"
-                "            property int selectedIndex: 0\n"
-                "            Layout.fillWidth: true\n"
-                "            spacing: 5\n\n"
-                "            Repeater {\n"
-                "                id: suggestionRepeater\n"
-                "                model: {\n"
-                "                    suggestions.selectedIndex = 0;\n"
-                "                    return root.suggestionList.slice(0, 10);\n"
-                "                }\n"
-                "                delegate: ApiCommandButton {\n"
-                "                    id: commandButton\n"
-                "                    colBackground: suggestions.selectedIndex === index ? Appearance.colors.colSecondaryContainerHover : Appearance.colors.colSecondaryContainer\n"
-                "                    bounce: false\n"
-                "                    contentItem: StyledText {\n"
-                "                        font.pixelSize: Appearance.font.pixelSize.small\n"
-                "                        color: Appearance.m3colors.m3onSurface\n"
-                "                        horizontalAlignment: Text.AlignHCenter\n"
-                "                        text: modelData.displayName ?? modelData.name\n"
-                "                    }\n\n"
-                "                    onHoveredChanged: {\n"
-                "                        if (commandButton.hovered) {\n"
-                "                            suggestions.selectedIndex = index;\n"
-                "                        }\n"
-                "                    }\n"
-                "                    onClicked: {\n"
-                "                        suggestions.acceptSuggestion(modelData.name);\n"
-                "                    }\n"
-                "                }\n"
-                "            }",
-                "        Rectangle { // Native CLI-style command & suggestion palette\n"
-                "            id: suggestions\n"
-                "            visible: root.suggestionList.length > 0 && messageInputField.text.length > 0\n"
-                "            property int selectedIndex: 0\n"
-                "            Layout.fillWidth: true\n"
-                "            implicitHeight: Math.min(220, suggestionListView.contentHeight + 12)\n"
-                "            clip: true\n"
-                "            radius: Appearance.rounding.normal\n"
-                "            color: Appearance.colors.colLayer2\n"
-                "            border.width: 1\n"
-                "            border.color: Appearance.colors.colOutlineVariant\n\n"
-                "            ListView {\n"
-                "                id: suggestionListView\n"
-                "                anchors.fill: parent\n"
-                "                anchors.margins: 6\n"
-                "                clip: true\n"
-                "                spacing: 2\n"
-                "                currentIndex: suggestions.selectedIndex\n"
-                "                highlightFollowsCurrentItem: true\n"
-                "                onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)\n"
-                "                model: {\n"
-                "                    suggestions.selectedIndex = 0;\n"
-                "                    return root.suggestionList;\n"
-                "                }\n"
-                "                delegate: RippleButton {\n"
-                "                    id: commandButton\n"
-                "                    required property var modelData\n"
-                "                    required property int index\n"
-                "                    readonly property bool active: suggestions.selectedIndex === index\n"
-                "                    width: suggestionListView.width\n"
-                "                    implicitHeight: 32\n"
-                "                    buttonRadius: Appearance.rounding.small\n"
-                "                    colBackground: active ? Appearance.colors.colPrimaryContainer : \"transparent\"\n"
-                "                    colBackgroundHover: active ? Appearance.colors.colPrimaryContainer : Appearance.colors.colSurfaceContainerHigh\n"
-                "                    onHoveredChanged: {\n"
-                "                        if (commandButton.hovered)\n"
-                "                            suggestions.selectedIndex = index;\n"
-                "                    }\n"
-                "                    onClicked: suggestions.acceptSuggestion(modelData.name, modelData.instant ?? false)\n\n"
-                "                    contentItem: RowLayout {\n"
-                "                        anchors.fill: parent\n"
-                "                        anchors.leftMargin: 8\n"
-                "                        anchors.rightMargin: 8\n"
-                "                        spacing: 10\n"
-                "                        StyledText {\n"
-                "                            font.pixelSize: Appearance.font.pixelSize.small\n"
-                "                            font.family: Appearance.font.family.monospace\n"
-                "                            font.weight: Font.Medium\n"
-                "                            color: commandButton.active ? Appearance.colors.colPrimary : Appearance.m3colors.m3onSurface\n"
-                "                            text: modelData.displayName ?? modelData.name\n"
-                "                        }\n"
-                "                        StyledText {\n"
-                "                            Layout.fillWidth: true\n"
-                "                            font.pixelSize: Appearance.font.pixelSize.smaller\n"
-                "                            color: commandButton.active ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colSubtext\n"
-                "                            horizontalAlignment: Text.AlignRight\n"
-                "                            maximumLineCount: 1\n"
-                "                            elide: Text.ElideRight\n"
-                "                            text: (modelData.description ?? \"\").replace(/\\n+/g, \" · \")\n"
-                "                        }\n"
-                "                    }\n"
-                "                }\n"
-                "            }",
-            ),
-            (
-                "id: agyAuthRow",
-                "        Rectangle { // Input area",
-                "        Rectangle {\n"
-                "            visible: (Ai.getModel()?.api_format === \"agy\") && (!root.agyLoggedIn || agyLoginProc.running)\n"
-                "            Layout.fillWidth: true\n"
-                "            implicitHeight: agyAuthCol.implicitHeight + 16\n"
-                "            radius: Appearance.rounding.normal\n"
-                "            color: Appearance.colors.colLayer2\n"
-                "            border.width: 1\n"
-                "            border.color: Appearance.colors.colOutlineVariant\n\n"
-                "            ColumnLayout {\n"
-                "                id: agyAuthCol\n"
-                "                anchors.fill: parent\n"
-                "                anchors.margins: 8\n"
-                "                spacing: 6\n\n"
-                "                RowLayout {\n"
-                "                    id: agyAuthRow\n"
-                "                    Layout.fillWidth: true\n"
-                "                    spacing: 8\n"
-                "                    MaterialLoadingIndicator {\n"
-                "                        visible: agyLoginProc.running\n"
-                "                        implicitSize: 18\n"
-                "                    }\n"
-                "                    MaterialSymbol {\n"
-                "                        visible: !agyLoginProc.running\n"
-                "                        text: \"passkey\"\n"
-                "                        iconSize: 20\n"
-                "                        color: Appearance.colors.colPrimary\n"
-                "                    }\n"
-                "                    StyledText {\n"
-                "                        Layout.fillWidth: true\n"
-                "                        font.pixelSize: Appearance.font.pixelSize.smaller\n"
-                "                        color: Appearance.m3colors.m3onSurface\n"
-                "                        elide: Text.ElideRight\n"
-                "                        text: agyLoginProc.running\n"
-                "                            ? Translation.tr(\"Signing in to Agy...\")\n"
-                "                            : Translation.tr(\"Sign in required to use Agy\")\n"
-                "                    }\n"
-                "                    RippleButton {\n"
-                "                        implicitWidth: agyLoginBtnTxt.implicitWidth + 20\n"
-                "                        implicitHeight: 28\n"
-                "                        buttonRadius: Appearance.rounding.full\n"
-                "                        enabled: !agyLoginProc.running\n"
-                "                        colBackground: Appearance.colors.colPrimary\n"
-                "                        onClicked: root.openAgyLogin()\n"
-                "                        contentItem: StyledText {\n"
-                "                            id: agyLoginBtnTxt\n"
-                "                            anchors.centerIn: parent\n"
-                "                            font.pixelSize: Appearance.font.pixelSize.smaller\n"
-                "                            font.weight: Font.Medium\n"
-                "                            color: Appearance.m3colors.m3onPrimary\n"
-                "                            text: agyLoginProc.running ? Translation.tr(\"Waiting...\") : Translation.tr(\"Sign in\")\n"
-                "                        }\n"
-                "                    }\n"
-                "                    RippleButton {\n"
-                "                        implicitWidth: 28\n"
-                "                        implicitHeight: 28\n"
-                "                        buttonRadius: Appearance.rounding.full\n"
-                "                        onClicked: root.refreshAgyAuth()\n"
-                "                        contentItem: MaterialSymbol {\n"
-                "                            anchors.centerIn: parent\n"
-                "                            text: \"refresh\"\n"
-                "                            iconSize: 16\n"
-                "                            color: Appearance.m3colors.m3onSurface\n"
-                "                        }\n"
-                "                    }\n"
-                "                }\n\n"
-                "            }\n"
-                "        }\n\n"
-                "        AgyModelPicker {\n"
-                "            visible: root.modelPickerOpen\n"
-                "            Layout.fillWidth: true\n"
-                "            onCloseRequested: root.modelPickerOpen = false\n"
-                "        }\n\n"
-                "        AgyConfigPicker {\n"
-                "            visible: root.configPickerOpen\n"
-                "            Layout.fillWidth: true\n"
-                "            onCloseRequested: root.configPickerOpen = false\n"
-                "        }\n\n"
-                "        Rectangle { // Input area",
-            ),
-            (
-                "root.modelPickerOpen = !root.modelPickerOpen",
-                '                ApiInputBoxIndicator {\n'
-                '                    // Model indicator\n'
-                '                    icon: "api"\n'
-                '                    text: Ai.getModel().name\n'
-                '                    tooltipText: Translation.tr("Current model: %1\\nSet it with %2model MODEL").arg(Ai.getModel().name).arg(root.commandPrefix)\n'
-                '                }',
-                '                ApiInputBoxIndicator {\n'
-                '                    // Model indicator (clickable -> AgyModelPicker)\n'
-                '                    icon: "api"\n'
-                '                    text: Ai.getModel()?.name ?? ""\n'
-                '                    tooltipText: Translation.tr("Current model: %1\\nSet it with %2model MODEL").arg(Ai.getModel()?.name ?? "").arg(root.commandPrefix)\n'
-                '                    MouseArea {\n'
-                '                        z: 10\n'
-                '                        anchors.fill: parent\n'
-                '                        cursorShape: Qt.PointingHandCursor\n'
-                '                        onClicked: root.modelPickerOpen = !root.modelPickerOpen\n'
-                '                    }\n'
-                '                }',
-            ),
-            (
-                "root.modelPickerOpen = false;\n                                    root.configPickerOpen = false;",
-                '                            } else if (event.key === Qt.Key_Escape) {\n'
-                '                                // Esc to detach file\n'
-                '                                if (Ai.pendingFilePath.length > 0) {',
-                '                            } else if (event.key === Qt.Key_Escape) {\n'
-                '                                if (root.modelPickerOpen || root.configPickerOpen) {\n'
-                '                                    root.modelPickerOpen = false;\n'
-                '                                    root.configPickerOpen = false;\n'
-                '                                    event.accepted = true;\n'
-                '                                } else if (suggestions.visible) {\n'
-                '                                    messageInputField.clear();\n'
-                '                                    event.accepted = true;\n'
-                '                                } else if (Ai.pendingFilePath.length > 0) {',
-            ),
-            (
-                "onActiveFocusChanged: if (activeFocus) { root.modelPickerOpen = false; root.configPickerOpen = false; }",
-                '                    StyledTextArea { // The actual TextArea (inside ScrollView to enable scrolling)\n                        id: messageInputField',
-                '                    StyledTextArea { // The actual TextArea (inside ScrollView to enable scrolling)\n                        id: messageInputField\n                        onActiveFocusChanged: if (activeFocus) { root.modelPickerOpen = false; root.configPickerOpen = false; }',
-            ),
-            (
-                "suggestions.acceptSuggestion(sel.name, sel.instant ?? false);",
-                '                            } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)) {\n'
-                '                                if (event.modifiers & Qt.ShiftModifier) {\n'
-                '                                    // Insert newline\n'
-                '                                    messageInputField.insert(messageInputField.cursorPosition, "\\n");\n'
-                '                                    event.accepted = true;\n'
-                '                                } else {',
-                '                            } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)) {\n'
-                '                                if (event.modifiers & Qt.ShiftModifier) {\n'
-                '                                    // Insert newline\n'
-                '                                    messageInputField.insert(messageInputField.cursorPosition, "\\n");\n'
-                '                                    event.accepted = true;\n'
-                '                                } else if (suggestions.visible && root.suggestionList.length > 0 && Ai.getModel()?.api_format === "agy") {\n'
-                '                                    const sel = root.suggestionList[suggestions.selectedIndex] ?? root.suggestionList[0];\n'
-                '                                    if (sel) {\n'
-                '                                        suggestions.acceptSuggestion(sel.name, sel.instant ?? false);\n'
-                '                                        event.accepted = true;\n'
-                '                                        return;\n'
-                '                                    }\n'
-                '                                } else {',
-            ),
-            (
-                "Ai.stopGeneration()",
-                '                    enabled: messageInputField.text.length > 0\n'
-                '                    toggled: enabled\n\n'
-                '                    MouseArea {\n'
-                '                        anchors.fill: parent\n'
-                '                        cursorShape: sendButton.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor\n'
-                '                        onClicked: {\n'
-                '                            const inputText = messageInputField.text;\n'
-                '                            root.handleInput(inputText);\n'
-                '                            messageInputField.clear();\n'
-                '                        }\n'
-                '                    }\n\n'
-                '                    contentItem: MaterialSymbol {\n'
-                '                        anchors.centerIn: parent\n'
-                '                        horizontalAlignment: Text.AlignHCenter\n'
-                '                        iconSize: 22\n'
-                '                        color: sendButton.enabled ? Appearance.m3colors.m3onPrimary : Appearance.colors.colOnLayer2Disabled\n'
-                '                        text: "arrow_upward"\n'
-                '                    }',
-                '                    enabled: Ai.isGenerating || messageInputField.text.length > 0\n'
-                '                    toggled: enabled\n\n'
-                '                    MouseArea {\n'
-                '                        anchors.fill: parent\n'
-                '                        cursorShape: sendButton.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor\n'
-                '                        onClicked: {\n'
-                '                            if (Ai.isGenerating) {\n'
-                '                                Ai.stopGeneration();\n'
-                '                            } else {\n'
-                '                                const inputText = messageInputField.text;\n'
-                '                                root.handleInput(inputText);\n'
-                '                                messageInputField.clear();\n'
-                '                            }\n'
-                '                        }\n'
-                '                    }\n\n'
-                '                    contentItem: MaterialSymbol {\n'
-                '                        anchors.centerIn: parent\n'
-                '                        horizontalAlignment: Text.AlignHCenter\n'
-                '                        iconSize: 22\n'
-                '                        color: sendButton.enabled ? Appearance.m3colors.m3onPrimary : Appearance.colors.colOnLayer2Disabled\n'
-                '                        text: Ai.isGenerating ? "stop" : "arrow_upward"\n'
-                '                    }',
-            ),
-            (
-                "if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && Ai.isGenerating",
-                '                            } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)) {',
-                '                            } else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && Ai.isGenerating && messageInputField.selectedText.length === 0) {\n'
-                '                                Ai.stopGeneration();\n'
-                '                                event.accepted = true;\n'
-                '                            } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)) {',
-            ),
-            (
-                "visible: root.modelPickerOpen || root.configPickerOpen\n                z: 5",
-                "            StyledListView { // Message list",
-                "            MouseArea {\n"
-                "                anchors.fill: parent\n"
-                "                visible: root.modelPickerOpen || root.configPickerOpen\n"
-                "                z: 5\n"
-                "                onPressed: mouse => {\n"
-                "                    root.modelPickerOpen = false;\n"
-                "                    root.configPickerOpen = false;\n"
-                "                    mouse.accepted = false;\n"
-                "                }\n"
-                "            }\n"
-                "            StyledListView { // Message list",
-            ),
-            (
-                'visible: Ai.getModel()?.api_format !== "agy"\n                    // Tool indicator',
-                '                ApiInputBoxIndicator {\n                    // Tool indicator',
-                '                ApiInputBoxIndicator {\n                    visible: Ai.getModel()?.api_format !== "agy"\n                    // Tool indicator',
-            ),
-        ],
-    )
+        # 2. AiChat.qml: hide useless key/temp/tool pills for agy, native CLI-style / popup, clickable model picker
+        ok &= patch_file(
+            ii / "modules/ii/sidebarLeft/AiChat.qml",
+            [
+                (
+                    'property bool agyLoggedIn: true',
+                    '    property string commandPrefix: "/"',
+                    '    property string commandPrefix: "/"\n'
+                    '    property bool modelPickerOpen: false\n'
+                    '    property bool configPickerOpen: false\n'
+                    '    property bool agyLoggedIn: true\n\n'
+                    '    function refreshAgyAuth() {\n'
+                    '        agyAuthProc.running = false;\n'
+                    '        agyAuthProc.running = true;\n'
+                    '    }\n\n'
+                    '    function openAgyLogin() {\n'
+                    '        const agyBin = FileUtils.trimFileProtocol(`${Directories.home}/.local/bin/agy`);\n'
+                    '        agyLoginProc.command = ["bash", "-c", `${Config.options.apps.terminal} -e bash -c \'"${0}" -i /login; echo; read -p "Press Enter to close..."\' "${agyBin}"`];\n'
+                    '        agyLoginProc.running = false;\n'
+                    '        agyLoginProc.running = true;\n'
+                    '    }\n\n'
+                    '    Process {\n'
+                    '        id: agyAuthProc\n'
+                    '        command: ["bash", "-c", "[ -s \\"$HOME/.gemini/antigravity-cli/antigravity-oauth-token\\" ] && echo 1 || echo 0"]\n'
+                    '        stdout: StdioCollector {\n'
+                    '            onStreamFinished: root.agyLoggedIn = (text.trim() === "1")\n'
+                    '        }\n'
+                    '    }\n\n'
+                    '    Process {\n'
+                    '        id: agyLoginProc\n'
+                    '        onExited: {\n'
+                    '            root.refreshAgyAuth();\n'
+                    '            Ai.refreshAgyModels();\n'
+                    '        }\n'
+                    '    }\n\n'
+                    '    Component.onCompleted: root.refreshAgyAuth()\n'
+                    '    onVisibleChanged: {\n'
+                    '        if (visible) {\n'
+                    '            root.refreshAgyAuth();\n'
+                    '            if (Ai.agyFamilies.length === 0) Ai.refreshAgyModels();\n'
+                    '        }\n'
+                    '    }',
+                ),
+                (
+                    'root.openAgyLogin()',
+                    '        if (inputText.startsWith(root.commandPrefix)) {',
+                    '        if (Ai.getModel()?.api_format === "agy" && inputText.startsWith(root.commandPrefix)) {\n'
+                    '            const parts = inputText.trim().split(/\\s+/);\n'
+                    '            const cmd = parts[0].substring(1);\n'
+                    '            if (cmd === "model" || cmd === "effort") { root.configPickerOpen = false; root.modelPickerOpen = true; return; }\n'
+                    '            if (cmd === "config" || cmd === "settings") { root.modelPickerOpen = false; root.configPickerOpen = true; return; }\n'
+                    '            if (cmd === "login") {\n'
+                    '                root.openAgyLogin();\n'
+                    '                return;\n'
+                    '            }\n'
+                    '            if (cmd === "clear") { Ai.clearMessages(); return; }\n'
+                    '            Ai.sendUserMessage(inputText);\n'
+                    '            return;\n'
+                    '        }\n'
+                    '        if (inputText.startsWith(root.commandPrefix)) {',
+                ),
+                (
+                    "visible: (Ai.getModel()?.api_format !== \"agy\") || Ai.tokenCount.total > 0",
+                    '            Rectangle {\n                id: statusBg\n',
+                    '            Rectangle {\n                id: statusBg\n                visible: (Ai.getModel()?.api_format !== "agy") || Ai.tokenCount.total > 0\n',
+                ),
+                (
+                    "visible: Ai.getModel()?.requires_key ?? true",
+                    '                    StatusItem {\n                        icon: Ai.currentModelHasApiKey ? "key" : "key_off"',
+                    '                    StatusItem {\n                        visible: Ai.getModel()?.requires_key ?? true\n                        icon: Ai.currentModelHasApiKey ? "key" : "key_off"',
+                ),
+                (
+                    'visible: Ai.getModel()?.api_format !== "agy"\n                        icon: "device_thermostat"',
+                    '                    StatusSeparator {}\n                    StatusItem {\n                        icon: "device_thermostat"',
+                    '                    StatusSeparator { visible: Ai.getModel()?.requires_key ?? true }\n                    StatusItem {\n                        visible: Ai.getModel()?.api_format !== "agy"\n                        icon: "device_thermostat"',
+                ),
+                (
+                    'const isAgy = Ai.getModel()?.api_format === "agy";',
+                    '                                root.suggestionList = root.allCommands.filter(cmd => cmd.name.startsWith(messageInputField.text.substring(1))).map(cmd => {',
+                    '                                const isAgy = Ai.getModel()?.api_format === "agy";\n'
+                    '                                if (isAgy) {\n'
+                    '                                    const q = messageInputField.text.substring(1).toLowerCase();\n'
+                    '                                    root.suggestionList = Ai.agyCommands.filter(cmd => cmd.name.startsWith(q)).map(cmd => ({\n'
+                    '                                        name: `${root.commandPrefix}${cmd.name}`,\n'
+                    '                                        description: cmd.description,\n'
+                    '                                        instant: cmd.instant,\n'
+                    '                                    }));\n'
+                    '                                    return;\n'
+                    '                                }\n'
+                    '                                root.suggestionList = root.allCommands.filter(cmd => cmd.name.startsWith(messageInputField.text.substring(1))).map(cmd => {',
+                ),
+                (
+                    "if (isInstant && Ai.getModel()?.api_format === \"agy\")",
+                    '            function acceptSuggestion(word) {\n'
+                    '                const words = messageInputField.text.trim().split(/\\s+/);',
+                    '            function acceptSuggestion(word, isInstant = false) {\n'
+                    '                if (isInstant && Ai.getModel()?.api_format === "agy") {\n'
+                    '                    messageInputField.clear();\n'
+                    '                    root.handleInput(word);\n'
+                    '                    return;\n'
+                    '                }\n'
+                    '                const words = messageInputField.text.trim().split(/\\s+/);',
+                ),
+                (
+                    "// Native CLI-style command & suggestion palette",
+                    "        FlowButtonGroup { // Suggestions\n"
+                    "            id: suggestions\n"
+                    "            visible: root.suggestionList.length > 0 && messageInputField.text.length > 0\n"
+                    "            property int selectedIndex: 0\n"
+                    "            Layout.fillWidth: true\n"
+                    "            spacing: 5\n\n"
+                    "            Repeater {\n"
+                    "                id: suggestionRepeater\n"
+                    "                model: {\n"
+                    "                    suggestions.selectedIndex = 0;\n"
+                    "                    return root.suggestionList.slice(0, 10);\n"
+                    "                }\n"
+                    "                delegate: ApiCommandButton {\n"
+                    "                    id: commandButton\n"
+                    "                    colBackground: suggestions.selectedIndex === index ? Appearance.colors.colSecondaryContainerHover : Appearance.colors.colSecondaryContainer\n"
+                    "                    bounce: false\n"
+                    "                    contentItem: StyledText {\n"
+                    "                        font.pixelSize: Appearance.font.pixelSize.small\n"
+                    "                        color: Appearance.m3colors.m3onSurface\n"
+                    "                        horizontalAlignment: Text.AlignHCenter\n"
+                    "                        text: modelData.displayName ?? modelData.name\n"
+                    "                    }\n\n"
+                    "                    onHoveredChanged: {\n"
+                    "                        if (commandButton.hovered) {\n"
+                    "                            suggestions.selectedIndex = index;\n"
+                    "                        }\n"
+                    "                    }\n"
+                    "                    onClicked: {\n"
+                    "                        suggestions.acceptSuggestion(modelData.name);\n"
+                    "                    }\n"
+                    "                }\n"
+                    "            }",
+                    "        Rectangle { // Native CLI-style command & suggestion palette\n"
+                    "            id: suggestions\n"
+                    "            visible: root.suggestionList.length > 0 && messageInputField.text.length > 0\n"
+                    "            property int selectedIndex: 0\n"
+                    "            Layout.fillWidth: true\n"
+                    "            implicitHeight: Math.min(220, suggestionListView.contentHeight + 12)\n"
+                    "            clip: true\n"
+                    "            radius: Appearance.rounding.normal\n"
+                    "            color: Appearance.colors.colLayer2\n"
+                    "            border.width: 1\n"
+                    "            border.color: Appearance.colors.colOutlineVariant\n\n"
+                    "            ListView {\n"
+                    "                id: suggestionListView\n"
+                    "                anchors.fill: parent\n"
+                    "                anchors.margins: 6\n"
+                    "                clip: true\n"
+                    "                spacing: 2\n"
+                    "                currentIndex: suggestions.selectedIndex\n"
+                    "                highlightFollowsCurrentItem: true\n"
+                    "                onCurrentIndexChanged: positionViewAtIndex(currentIndex, ListView.Contain)\n"
+                    "                model: {\n"
+                    "                    suggestions.selectedIndex = 0;\n"
+                    "                    return root.suggestionList;\n"
+                    "                }\n"
+                    "                delegate: RippleButton {\n"
+                    "                    id: commandButton\n"
+                    "                    required property var modelData\n"
+                    "                    required property int index\n"
+                    "                    readonly property bool active: suggestions.selectedIndex === index\n"
+                    "                    width: suggestionListView.width\n"
+                    "                    implicitHeight: 32\n"
+                    "                    buttonRadius: Appearance.rounding.small\n"
+                    "                    colBackground: active ? Appearance.colors.colPrimaryContainer : \"transparent\"\n"
+                    "                    colBackgroundHover: active ? Appearance.colors.colPrimaryContainer : Appearance.colors.colSurfaceContainerHigh\n"
+                    "                    onHoveredChanged: {\n"
+                    "                        if (commandButton.hovered)\n"
+                    "                            suggestions.selectedIndex = index;\n"
+                    "                    }\n"
+                    "                    onClicked: suggestions.acceptSuggestion(modelData.name, modelData.instant ?? false)\n\n"
+                    "                    contentItem: RowLayout {\n"
+                    "                        anchors.fill: parent\n"
+                    "                        anchors.leftMargin: 8\n"
+                    "                        anchors.rightMargin: 8\n"
+                    "                        spacing: 10\n"
+                    "                        StyledText {\n"
+                    "                            font.pixelSize: Appearance.font.pixelSize.small\n"
+                    "                            font.family: Appearance.font.family.monospace\n"
+                    "                            font.weight: Font.Medium\n"
+                    "                            color: commandButton.active ? Appearance.colors.colPrimary : Appearance.m3colors.m3onSurface\n"
+                    "                            text: modelData.displayName ?? modelData.name\n"
+                    "                        }\n"
+                    "                        StyledText {\n"
+                    "                            Layout.fillWidth: true\n"
+                    "                            font.pixelSize: Appearance.font.pixelSize.smaller\n"
+                    "                            color: commandButton.active ? Appearance.colors.colOnPrimaryContainer : Appearance.colors.colSubtext\n"
+                    "                            horizontalAlignment: Text.AlignRight\n"
+                    "                            maximumLineCount: 1\n"
+                    "                            elide: Text.ElideRight\n"
+                    "                            text: (modelData.description ?? \"\").replace(/\\n+/g, \" · \")\n"
+                    "                        }\n"
+                    "                    }\n"
+                    "                }\n"
+                    "            }",
+                ),
+                (
+                    "id: agyAuthRow",
+                    "        Rectangle { // Input area",
+                    "        Rectangle {\n"
+                    "            visible: (Ai.getModel()?.api_format === \"agy\") && (!root.agyLoggedIn || agyLoginProc.running)\n"
+                    "            Layout.fillWidth: true\n"
+                    "            implicitHeight: agyAuthCol.implicitHeight + 16\n"
+                    "            radius: Appearance.rounding.normal\n"
+                    "            color: Appearance.colors.colLayer2\n"
+                    "            border.width: 1\n"
+                    "            border.color: Appearance.colors.colOutlineVariant\n\n"
+                    "            ColumnLayout {\n"
+                    "                id: agyAuthCol\n"
+                    "                anchors.fill: parent\n"
+                    "                anchors.margins: 8\n"
+                    "                spacing: 6\n\n"
+                    "                RowLayout {\n"
+                    "                    id: agyAuthRow\n"
+                    "                    Layout.fillWidth: true\n"
+                    "                    spacing: 8\n"
+                    "                    MaterialLoadingIndicator {\n"
+                    "                        visible: agyLoginProc.running\n"
+                    "                        implicitSize: 18\n"
+                    "                    }\n"
+                    "                    MaterialSymbol {\n"
+                    "                        visible: !agyLoginProc.running\n"
+                    "                        text: \"passkey\"\n"
+                    "                        iconSize: 20\n"
+                    "                        color: Appearance.colors.colPrimary\n"
+                    "                    }\n"
+                    "                    StyledText {\n"
+                    "                        Layout.fillWidth: true\n"
+                    "                        font.pixelSize: Appearance.font.pixelSize.smaller\n"
+                    "                        color: Appearance.m3colors.m3onSurface\n"
+                    "                        elide: Text.ElideRight\n"
+                    "                        text: agyLoginProc.running\n"
+                    "                            ? Translation.tr(\"Signing in to Agy...\")\n"
+                    "                            : Translation.tr(\"Sign in required to use Agy\")\n"
+                    "                    }\n"
+                    "                    RippleButton {\n"
+                    "                        implicitWidth: agyLoginBtnTxt.implicitWidth + 20\n"
+                    "                        implicitHeight: 28\n"
+                    "                        buttonRadius: Appearance.rounding.full\n"
+                    "                        enabled: !agyLoginProc.running\n"
+                    "                        colBackground: Appearance.colors.colPrimary\n"
+                    "                        onClicked: root.openAgyLogin()\n"
+                    "                        contentItem: StyledText {\n"
+                    "                            id: agyLoginBtnTxt\n"
+                    "                            anchors.centerIn: parent\n"
+                    "                            font.pixelSize: Appearance.font.pixelSize.smaller\n"
+                    "                            font.weight: Font.Medium\n"
+                    "                            color: Appearance.m3colors.m3onPrimary\n"
+                    "                            text: agyLoginProc.running ? Translation.tr(\"Waiting...\") : Translation.tr(\"Sign in\")\n"
+                    "                        }\n"
+                    "                    }\n"
+                    "                    RippleButton {\n"
+                    "                        implicitWidth: 28\n"
+                    "                        implicitHeight: 28\n"
+                    "                        buttonRadius: Appearance.rounding.full\n"
+                    "                        onClicked: root.refreshAgyAuth()\n"
+                    "                        contentItem: MaterialSymbol {\n"
+                    "                            anchors.centerIn: parent\n"
+                    "                            text: \"refresh\"\n"
+                    "                            iconSize: 16\n"
+                    "                            color: Appearance.m3colors.m3onSurface\n"
+                    "                        }\n"
+                    "                    }\n"
+                    "                }\n\n"
+                    "            }\n"
+                    "        }\n\n"
+                    "        AgyModelPicker {\n"
+                    "            visible: root.modelPickerOpen\n"
+                    "            Layout.fillWidth: true\n"
+                    "            onCloseRequested: root.modelPickerOpen = false\n"
+                    "        }\n\n"
+                    "        AgyConfigPicker {\n"
+                    "            visible: root.configPickerOpen\n"
+                    "            Layout.fillWidth: true\n"
+                    "            onCloseRequested: root.configPickerOpen = false\n"
+                    "        }\n\n"
+                    "        Rectangle { // Input area",
+                ),
+                (
+                    "root.modelPickerOpen = !root.modelPickerOpen",
+                    '                ApiInputBoxIndicator {\n'
+                    '                    // Model indicator\n'
+                    '                    icon: "api"\n'
+                    '                    text: Ai.getModel().name\n'
+                    '                    tooltipText: Translation.tr("Current model: %1\\nSet it with %2model MODEL").arg(Ai.getModel().name).arg(root.commandPrefix)\n'
+                    '                }',
+                    '                ApiInputBoxIndicator {\n'
+                    '                    // Model indicator (clickable -> AgyModelPicker)\n'
+                    '                    icon: "api"\n'
+                    '                    text: Ai.getModel()?.name ?? ""\n'
+                    '                    tooltipText: Translation.tr("Current model: %1\\nSet it with %2model MODEL").arg(Ai.getModel()?.name ?? "").arg(root.commandPrefix)\n'
+                    '                    MouseArea {\n'
+                    '                        z: 10\n'
+                    '                        anchors.fill: parent\n'
+                    '                        cursorShape: Qt.PointingHandCursor\n'
+                    '                        onClicked: root.modelPickerOpen = !root.modelPickerOpen\n'
+                    '                    }\n'
+                    '                }',
+                ),
+                (
+                    "root.modelPickerOpen = false;\n                                    root.configPickerOpen = false;",
+                    '                            } else if (event.key === Qt.Key_Escape) {\n'
+                    '                                // Esc to detach file\n'
+                    '                                if (Ai.pendingFilePath.length > 0) {',
+                    '                            } else if (event.key === Qt.Key_Escape) {\n'
+                    '                                if (root.modelPickerOpen || root.configPickerOpen) {\n'
+                    '                                    root.modelPickerOpen = false;\n'
+                    '                                    root.configPickerOpen = false;\n'
+                    '                                    event.accepted = true;\n'
+                    '                                } else if (suggestions.visible) {\n'
+                    '                                    messageInputField.clear();\n'
+                    '                                    event.accepted = true;\n'
+                    '                                } else if (Ai.pendingFilePath.length > 0) {',
+                ),
+                (
+                    "onActiveFocusChanged: if (activeFocus) { root.modelPickerOpen = false; root.configPickerOpen = false; }",
+                    '                    StyledTextArea { // The actual TextArea (inside ScrollView to enable scrolling)\n                        id: messageInputField',
+                    '                    StyledTextArea { // The actual TextArea (inside ScrollView to enable scrolling)\n                        id: messageInputField\n                        onActiveFocusChanged: if (activeFocus) { root.modelPickerOpen = false; root.configPickerOpen = false; }',
+                ),
+                (
+                    "suggestions.acceptSuggestion(sel.name, sel.instant ?? false);",
+                    '                            } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)) {\n'
+                    '                                if (event.modifiers & Qt.ShiftModifier) {\n'
+                    '                                    // Insert newline\n'
+                    '                                    messageInputField.insert(messageInputField.cursorPosition, "\\n");\n'
+                    '                                    event.accepted = true;\n'
+                    '                                } else {',
+                    '                            } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)) {\n'
+                    '                                if (event.modifiers & Qt.ShiftModifier) {\n'
+                    '                                    // Insert newline\n'
+                    '                                    messageInputField.insert(messageInputField.cursorPosition, "\\n");\n'
+                    '                                    event.accepted = true;\n'
+                    '                                } else if (suggestions.visible && root.suggestionList.length > 0 && Ai.getModel()?.api_format === "agy") {\n'
+                    '                                    const sel = root.suggestionList[suggestions.selectedIndex] ?? root.suggestionList[0];\n'
+                    '                                    if (sel) {\n'
+                    '                                        suggestions.acceptSuggestion(sel.name, sel.instant ?? false);\n'
+                    '                                        event.accepted = true;\n'
+                    '                                        return;\n'
+                    '                                    }\n'
+                    '                                } else {',
+                ),
+                (
+                    "Ai.stopGeneration()",
+                    '                    enabled: messageInputField.text.length > 0\n'
+                    '                    toggled: enabled\n\n'
+                    '                    MouseArea {\n'
+                    '                        anchors.fill: parent\n'
+                    '                        cursorShape: sendButton.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor\n'
+                    '                        onClicked: {\n'
+                    '                            const inputText = messageInputField.text;\n'
+                    '                            root.handleInput(inputText);\n'
+                    '                            messageInputField.clear();\n'
+                    '                        }\n'
+                    '                    }\n\n'
+                    '                    contentItem: MaterialSymbol {\n'
+                    '                        anchors.centerIn: parent\n'
+                    '                        horizontalAlignment: Text.AlignHCenter\n'
+                    '                        iconSize: 22\n'
+                    '                        color: sendButton.enabled ? Appearance.m3colors.m3onPrimary : Appearance.colors.colOnLayer2Disabled\n'
+                    '                        text: "arrow_upward"\n'
+                    '                    }',
+                    '                    enabled: Ai.isGenerating || messageInputField.text.length > 0\n'
+                    '                    toggled: enabled\n\n'
+                    '                    MouseArea {\n'
+                    '                        anchors.fill: parent\n'
+                    '                        cursorShape: sendButton.enabled ? Qt.PointingHandCursor : Qt.ArrowCursor\n'
+                    '                        onClicked: {\n'
+                    '                            if (Ai.isGenerating) {\n'
+                    '                                Ai.stopGeneration();\n'
+                    '                            } else {\n'
+                    '                                const inputText = messageInputField.text;\n'
+                    '                                root.handleInput(inputText);\n'
+                    '                                messageInputField.clear();\n'
+                    '                            }\n'
+                    '                        }\n'
+                    '                    }\n\n'
+                    '                    contentItem: MaterialSymbol {\n'
+                    '                        anchors.centerIn: parent\n'
+                    '                        horizontalAlignment: Text.AlignHCenter\n'
+                    '                        iconSize: 22\n'
+                    '                        color: sendButton.enabled ? Appearance.m3colors.m3onPrimary : Appearance.colors.colOnLayer2Disabled\n'
+                    '                        text: Ai.isGenerating ? "stop" : "arrow_upward"\n'
+                    '                    }',
+                ),
+                (
+                    "if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && Ai.isGenerating",
+                    '                            } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)) {',
+                    '                            } else if ((event.modifiers & Qt.ControlModifier) && event.key === Qt.Key_C && Ai.isGenerating && messageInputField.selectedText.length === 0) {\n'
+                    '                                Ai.stopGeneration();\n'
+                    '                                event.accepted = true;\n'
+                    '                            } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)) {',
+                ),
+                (
+                    "visible: root.modelPickerOpen || root.configPickerOpen\n                z: 5",
+                    "            StyledListView { // Message list",
+                    "            MouseArea {\n"
+                    "                anchors.fill: parent\n"
+                    "                visible: root.modelPickerOpen || root.configPickerOpen\n"
+                    "                z: 5\n"
+                    "                onPressed: mouse => {\n"
+                    "                    root.modelPickerOpen = false;\n"
+                    "                    root.configPickerOpen = false;\n"
+                    "                    mouse.accepted = false;\n"
+                    "                }\n"
+                    "            }\n"
+                    "            StyledListView { // Message list",
+                ),
+                (
+                    'visible: Ai.getModel()?.api_format !== "agy"\n                    // Tool indicator',
+                    '                ApiInputBoxIndicator {\n                    // Tool indicator',
+                    '                ApiInputBoxIndicator {\n                    visible: Ai.getModel()?.api_format !== "agy"\n                    // Tool indicator',
+                ),
+            ],
+        )
 
-    # 3. AiMessage.qml: clean Claude Code / CLI flat style for agy messages
-    ok &= patch_file(
-        ii / "modules/ii/sidebarLeft/aiChat/AiMessage.qml",
-        [
-            (
-                "readonly property bool cliStyle:",
-                "    property bool editing: false",
-                "    property bool editing: false\n"
-                "    readonly property bool cliStyle: (Ai.models[root.messageData?.model]?.api_format === \"agy\") || (Ai.getModel()?.api_format === \"agy\")",
-            ),
-            (
-                "color: root.cliStyle ?",
-                "    radius: Appearance.rounding.normal\n"
-                "    color: Appearance.colors.colLayer1",
-                "    radius: root.cliStyle ? Appearance.rounding.small : Appearance.rounding.normal\n"
-                "    color: root.cliStyle ? (messageData?.role === \"user\" ? ColorUtils.transparentize(Appearance.colors.colLayer2, 0.45) : \"transparent\") : Appearance.colors.colLayer1",
-            ),
-            (
-                "color: root.cliStyle ? \"transparent\" : Appearance.colors.colSecondaryContainer",
-                "        Rectangle {\n"
-                "            Layout.fillWidth: true\n"
-                "            implicitWidth: headerRowLayout.implicitWidth + 4 * 2\n"
-                "            implicitHeight: headerRowLayout.implicitHeight + 4 * 2\n"
-                "            color: Appearance.colors.colSecondaryContainer",
-                "        Rectangle {\n"
-                "            Layout.fillWidth: true\n"
-                "            implicitWidth: headerRowLayout.implicitWidth + 4 * 2\n"
-                "            implicitHeight: root.cliStyle ? (headerRowLayout.implicitHeight + 2) : (headerRowLayout.implicitHeight + 4 * 2)\n"
-                "            color: root.cliStyle ? \"transparent\" : Appearance.colors.colSecondaryContainer",
-            ),
-            (
-                "id: editButton\n                        visible: !root.cliStyle",
-                "                    AiMessageControlButton {\n                        id: editButton",
-                "                    AiMessageControlButton {\n                        id: editButton\n                        visible: !root.cliStyle",
-            ),
-            (
-                "id: toggleMarkdownButton\n                        visible: !root.cliStyle",
-                "                    AiMessageControlButton {\n                        id: toggleMarkdownButton",
-                "                    AiMessageControlButton {\n                        id: toggleMarkdownButton\n                        visible: !root.cliStyle",
-            ),
-        ],
-    )
+        # 3. AiMessage.qml: clean Claude Code / CLI flat style for agy messages
+        ok &= patch_file(
+            ii / "modules/ii/sidebarLeft/aiChat/AiMessage.qml",
+            [
+                (
+                    "readonly property bool cliStyle:",
+                    "    property bool editing: false",
+                    "    property bool editing: false\n"
+                    "    readonly property bool cliStyle: (Ai.models[root.messageData?.model]?.api_format === \"agy\") || (Ai.getModel()?.api_format === \"agy\")",
+                ),
+                (
+                    "color: root.cliStyle ?",
+                    "    radius: Appearance.rounding.normal\n"
+                    "    color: Appearance.colors.colLayer1",
+                    "    radius: root.cliStyle ? Appearance.rounding.small : Appearance.rounding.normal\n"
+                    "    color: root.cliStyle ? (messageData?.role === \"user\" ? ColorUtils.transparentize(Appearance.colors.colLayer2, 0.45) : \"transparent\") : Appearance.colors.colLayer1",
+                ),
+                (
+                    "color: root.cliStyle ? \"transparent\" : Appearance.colors.colSecondaryContainer",
+                    "        Rectangle {\n"
+                    "            Layout.fillWidth: true\n"
+                    "            implicitWidth: headerRowLayout.implicitWidth + 4 * 2\n"
+                    "            implicitHeight: headerRowLayout.implicitHeight + 4 * 2\n"
+                    "            color: Appearance.colors.colSecondaryContainer",
+                    "        Rectangle {\n"
+                    "            Layout.fillWidth: true\n"
+                    "            implicitWidth: headerRowLayout.implicitWidth + 4 * 2\n"
+                    "            implicitHeight: root.cliStyle ? (headerRowLayout.implicitHeight + 2) : (headerRowLayout.implicitHeight + 4 * 2)\n"
+                    "            color: root.cliStyle ? \"transparent\" : Appearance.colors.colSecondaryContainer",
+                ),
+                (
+                    "id: editButton\n                        visible: !root.cliStyle",
+                    "                    AiMessageControlButton {\n                        id: editButton",
+                    "                    AiMessageControlButton {\n                        id: editButton\n                        visible: !root.cliStyle",
+                ),
+                (
+                    "id: toggleMarkdownButton\n                        visible: !root.cliStyle",
+                    "                    AiMessageControlButton {\n                        id: toggleMarkdownButton",
+                    "                    AiMessageControlButton {\n                        id: toggleMarkdownButton\n                        visible: !root.cliStyle",
+                ),
+            ],
+        )
 
-    # 4. MessageCodeBlock.qml: green/red diff highlighting for diff blocks
-    ok &= patch_file(
-        ii / "modules/ii/sidebarLeft/aiChat/MessageCodeBlock.qml",
-        [
-            (
-                "function formatDiffHtml(raw)",
-                "                        text: segmentContent",
-                "                        function formatDiffHtml(raw) {\n"
-                "                            const esc = s => s.replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\");\n"
-                "                            return raw.split(\"\\n\").map(ln => {\n"
-                "                                if (ln.startsWith(\"+\") && !ln.startsWith(\"+++\")) return `<font color=\"#a6e3a1\">${esc(ln)}</font>`;\n"
-                "                                if (ln.startsWith(\"-\") && !ln.startsWith(\"---\")) return `<font color=\"#f38ba8\">${esc(ln)}</font>`;\n"
-                "                                if (ln.startsWith(\"@@\")) return `<font color=\"#89b4fa\">${esc(ln)}</font>`;\n"
-                "                                return esc(ln);\n"
-                "                            }).join(\"<br>\");\n"
-                "                        }\n"
-                "                        readonly property bool isDiffBlock: !editing && (segmentLang === \"diff\" || (/^\\+[^+]/m.test(segmentContent) && /^-[^-]/m.test(segmentContent)))\n"
-                "                        textFormat: isDiffBlock ? TextEdit.RichText : TextEdit.PlainText\n"
-                "                        text: isDiffBlock ? formatDiffHtml(segmentContent) : segmentContent",
-            ),
-        ],
-    )
+        # 4. MessageCodeBlock.qml: green/red diff highlighting for diff blocks
+        ok &= patch_file(
+            ii / "modules/ii/sidebarLeft/aiChat/MessageCodeBlock.qml",
+            [
+                (
+                    "function formatDiffHtml(raw)",
+                    "                        text: segmentContent",
+                    "                        function formatDiffHtml(raw) {\n"
+                    "                            const esc = s => s.replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\");\n"
+                    "                            return raw.split(\"\\n\").map(ln => {\n"
+                    "                                if (ln.startsWith(\"+\") && !ln.startsWith(\"+++\")) return `<font color=\"#a6e3a1\">${esc(ln)}</font>`;\n"
+                    "                                if (ln.startsWith(\"-\") && !ln.startsWith(\"---\")) return `<font color=\"#f38ba8\">${esc(ln)}</font>`;\n"
+                    "                                if (ln.startsWith(\"@@\")) return `<font color=\"#89b4fa\">${esc(ln)}</font>`;\n"
+                    "                                return esc(ln);\n"
+                    "                            }).join(\"<br>\");\n"
+                    "                        }\n"
+                    "                        readonly property bool isDiffBlock: !editing && (segmentLang === \"diff\" || (/^\\+[^+]/m.test(segmentContent) && /^-[^-]/m.test(segmentContent)))\n"
+                    "                        textFormat: isDiffBlock ? TextEdit.RichText : TextEdit.PlainText\n"
+                    "                        text: isDiffBlock ? formatDiffHtml(segmentContent) : segmentContent",
+                ),
+            ],
+        )
 
-    # 5. SidebarLeftContent.qml: tabs Claude | Agy | Codex | Anime
-    ok &= patch_file(
-        ii / "modules/ii/sidebarLeft/SidebarLeftContent.qml",
-        [
-            (
-                '"name": "Codex"',
-                '        ...(root.aiChatEnabled ? [{"icon": "neurology", "name": Translation.tr("Intelligence")}] : []),',
-                '        ...(root.aiChatEnabled ? [\n'
-                '            {"icon": "neurology", "name": "Claude"},\n'
-                '            {"icon": "auto_awesome", "name": "Agy"},\n'
-                '            {"icon": "terminal", "name": "Codex"}\n'
-                '        ] : []),',
-            ),
-            (
-                "claudeChat.createObject()",
-                "                    ...(root.aiChatEnabled ? [aiChat.createObject()] : []),",
-                "                    ...(root.aiChatEnabled ? [claudeChat.createObject(), aiChat.createObject(), codexChat.createObject()] : []),",
-            ),
-            (
-                "id: claudeChat",
-                "        Component {\n            id: aiChat",
-                "        Component {\n"
-                "            id: claudeChat\n"
-                "            CliChatPanel { backend: \"claude\" }\n"
-                "        }\n"
-                "        Component {\n"
-                "            id: codexChat\n"
-                "            CliChatPanel { backend: \"codex\" }\n"
-                "        }\n"
-                "        Component {\n            id: aiChat",
-            ),
-        ],
-    )
+        # 5. SidebarLeftContent.qml: tabs Claude | Agy | Codex | Anime
+        ok &= patch_file(
+            ii / "modules/ii/sidebarLeft/SidebarLeftContent.qml",
+            [
+                (
+                    '"name": "Codex"',
+                    '        ...(root.aiChatEnabled ? [{"icon": "neurology", "name": Translation.tr("Intelligence")}] : []),',
+                    '        ...(root.aiChatEnabled ? [\n'
+                    '            {"icon": "neurology", "name": "Claude"},\n'
+                    '            {"icon": "auto_awesome", "name": "Agy"},\n'
+                    '            {"icon": "terminal", "name": "Codex"}\n'
+                    '        ] : []),',
+                ),
+                (
+                    "claudeChat.createObject()",
+                    "                    ...(root.aiChatEnabled ? [aiChat.createObject()] : []),",
+                    "                    ...(root.aiChatEnabled ? [claudeChat.createObject(), aiChat.createObject(), codexChat.createObject()] : []),",
+                ),
+                (
+                    "id: claudeChat",
+                    "        Component {\n            id: aiChat",
+                    "        Component {\n"
+                    "            id: claudeChat\n"
+                    "            CliChatPanel { backend: \"claude\" }\n"
+                    "        }\n"
+                    "        Component {\n"
+                    "            id: codexChat\n"
+                    "            CliChatPanel { backend: \"codex\" }\n"
+                    "        }\n"
+                    "        Component {\n            id: aiChat",
+                ),
+            ],
+        )
 
-    # 6. Anime.qml: clickable provider picker, / button instead of /mode, shared CliSlashList + Esc/click-outside
-    ok &= patch_file(
-        ii / "modules/ii/sidebarLeft/Anime.qml",
-        [
-            (
-                "property bool providerPickerOpen: false",
-                '    property string commandPrefix: "/"',
-                '    property string commandPrefix: "/"\n    property bool providerPickerOpen: false',
-            ),
-            (
-                "CliSlashList {",
-                "        FlowButtonGroup { // Tag suggestions\n"
-                "            id: tagSuggestions\n"
-                "            visible: root.suggestionList.length > 0 && tagInputField.text.length > 0\n"
-                "            property int selectedIndex: 0\n"
-                "            Layout.fillWidth: true\n"
-                "            spacing: 5\n\n"
-                "            Repeater {\n"
-                "                id: tagSuggestionRepeater\n"
-                "                model: {\n"
-                "                    tagSuggestions.selectedIndex = 0\n"
-                "                    return root.suggestionList.slice(0, 10)\n"
-                "                }\n"
-                "                delegate: ApiCommandButton {\n"
-                "                    id: tagButton\n"
-                "                    colBackground: tagSuggestions.selectedIndex === index ? Appearance.colors.colSecondaryContainerHover : Appearance.colors.colSecondaryContainer\n"
-                "                    bounce: false\n"
-                "                    contentItem: RowLayout {\n"
-                "                        anchors.centerIn: parent\n"
-                "                        spacing: 5\n"
-                "                        StyledText {\n"
-                "                            Layout.fillWidth: false\n"
-                "                            font.pixelSize: Appearance.font.pixelSize.small\n"
-                "                            color: Appearance.colors.colOnSecondaryContainer\n"
-                "                            horizontalAlignment: Text.AlignRight\n"
-                "                            text: modelData.displayName ?? modelData.name\n"
-                "                        }\n"
-                "                        StyledText {\n"
-                "                            Layout.fillWidth: false\n"
-                "                            visible: modelData.count !== undefined\n"
-                "                            font.pixelSize: Appearance.font.pixelSize.smaller\n"
-                "                            color: Appearance.colors.colOnSecondaryContainer\n"
-                "                            horizontalAlignment: Text.AlignLeft\n"
-                "                            text: modelData.count ?? \"\"\n"
-                "                        }\n"
-                "                    }\n\n"
-                "                    onHoveredChanged: {\n"
-                "                        if (tagButton.hovered) {\n"
-                "                            tagSuggestions.selectedIndex = index;\n"
-                "                        }\n"
-                "                    }\n"
-                "                    onClicked: {\n"
-                "                        tagSuggestions.acceptTag(modelData.name)\n"
-                "                    }\n"
-                "                }\n"
-                "            }",
-                "        CliSlashList {\n"
-                "            id: tagSuggestions\n"
-                "            visible: root.suggestionList.length > 0 && tagInputField.text.length > 0\n"
-                "            Layout.fillWidth: true\n"
-                "            model: root.suggestionList\n"
-                "            onItemAccepted: item => tagSuggestions.acceptTag(item.name)",
-            ),
-            (
-                "const sel = tagSuggestions.currentItem();",
-                "                if (tagSuggestions.selectedIndex >= 0 && tagSuggestions.selectedIndex < tagSuggestionRepeater.count) {\n"
-                "                    const tag = root.suggestionList[tagSuggestions.selectedIndex].name;\n"
-                "                    tagSuggestions.acceptTag(tag);\n"
-                "                }",
-                "                const sel = tagSuggestions.currentItem();\n"
-                "                if (sel) tagSuggestions.acceptTag(sel.name);",
-            ),
-            (
-                "id: animeClickDismiss",
-                "        ScrollEdgeFade {",
-                "        MouseArea {\n"
-                "            id: animeClickDismiss\n"
-                "            anchors.fill: parent\n"
-                "            visible: root.providerPickerOpen\n"
-                "            z: 5\n"
-                "            onPressed: mouse => {\n"
-                "                root.providerPickerOpen = false;\n"
-                "                mouse.accepted = false;\n"
-                "            }\n"
-                "        }\n"
-                "        ScrollEdgeFade {",
-            ),
-            (
-                "id: animeProviderPicker",
-                "        Rectangle { // Tag input area",
-                "        Rectangle { // Inline Anime Provider Picker\n"
-                "            id: animeProviderPicker\n"
-                "            visible: root.providerPickerOpen\n"
-                "            Layout.fillWidth: true\n"
-                "            implicitHeight: Math.min(240, provCol.implicitHeight + 14)\n"
-                "            clip: true\n"
-                "            radius: Appearance.rounding.normal\n"
-                "            color: Appearance.colors.colLayer2\n"
-                "            border.width: 1\n"
-                "            border.color: Appearance.colors.colOutlineVariant\n\n"
-                "            ColumnLayout {\n"
-                "                id: provCol\n"
-                "                anchors.left: parent.left\n"
-                "                anchors.right: parent.right\n"
-                "                anchors.top: parent.top\n"
-                "                anchors.margins: 8\n"
-                "                spacing: 4\n"
-                "                StyledText {\n"
-                "                    Layout.leftMargin: 6\n"
-                "                    font.pixelSize: Appearance.font.pixelSize.smaller\n"
-                "                    font.weight: Font.Medium\n"
-                "                    color: Appearance.colors.colSubtext\n"
-                "                    text: Translation.tr(\"Providers\")\n"
-                "                }\n"
-                "                ListView {\n"
-                "                    id: provList\n"
-                "                    Layout.fillWidth: true\n"
-                "                    implicitHeight: Math.min(190, contentHeight)\n"
-                "                    clip: true\n"
-                "                    spacing: 2\n"
-                "                    model: Booru.providerList\n"
-                "                    delegate: RippleButton {\n"
-                "                        required property string modelData\n"
-                "                        readonly property bool active: Booru.currentProvider === modelData\n"
-                "                        width: provList.width\n"
-                "                        implicitHeight: 30\n"
-                "                        buttonRadius: Appearance.rounding.small\n"
-                "                        colBackground: active ? Appearance.colors.colPrimaryContainer : \"transparent\"\n"
-                "                        colBackgroundHover: active ? Appearance.colors.colPrimaryContainer : Appearance.colors.colSurfaceContainerHigh\n"
-                "                        onClicked: {\n"
-                "                            Booru.setProvider(modelData);\n"
-                "                            root.providerPickerOpen = false;\n"
-                "                        }\n"
-                "                        contentItem: RowLayout {\n"
-                "                            anchors.fill: parent\n"
-                "                            anchors.leftMargin: 8\n"
-                "                            anchors.rightMargin: 8\n"
-                "                            StyledText {\n"
-                "                                Layout.fillWidth: true\n"
-                "                                font.pixelSize: Appearance.font.pixelSize.small\n"
-                "                                color: active ? Appearance.colors.colOnPrimaryContainer : Appearance.m3colors.m3onSurface\n"
-                "                                text: Booru.providers[modelData]?.name ?? modelData\n"
-                "                            }\n"
-                "                            MaterialSymbol {\n"
-                "                                visible: active\n"
-                "                                text: \"check\"\n"
-                "                                iconSize: 16\n"
-                "                                color: Appearance.colors.colPrimary\n"
-                "                            }\n"
-                "                        }\n"
-                "                    }\n"
-                "                }\n"
-                "            }\n"
-                "        }\n\n"
-                "        Rectangle { // Tag input area",
-            ),
-            (
-                "onActiveFocusChanged: if (activeFocus) root.providerPickerOpen = false;",
-                "                StyledTextArea { // The actual TextArea\n"
-                "                    id: tagInputField",
-                "                StyledTextArea { // The actual TextArea\n"
-                "                    id: tagInputField\n"
-                "                    onActiveFocusChanged: if (activeFocus) root.providerPickerOpen = false;",
-            ),
-            (
-                "tagSuggestions.moveUp()",
-                "                        } else if (event.key === Qt.Key_Up) {\n"
-                "                            tagSuggestions.selectedIndex = Math.max(0, tagSuggestions.selectedIndex - 1);\n"
-                "                            event.accepted = true;\n"
-                "                        } else if (event.key === Qt.Key_Down) {\n"
-                "                            tagSuggestions.selectedIndex = Math.min(root.suggestionList.length - 1, tagSuggestions.selectedIndex + 1);\n"
-                "                            event.accepted = true;\n"
-                "                        }",
-                "                        } else if (event.key === Qt.Key_Up) {\n"
-                "                            tagSuggestions.moveUp();\n"
-                "                            event.accepted = true;\n"
-                "                        } else if (event.key === Qt.Key_Down) {\n"
-                "                            tagSuggestions.moveDown();\n"
-                "                            event.accepted = true;\n"
-                "                        }",
-            ),
-            (
-                "if (root.providerPickerOpen) { root.providerPickerOpen = false; event.accepted = true; return; }",
-                "                        } else if (event.key === Qt.Key_Up) {",
-                "                        } else if (event.key === Qt.Key_Escape) {\n"
-                "                            if (root.providerPickerOpen) { root.providerPickerOpen = false; event.accepted = true; return; }\n"
-                "                            if (tagSuggestions.visible) { tagInputField.clear(); event.accepted = true; return; }\n"
-                "                        } else if (event.key === Qt.Key_Up) {",
-            ),
-            (
-                'dontAddSpace: true\n                    },',
-                '                    {\n'
-                '                        name: "mode",\n'
-                '                        sendDirectly: false,\n'
-                '                    },',
-                '                    {\n'
-                '                        name: "",\n'
-                '                        sendDirectly: false,\n'
-                '                        dontAddSpace: true\n'
-                '                    },',
-            ),
-            (
-                "enter sends selected",
-                "                        } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)) {\n"
-                "                            if (event.modifiers & Qt.ShiftModifier) {\n"
-                "                                // Insert newline\n"
-                "                                tagInputField.insert(tagInputField.cursorPosition, \"\\n\")\n"
-                "                                event.accepted = true\n"
-                "                            } else { // Accept text\n"
-                "                                const inputText = tagInputField.text\n"
-                "                                root.handleInput(inputText)\n"
-                "                                tagInputField.clear()\n"
-                "                                event.accepted = true\n"
-                "                            }\n"
-                "                        }",
-                "                        } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)) {\n"
-                "                            if (event.modifiers & Qt.ShiftModifier) {\n"
-                "                                // Insert newline\n"
-                "                                tagInputField.insert(tagInputField.cursorPosition, \"\\n\")\n"
-                "                                event.accepted = true\n"
-                "                            } else if (tagSuggestions.visible) { // enter sends selected\n"
-                "                                tagSuggestions.acceptSelectedTag();\n"
-                "                                const inputText = tagInputField.text.trim();\n"
-                "                                if (inputText.length > 0) root.handleInput(inputText);\n"
-                "                                tagInputField.clear();\n"
-                "                                event.accepted = true;\n"
-                "                            } else { // Accept text\n"
-                "                                const inputText = tagInputField.text\n"
-                "                                root.handleInput(inputText)\n"
-                "                                tagInputField.clear()\n"
-                "                                event.accepted = true\n"
-                "                            }\n"
-                "                        }",
-            ),
-            (
-                "root.suggestionList = []; // clear after accept",
-                "                const updatedText = words.join(\" \") + \" \";\n"
-                "                tagInputField.text = updatedText;\n"
-                "                tagInputField.cursorPosition = tagInputField.text.length;\n"
-                "                tagInputField.forceActiveFocus();",
-                "                const updatedText = words.join(\" \") + \" \";\n"
-                "                tagInputField.text = updatedText;\n"
-                "                root.suggestionList = []; // clear after accept\n"
-                "                tagInputField.cursorPosition = tagInputField.text.length;\n"
-                "                tagInputField.forceActiveFocus();",
-            ),
-            (
-                "root.providerPickerOpen = !root.providerPickerOpen",
-                '                ApiInputBoxIndicator { // Tool indicator\n'
-                '                    icon: "api"\n'
-                '                    text: Booru.providers[Booru.currentProvider].name\n'
-                '                    tooltipText: Translation.tr("Current API endpoint: %1\\nSet it with %2mode PROVIDER")\n'
-                '                        .arg(Booru.providers[Booru.currentProvider].url)\n'
-                '                        .arg(root.commandPrefix)\n'
-                '                }',
-                '                ApiInputBoxIndicator { // Tool indicator (clickable)\n'
-                '                    icon: "api"\n'
-                '                    text: Booru.providers[Booru.currentProvider].name\n'
-                '                    tooltipText: Translation.tr("Current API endpoint: %1\\nSet it with %2mode PROVIDER")\n'
-                '                        .arg(Booru.providers[Booru.currentProvider].url)\n'
-                '                        .arg(root.commandPrefix)\n'
-                '                    MouseArea {\n'
-                '                        z: 10\n'
-                '                        anchors.fill: parent\n'
-                '                        cursorShape: Qt.PointingHandCursor\n'
-                '                        onClicked: root.providerPickerOpen = !root.providerPickerOpen\n'
-                '                    }\n'
-                '                }',
-            ),
-        ],
-    )
+        # 6. Anime.qml: clickable provider picker, / button instead of /mode, shared CliSlashList + Esc/click-outside
+        ok &= patch_file(
+            ii / "modules/ii/sidebarLeft/Anime.qml",
+            [
+                (
+                    "property bool providerPickerOpen: false",
+                    '    property string commandPrefix: "/"',
+                    '    property string commandPrefix: "/"\n    property bool providerPickerOpen: false',
+                ),
+                (
+                    "CliSlashList {",
+                    "        FlowButtonGroup { // Tag suggestions\n"
+                    "            id: tagSuggestions\n"
+                    "            visible: root.suggestionList.length > 0 && tagInputField.text.length > 0\n"
+                    "            property int selectedIndex: 0\n"
+                    "            Layout.fillWidth: true\n"
+                    "            spacing: 5\n\n"
+                    "            Repeater {\n"
+                    "                id: tagSuggestionRepeater\n"
+                    "                model: {\n"
+                    "                    tagSuggestions.selectedIndex = 0\n"
+                    "                    return root.suggestionList.slice(0, 10)\n"
+                    "                }\n"
+                    "                delegate: ApiCommandButton {\n"
+                    "                    id: tagButton\n"
+                    "                    colBackground: tagSuggestions.selectedIndex === index ? Appearance.colors.colSecondaryContainerHover : Appearance.colors.colSecondaryContainer\n"
+                    "                    bounce: false\n"
+                    "                    contentItem: RowLayout {\n"
+                    "                        anchors.centerIn: parent\n"
+                    "                        spacing: 5\n"
+                    "                        StyledText {\n"
+                    "                            Layout.fillWidth: false\n"
+                    "                            font.pixelSize: Appearance.font.pixelSize.small\n"
+                    "                            color: Appearance.colors.colOnSecondaryContainer\n"
+                    "                            horizontalAlignment: Text.AlignRight\n"
+                    "                            text: modelData.displayName ?? modelData.name\n"
+                    "                        }\n"
+                    "                        StyledText {\n"
+                    "                            Layout.fillWidth: false\n"
+                    "                            visible: modelData.count !== undefined\n"
+                    "                            font.pixelSize: Appearance.font.pixelSize.smaller\n"
+                    "                            color: Appearance.colors.colOnSecondaryContainer\n"
+                    "                            horizontalAlignment: Text.AlignLeft\n"
+                    "                            text: modelData.count ?? \"\"\n"
+                    "                        }\n"
+                    "                    }\n\n"
+                    "                    onHoveredChanged: {\n"
+                    "                        if (tagButton.hovered) {\n"
+                    "                            tagSuggestions.selectedIndex = index;\n"
+                    "                        }\n"
+                    "                    }\n"
+                    "                    onClicked: {\n"
+                    "                        tagSuggestions.acceptTag(modelData.name)\n"
+                    "                    }\n"
+                    "                }\n"
+                    "            }",
+                    "        CliSlashList {\n"
+                    "            id: tagSuggestions\n"
+                    "            visible: root.suggestionList.length > 0 && tagInputField.text.length > 0\n"
+                    "            Layout.fillWidth: true\n"
+                    "            model: root.suggestionList\n"
+                    "            onItemAccepted: item => tagSuggestions.acceptTag(item.name)",
+                ),
+                (
+                    "const sel = tagSuggestions.currentItem();",
+                    "                if (tagSuggestions.selectedIndex >= 0 && tagSuggestions.selectedIndex < tagSuggestionRepeater.count) {\n"
+                    "                    const tag = root.suggestionList[tagSuggestions.selectedIndex].name;\n"
+                    "                    tagSuggestions.acceptTag(tag);\n"
+                    "                }",
+                    "                const sel = tagSuggestions.currentItem();\n"
+                    "                if (sel) tagSuggestions.acceptTag(sel.name);",
+                ),
+                (
+                    "id: animeClickDismiss",
+                    "        ScrollEdgeFade {",
+                    "        MouseArea {\n"
+                    "            id: animeClickDismiss\n"
+                    "            anchors.fill: parent\n"
+                    "            visible: root.providerPickerOpen\n"
+                    "            z: 5\n"
+                    "            onPressed: mouse => {\n"
+                    "                root.providerPickerOpen = false;\n"
+                    "                mouse.accepted = false;\n"
+                    "            }\n"
+                    "        }\n"
+                    "        ScrollEdgeFade {",
+                ),
+                (
+                    "id: animeProviderPicker",
+                    "        Rectangle { // Tag input area",
+                    "        Rectangle { // Inline Anime Provider Picker\n"
+                    "            id: animeProviderPicker\n"
+                    "            visible: root.providerPickerOpen\n"
+                    "            Layout.fillWidth: true\n"
+                    "            implicitHeight: Math.min(240, provCol.implicitHeight + 14)\n"
+                    "            clip: true\n"
+                    "            radius: Appearance.rounding.normal\n"
+                    "            color: Appearance.colors.colLayer2\n"
+                    "            border.width: 1\n"
+                    "            border.color: Appearance.colors.colOutlineVariant\n\n"
+                    "            ColumnLayout {\n"
+                    "                id: provCol\n"
+                    "                anchors.left: parent.left\n"
+                    "                anchors.right: parent.right\n"
+                    "                anchors.top: parent.top\n"
+                    "                anchors.margins: 8\n"
+                    "                spacing: 4\n"
+                    "                StyledText {\n"
+                    "                    Layout.leftMargin: 6\n"
+                    "                    font.pixelSize: Appearance.font.pixelSize.smaller\n"
+                    "                    font.weight: Font.Medium\n"
+                    "                    color: Appearance.colors.colSubtext\n"
+                    "                    text: Translation.tr(\"Providers\")\n"
+                    "                }\n"
+                    "                ListView {\n"
+                    "                    id: provList\n"
+                    "                    Layout.fillWidth: true\n"
+                    "                    implicitHeight: Math.min(190, contentHeight)\n"
+                    "                    clip: true\n"
+                    "                    spacing: 2\n"
+                    "                    model: Booru.providerList\n"
+                    "                    delegate: RippleButton {\n"
+                    "                        required property string modelData\n"
+                    "                        readonly property bool active: Booru.currentProvider === modelData\n"
+                    "                        width: provList.width\n"
+                    "                        implicitHeight: 30\n"
+                    "                        buttonRadius: Appearance.rounding.small\n"
+                    "                        colBackground: active ? Appearance.colors.colPrimaryContainer : \"transparent\"\n"
+                    "                        colBackgroundHover: active ? Appearance.colors.colPrimaryContainer : Appearance.colors.colSurfaceContainerHigh\n"
+                    "                        onClicked: {\n"
+                    "                            Booru.setProvider(modelData);\n"
+                    "                            root.providerPickerOpen = false;\n"
+                    "                        }\n"
+                    "                        contentItem: RowLayout {\n"
+                    "                            anchors.fill: parent\n"
+                    "                            anchors.leftMargin: 8\n"
+                    "                            anchors.rightMargin: 8\n"
+                    "                            StyledText {\n"
+                    "                                Layout.fillWidth: true\n"
+                    "                                font.pixelSize: Appearance.font.pixelSize.small\n"
+                    "                                color: active ? Appearance.colors.colOnPrimaryContainer : Appearance.m3colors.m3onSurface\n"
+                    "                                text: Booru.providers[modelData]?.name ?? modelData\n"
+                    "                            }\n"
+                    "                            MaterialSymbol {\n"
+                    "                                visible: active\n"
+                    "                                text: \"check\"\n"
+                    "                                iconSize: 16\n"
+                    "                                color: Appearance.colors.colPrimary\n"
+                    "                            }\n"
+                    "                        }\n"
+                    "                    }\n"
+                    "                }\n"
+                    "            }\n"
+                    "        }\n\n"
+                    "        Rectangle { // Tag input area",
+                ),
+                (
+                    "onActiveFocusChanged: if (activeFocus) root.providerPickerOpen = false;",
+                    "                StyledTextArea { // The actual TextArea\n"
+                    "                    id: tagInputField",
+                    "                StyledTextArea { // The actual TextArea\n"
+                    "                    id: tagInputField\n"
+                    "                    onActiveFocusChanged: if (activeFocus) root.providerPickerOpen = false;",
+                ),
+                (
+                    "tagSuggestions.moveUp()",
+                    "                        } else if (event.key === Qt.Key_Up) {\n"
+                    "                            tagSuggestions.selectedIndex = Math.max(0, tagSuggestions.selectedIndex - 1);\n"
+                    "                            event.accepted = true;\n"
+                    "                        } else if (event.key === Qt.Key_Down) {\n"
+                    "                            tagSuggestions.selectedIndex = Math.min(root.suggestionList.length - 1, tagSuggestions.selectedIndex + 1);\n"
+                    "                            event.accepted = true;\n"
+                    "                        }",
+                    "                        } else if (event.key === Qt.Key_Up) {\n"
+                    "                            tagSuggestions.moveUp();\n"
+                    "                            event.accepted = true;\n"
+                    "                        } else if (event.key === Qt.Key_Down) {\n"
+                    "                            tagSuggestions.moveDown();\n"
+                    "                            event.accepted = true;\n"
+                    "                        }",
+                ),
+                (
+                    "if (root.providerPickerOpen) { root.providerPickerOpen = false; event.accepted = true; return; }",
+                    "                        } else if (event.key === Qt.Key_Up) {",
+                    "                        } else if (event.key === Qt.Key_Escape) {\n"
+                    "                            if (root.providerPickerOpen) { root.providerPickerOpen = false; event.accepted = true; return; }\n"
+                    "                            if (tagSuggestions.visible) { tagInputField.clear(); event.accepted = true; return; }\n"
+                    "                        } else if (event.key === Qt.Key_Up) {",
+                ),
+                (
+                    'dontAddSpace: true\n                    },',
+                    '                    {\n'
+                    '                        name: "mode",\n'
+                    '                        sendDirectly: false,\n'
+                    '                    },',
+                    '                    {\n'
+                    '                        name: "",\n'
+                    '                        sendDirectly: false,\n'
+                    '                        dontAddSpace: true\n'
+                    '                    },',
+                ),
+                (
+                    "enter sends selected",
+                    "                        } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)) {\n"
+                    "                            if (event.modifiers & Qt.ShiftModifier) {\n"
+                    "                                // Insert newline\n"
+                    "                                tagInputField.insert(tagInputField.cursorPosition, \"\\n\")\n"
+                    "                                event.accepted = true\n"
+                    "                            } else { // Accept text\n"
+                    "                                const inputText = tagInputField.text\n"
+                    "                                root.handleInput(inputText)\n"
+                    "                                tagInputField.clear()\n"
+                    "                                event.accepted = true\n"
+                    "                            }\n"
+                    "                        }",
+                    "                        } else if ((event.key === Qt.Key_Enter || event.key === Qt.Key_Return)) {\n"
+                    "                            if (event.modifiers & Qt.ShiftModifier) {\n"
+                    "                                // Insert newline\n"
+                    "                                tagInputField.insert(tagInputField.cursorPosition, \"\\n\")\n"
+                    "                                event.accepted = true\n"
+                    "                            } else if (tagSuggestions.visible) { // enter sends selected\n"
+                    "                                tagSuggestions.acceptSelectedTag();\n"
+                    "                                const inputText = tagInputField.text.trim();\n"
+                    "                                if (inputText.length > 0) root.handleInput(inputText);\n"
+                    "                                tagInputField.clear();\n"
+                    "                                event.accepted = true;\n"
+                    "                            } else { // Accept text\n"
+                    "                                const inputText = tagInputField.text\n"
+                    "                                root.handleInput(inputText)\n"
+                    "                                tagInputField.clear()\n"
+                    "                                event.accepted = true\n"
+                    "                            }\n"
+                    "                        }",
+                ),
+                (
+                    "root.suggestionList = []; // clear after accept",
+                    "                const updatedText = words.join(\" \") + \" \";\n"
+                    "                tagInputField.text = updatedText;\n"
+                    "                tagInputField.cursorPosition = tagInputField.text.length;\n"
+                    "                tagInputField.forceActiveFocus();",
+                    "                const updatedText = words.join(\" \") + \" \";\n"
+                    "                tagInputField.text = updatedText;\n"
+                    "                root.suggestionList = []; // clear after accept\n"
+                    "                tagInputField.cursorPosition = tagInputField.text.length;\n"
+                    "                tagInputField.forceActiveFocus();",
+                ),
+                (
+                    "root.providerPickerOpen = !root.providerPickerOpen",
+                    '                ApiInputBoxIndicator { // Tool indicator\n'
+                    '                    icon: "api"\n'
+                    '                    text: Booru.providers[Booru.currentProvider].name\n'
+                    '                    tooltipText: Translation.tr("Current API endpoint: %1\\nSet it with %2mode PROVIDER")\n'
+                    '                        .arg(Booru.providers[Booru.currentProvider].url)\n'
+                    '                        .arg(root.commandPrefix)\n'
+                    '                }',
+                    '                ApiInputBoxIndicator { // Tool indicator (clickable)\n'
+                    '                    icon: "api"\n'
+                    '                    text: Booru.providers[Booru.currentProvider].name\n'
+                    '                    tooltipText: Translation.tr("Current API endpoint: %1\\nSet it with %2mode PROVIDER")\n'
+                    '                        .arg(Booru.providers[Booru.currentProvider].url)\n'
+                    '                        .arg(root.commandPrefix)\n'
+                    '                    MouseArea {\n'
+                    '                        z: 10\n'
+                    '                        anchors.fill: parent\n'
+                    '                        cursorShape: Qt.PointingHandCursor\n'
+                    '                        onClicked: root.providerPickerOpen = !root.providerPickerOpen\n'
+                    '                    }\n'
+                    '                }',
+                ),
+            ],
+        )
 
-    # 7. BooruImage.qml: clicking an anime image opens a floating full-size viewer
-    ok &= patch_file(
-        ii / "modules/ii/sidebarLeft/anime/BooruImage.qml",
-        [
-            (
-                "property bool viewerOpen: false",
-                "    property bool showActions: false",
-                "    property bool showActions: false\n"
-                "    property bool viewerOpen: false",
-            ),
-            (
-                "sampleUrl: root.imageData.sample_url",
-                "    padding: 0\n"
-                "    implicitWidth: root.rowHeight * modelData.aspect_ratio",
-                "    onClicked: root.viewerOpen = true\n\n"
-                "    PointingHandInteraction {}\n\n"
-                "    Loader {\n"
-                "        active: root.viewerOpen\n"
-                "        sourceComponent: AnimeImageViewer {\n"
-                "            sourceUrl: root.imageData.file_url ?? root.imageData.sample_url ?? root.imageData.preview_url ?? \"\"\n"
-                "            sampleUrl: root.imageData.sample_url ?? \"\"\n"
-                "            previewUrl: root.imageData.preview_url ?? \"\"\n"
-                "            tags: root.imageData.tags ?? \"\"\n"
-                "            onCloseRequested: root.viewerOpen = false\n"
-                "        }\n"
-                "    }\n\n"
-                "    padding: 0\n"
-                "    implicitWidth: root.rowHeight * modelData.aspect_ratio",
-            ),
-        ],
-    )
+        # 7. BooruImage.qml: clicking an anime image opens a floating full-size viewer
+        ok &= patch_file(
+            ii / "modules/ii/sidebarLeft/anime/BooruImage.qml",
+            [
+                (
+                    "property bool viewerOpen: false",
+                    "    property bool showActions: false",
+                    "    property bool showActions: false\n"
+                    "    property bool viewerOpen: false",
+                ),
+                (
+                    "sampleUrl: root.imageData.sample_url",
+                    "    padding: 0\n"
+                    "    implicitWidth: root.rowHeight * modelData.aspect_ratio",
+                    "    onClicked: root.viewerOpen = true\n\n"
+                    "    PointingHandInteraction {}\n\n"
+                    "    Loader {\n"
+                    "        active: root.viewerOpen\n"
+                    "        sourceComponent: AnimeImageViewer {\n"
+                    "            sourceUrl: root.imageData.file_url ?? root.imageData.sample_url ?? root.imageData.preview_url ?? \"\"\n"
+                    "            sampleUrl: root.imageData.sample_url ?? \"\"\n"
+                    "            previewUrl: root.imageData.preview_url ?? \"\"\n"
+                    "            tags: root.imageData.tags ?? \"\"\n"
+                    "            onCloseRequested: root.viewerOpen = false\n"
+                    "        }\n"
+                    "    }\n\n"
+                    "    padding: 0\n"
+                    "    implicitWidth: root.rowHeight * modelData.aspect_ratio",
+                ),
+            ],
+        )
 
-    # 8. GlobalStates.qml: track animeViewerOpen so SidebarLeft ignores Esc/focus-grab while viewing
-    ok &= patch_file(
-        ii / "GlobalStates.qml",
-        [
-            (
-                "property bool animeViewerOpen: false",
-                "    property bool sidebarLeftOpen: false",
-                "    property bool sidebarLeftOpen: false\n"
-                "    property bool animeViewerOpen: false",
-            ),
-        ],
-    )
+        # 8. GlobalStates.qml: track animeViewerOpen so SidebarLeft ignores Esc/focus-grab while viewing
+        ok &= patch_file(
+            ii / "GlobalStates.qml",
+            [
+                (
+                    "property bool animeViewerOpen: false",
+                    "    property bool sidebarLeftOpen: false",
+                    "    property bool sidebarLeftOpen: false\n"
+                    "    property bool animeViewerOpen: false",
+                ),
+            ],
+        )
 
-    # 9. SidebarLeft.qml: don't dismiss SidebarLeft when AnimeImageViewer takes focus or Esc is pressed
-    ok &= patch_file(
-        ii / "modules/ii/sidebarLeft/SidebarLeft.qml",
-        [
-            (
-                "if (!GlobalStates.animeViewerOpen) panelWindow.hide();",
-                "            Connections {\n"
-                "                target: GlobalFocusGrab\n"
-                "                function onDismissed() {\n"
-                "                    panelWindow.hide();\n"
-                "                }\n"
-                "            }",
-                "            Connections {\n"
-                "                target: GlobalFocusGrab\n"
-                "                function onDismissed() {\n"
-                "                    if (!GlobalStates.animeViewerOpen) panelWindow.hide();\n"
-                "                }\n"
-                "            }\n"
-                "            Connections {\n"
-                "                target: GlobalStates\n"
-                "                function onAnimeViewerOpenChanged() {\n"
-                "                    if (!GlobalStates.animeViewerOpen && panelWindow.visible) {\n"
-                "                        GlobalFocusGrab.addDismissable(panelWindow);\n"
-                "                    }\n"
-                "                }\n"
-                "            }",
-            ),
-            (
-                "if (event.key === Qt.Key_Escape && !GlobalStates.animeViewerOpen)",
-                "                Keys.onPressed: (event) => {\n"
-                "                    if (event.key === Qt.Key_Escape) {\n"
-                "                        panelWindow.hide();\n"
-                "                    }",
-                "                Keys.onPressed: (event) => {\n"
-                "                    if (event.key === Qt.Key_Escape && !GlobalStates.animeViewerOpen) {\n"
-                "                        panelWindow.hide();\n"
-                "                    }",
-            ),
-        ],
-    )
+        # 9. SidebarLeft.qml: don't dismiss SidebarLeft when AnimeImageViewer takes focus or Esc is pressed
+        ok &= patch_file(
+            ii / "modules/ii/sidebarLeft/SidebarLeft.qml",
+            [
+                (
+                    "if (!GlobalStates.animeViewerOpen) panelWindow.hide();",
+                    "            Connections {\n"
+                    "                target: GlobalFocusGrab\n"
+                    "                function onDismissed() {\n"
+                    "                    panelWindow.hide();\n"
+                    "                }\n"
+                    "            }",
+                    "            Connections {\n"
+                    "                target: GlobalFocusGrab\n"
+                    "                function onDismissed() {\n"
+                    "                    if (!GlobalStates.animeViewerOpen) panelWindow.hide();\n"
+                    "                }\n"
+                    "            }\n"
+                    "            Connections {\n"
+                    "                target: GlobalStates\n"
+                    "                function onAnimeViewerOpenChanged() {\n"
+                    "                    if (!GlobalStates.animeViewerOpen && panelWindow.visible) {\n"
+                    "                        GlobalFocusGrab.addDismissable(panelWindow);\n"
+                    "                    }\n"
+                    "                }\n"
+                    "            }",
+                ),
+                (
+                    "if (event.key === Qt.Key_Escape && !GlobalStates.animeViewerOpen)",
+                    "                Keys.onPressed: (event) => {\n"
+                    "                    if (event.key === Qt.Key_Escape) {\n"
+                    "                        panelWindow.hide();\n"
+                    "                    }",
+                    "                Keys.onPressed: (event) => {\n"
+                    "                    if (event.key === Qt.Key_Escape && !GlobalStates.animeViewerOpen) {\n"
+                    "                        panelWindow.hide();\n"
+                    "                    }",
+                ),
+            ],
+        )
 
-    # 10. Config.qml: store splitByMonitor, leftMonitorCount & monitorSplits (M-1 boundaries for M monitors)
-    ok &= patch_file(
-        ii / "modules/common/Config.qml",
-        [
-            (
-                "property list<int> monitorSplits:",
-                "                property JsonObject workspaces: JsonObject {\n"
-                "                    property bool monochromeIcons: true",
-                "                property JsonObject workspaces: JsonObject {\n"
-                "                    property bool splitByMonitor: true\n"
-                "                    property int leftMonitorCount: 5\n"
-                "                    property list<int> monitorSplits: [5]\n"
-                "                    property bool monochromeIcons: true",
-            ),
-        ],
-    )
+    if has_feat("workspace-split"):
+        # 10. Config.qml: store splitByMonitor, leftMonitorCount & monitorSplits (M-1 boundaries for M monitors)
+        ok &= patch_file(
+            ii / "modules/common/Config.qml",
+            [
+                (
+                    "property list<int> monitorSplits:",
+                    "                property JsonObject workspaces: JsonObject {\n"
+                    "                    property bool monochromeIcons: true",
+                    "                property JsonObject workspaces: JsonObject {\n"
+                    "                    property bool splitByMonitor: true\n"
+                    "                    property int leftMonitorCount: 5\n"
+                    "                    property list<int> monitorSplits: [5]\n"
+                    "                    property bool monochromeIcons: true",
+                ),
+            ],
+        )
 
-    # 11. BarConfig.qml: On/Off switch + M-1 live sliders for M monitors
-    ok &= patch_file(
-        ii / "modules/settings/BarConfig.qml",
-        [
-            (
-                "import Quickshell.Io",
-                "import QtQuick\n"
-                "import QtQuick.Layouts\n"
-                "import qs.services",
-                "import QtQuick\n"
-                "import QtQuick.Layouts\n"
-                "import Quickshell\n"
-                "import Quickshell.Io\n"
-                "import qs.services",
-            ),
-            (
-                "function getMonitorSplits()",
-                "ContentPage {\n"
-                "    forceWidth: true",
-                "ContentPage {\n"
-                "    id: barConfigPage\n"
-                "    forceWidth: true\n"
-                "    readonly property int monitorCount: Quickshell.screens.length\n"
-                "    readonly property bool hasMultipleMonitors: monitorCount > 1\n\n"
-                "    function getMonitorSplits() {\n"
-                "        const needed = Math.max(0, monitorCount - 1);\n"
-                "        if (needed === 0) return [];\n"
-                "        let arr = Array.from(Config.options.bar.workspaces.monitorSplits ?? []);\n"
-                "        if (arr.length !== needed) {\n"
-                "            arr = [];\n"
-                "            for (let i = 0; i < needed; i++) {\n"
-                "                arr.push(Math.round(10 * (i + 1) / monitorCount));\n"
-                "            }\n"
-                "        }\n"
-                "        return arr;\n"
-                "    }\n\n"
-                "    function updateSplit(idx, val) {\n"
-                "        const needed = Math.max(0, monitorCount - 1);\n"
-                "        if (idx < 0 || idx >= needed) return;\n"
-                "        const arr = getMonitorSplits().slice();\n"
-                "        const minV = idx + 1;\n"
-                "        const maxV = 10 - (needed - idx);\n"
-                "        arr[idx] = Math.max(minV, Math.min(maxV, Math.round(val)));\n"
-                "        for (let j = idx - 1; j >= 0; j--) {\n"
-                "            if (arr[j] >= arr[j + 1]) arr[j] = arr[j + 1] - 1;\n"
-                "        }\n"
-                "        for (let j = idx + 1; j < needed; j++) {\n"
-                "            if (arr[j] <= arr[j - 1]) arr[j] = arr[j - 1] + 1;\n"
-                "        }\n"
-                "        Config.options.bar.workspaces.monitorSplits = arr;\n"
-                "        Config.options.bar.workspaces.leftMonitorCount = arr[0];\n"
-                "        wsSplitApplyTimer.restart();\n"
-                "    }\n\n"
-                "    Timer {\n"
-                "        id: wsSplitApplyTimer\n"
-                "        interval: 120\n"
-                "        repeat: false\n"
-                "        onTriggered: {\n"
-                "            wsSplitProc.running = false;\n"
-                "            wsSplitProc.running = true;\n"
-                "        }\n"
-                "    }\n\n"
-                "    Process {\n"
-                "        id: wsSplitProc\n"
-                "        command: [\n"
-                "            \"python3\",\n"
-                "            Quickshell.shellPath(\"scripts/apply-workspace-split.py\"),\n"
-                "            (barConfigPage.hasMultipleMonitors && Config.options.bar.workspaces.splitByMonitor)\n"
-                "                ? barConfigPage.getMonitorSplits().join(\",\")\n"
-                "                : \"0\"\n"
-                "        ]\n"
-                "    }",
-            ),
-            (
-                "Split workspaces by monitor",
-                "        ConfigSpinBox {\n"
-                "            icon: \"view_column\"\n"
-                "            text: Translation.tr(\"Workspaces shown\")",
-                "        RowLayout {\n"
-                "            Layout.fillWidth: true\n"
-                "            spacing: 8\n"
-                "            ConfigSwitch {\n"
-                "                Layout.fillWidth: true\n"
-                "                buttonIcon: \"splitscreen_left\"\n"
-                "                text: Translation.tr(\"Split workspaces by monitor\")\n"
-                "                enabled: barConfigPage.hasMultipleMonitors\n"
-                "                checked: barConfigPage.hasMultipleMonitors && Config.options.bar.workspaces.splitByMonitor\n"
-                "                onCheckedChanged: {\n"
-                "                    if (barConfigPage.hasMultipleMonitors && Config.options.bar.workspaces.splitByMonitor !== checked) {\n"
-                "                        Config.options.bar.workspaces.splitByMonitor = checked;\n"
-                "                        wsSplitApplyTimer.restart();\n"
-                "                    }\n"
-                "                }\n"
-                "            }\n"
-                "            RowLayout {\n"
-                "                visible: !barConfigPage.hasMultipleMonitors\n"
-                "                spacing: 4\n"
-                "                MaterialSymbol {\n"
-                "                    text: \"error\"\n"
-                "                    iconSize: 18\n"
-                "                    color: Appearance.colors.colError\n"
-                "                }\n"
-                "                StyledText {\n"
-                "                    text: Translation.tr(\"No 2nd monitor\")\n"
-                "                    color: Appearance.colors.colError\n"
-                "                    font.pixelSize: Appearance.font.pixelSize.small\n"
-                "                }\n"
-                "            }\n"
-                "        }\n\n"
-                "        Repeater {\n"
-                "            model: (barConfigPage.hasMultipleMonitors && Config.options.bar.workspaces.splitByMonitor)\n"
-                "                ? Math.max(0, barConfigPage.monitorCount - 1) : 0\n"
-                "            delegate: ConfigSlider {\n"
-                "                required property int index\n"
-                "                readonly property var splits: barConfigPage.getMonitorSplits()\n"
-                "                readonly property int prevEnd: index === 0 ? 0 : splits[index - 1]\n"
-                "                readonly property int curEnd: splits[index] ?? 5\n"
-                "                readonly property int nextEnd: (index + 1 < splits.length) ? splits[index + 1] : 10\n"
-                "                text: Translation.tr(\"M%1 %2–%3 | M%4 %5–%6\")\n"
-                "                    .arg(index + 1).arg(prevEnd + 1).arg(curEnd)\n"
-                "                    .arg(index + 2).arg(curEnd + 1).arg(nextEnd)\n"
-                "                value: curEnd\n"
-                "                usePercentTooltip: false\n"
-                "                buttonIcon: \"tune\"\n"
-                "                from: index + 1\n"
-                "                to: 10 - (barConfigPage.monitorCount - 1 - index)\n"
-                "                stopIndicatorValues: [Math.round(10 * (index + 1) / barConfigPage.monitorCount)]\n"
-                "                onValueChanged: {\n"
-                "                    const v = Math.round(value);\n"
-                "                    if (v !== curEnd) {\n"
-                "                        barConfigPage.updateSplit(index, v);\n"
-                "                    }\n"
-                "                }\n"
-                "            }\n"
-                "        }\n\n"
-                "        ConfigSpinBox {\n"
-                "            icon: \"view_column\"\n"
-                "            text: Translation.tr(\"Workspaces shown\")",
-            ),
-        ],
-    )
+        # 11. BarConfig.qml: On/Off switch + M-1 live sliders for M monitors
+        ok &= patch_file(
+            ii / "modules/settings/BarConfig.qml",
+            [
+                (
+                    "import Quickshell.Io",
+                    "import QtQuick\n"
+                    "import QtQuick.Layouts\n"
+                    "import qs.services",
+                    "import QtQuick\n"
+                    "import QtQuick.Layouts\n"
+                    "import Quickshell\n"
+                    "import Quickshell.Io\n"
+                    "import qs.services",
+                ),
+                (
+                    "function getMonitorSplits()",
+                    "ContentPage {\n"
+                    "    forceWidth: true",
+                    "ContentPage {\n"
+                    "    id: barConfigPage\n"
+                    "    forceWidth: true\n"
+                    "    readonly property int monitorCount: Quickshell.screens.length\n"
+                    "    readonly property bool hasMultipleMonitors: monitorCount > 1\n\n"
+                    "    function getMonitorSplits() {\n"
+                    "        const needed = Math.max(0, monitorCount - 1);\n"
+                    "        if (needed === 0) return [];\n"
+                    "        let arr = Array.from(Config.options.bar.workspaces.monitorSplits ?? []);\n"
+                    "        if (arr.length !== needed) {\n"
+                    "            arr = [];\n"
+                    "            for (let i = 0; i < needed; i++) {\n"
+                    "                arr.push(Math.round(10 * (i + 1) / monitorCount));\n"
+                    "            }\n"
+                    "        }\n"
+                    "        return arr;\n"
+                    "    }\n\n"
+                    "    function updateSplit(idx, val) {\n"
+                    "        const needed = Math.max(0, monitorCount - 1);\n"
+                    "        if (idx < 0 || idx >= needed) return;\n"
+                    "        const arr = getMonitorSplits().slice();\n"
+                    "        const minV = idx + 1;\n"
+                    "        const maxV = 10 - (needed - idx);\n"
+                    "        arr[idx] = Math.max(minV, Math.min(maxV, Math.round(val)));\n"
+                    "        for (let j = idx - 1; j >= 0; j--) {\n"
+                    "            if (arr[j] >= arr[j + 1]) arr[j] = arr[j + 1] - 1;\n"
+                    "        }\n"
+                    "        for (let j = idx + 1; j < needed; j++) {\n"
+                    "            if (arr[j] <= arr[j - 1]) arr[j] = arr[j - 1] + 1;\n"
+                    "        }\n"
+                    "        Config.options.bar.workspaces.monitorSplits = arr;\n"
+                    "        Config.options.bar.workspaces.leftMonitorCount = arr[0];\n"
+                    "        wsSplitApplyTimer.restart();\n"
+                    "    }\n\n"
+                    "    Timer {\n"
+                    "        id: wsSplitApplyTimer\n"
+                    "        interval: 120\n"
+                    "        repeat: false\n"
+                    "        onTriggered: {\n"
+                    "            wsSplitProc.running = false;\n"
+                    "            wsSplitProc.running = true;\n"
+                    "        }\n"
+                    "    }\n\n"
+                    "    Process {\n"
+                    "        id: wsSplitProc\n"
+                    "        command: [\n"
+                    "            \"python3\",\n"
+                    "            Quickshell.shellPath(\"scripts/apply-workspace-split.py\"),\n"
+                    "            (barConfigPage.hasMultipleMonitors && Config.options.bar.workspaces.splitByMonitor)\n"
+                    "                ? barConfigPage.getMonitorSplits().join(\",\")\n"
+                    "                : \"0\"\n"
+                    "        ]\n"
+                    "    }",
+                ),
+                (
+                    "Split workspaces by monitor",
+                    "        ConfigSpinBox {\n"
+                    "            icon: \"view_column\"\n"
+                    "            text: Translation.tr(\"Workspaces shown\")",
+                    "        RowLayout {\n"
+                    "            Layout.fillWidth: true\n"
+                    "            spacing: 8\n"
+                    "            ConfigSwitch {\n"
+                    "                Layout.fillWidth: true\n"
+                    "                buttonIcon: \"splitscreen_left\"\n"
+                    "                text: Translation.tr(\"Split workspaces by monitor\")\n"
+                    "                enabled: barConfigPage.hasMultipleMonitors\n"
+                    "                checked: barConfigPage.hasMultipleMonitors && Config.options.bar.workspaces.splitByMonitor\n"
+                    "                onCheckedChanged: {\n"
+                    "                    if (barConfigPage.hasMultipleMonitors && Config.options.bar.workspaces.splitByMonitor !== checked) {\n"
+                    "                        Config.options.bar.workspaces.splitByMonitor = checked;\n"
+                    "                        wsSplitApplyTimer.restart();\n"
+                    "                    }\n"
+                    "                }\n"
+                    "            }\n"
+                    "            RowLayout {\n"
+                    "                visible: !barConfigPage.hasMultipleMonitors\n"
+                    "                spacing: 4\n"
+                    "                MaterialSymbol {\n"
+                    "                    text: \"error\"\n"
+                    "                    iconSize: 18\n"
+                    "                    color: Appearance.colors.colError\n"
+                    "                }\n"
+                    "                StyledText {\n"
+                    "                    text: Translation.tr(\"No 2nd monitor\")\n"
+                    "                    color: Appearance.colors.colError\n"
+                    "                    font.pixelSize: Appearance.font.pixelSize.small\n"
+                    "                }\n"
+                    "            }\n"
+                    "        }\n\n"
+                    "        Repeater {\n"
+                    "            model: (barConfigPage.hasMultipleMonitors && Config.options.bar.workspaces.splitByMonitor)\n"
+                    "                ? Math.max(0, barConfigPage.monitorCount - 1) : 0\n"
+                    "            delegate: ConfigSlider {\n"
+                    "                required property int index\n"
+                    "                readonly property var splits: barConfigPage.getMonitorSplits()\n"
+                    "                readonly property int prevEnd: index === 0 ? 0 : splits[index - 1]\n"
+                    "                readonly property int curEnd: splits[index] ?? 5\n"
+                    "                readonly property int nextEnd: (index + 1 < splits.length) ? splits[index + 1] : 10\n"
+                    "                text: Translation.tr(\"M%1 %2–%3 | M%4 %5–%6\")\n"
+                    "                    .arg(index + 1).arg(prevEnd + 1).arg(curEnd)\n"
+                    "                    .arg(index + 2).arg(curEnd + 1).arg(nextEnd)\n"
+                    "                value: curEnd\n"
+                    "                usePercentTooltip: false\n"
+                    "                buttonIcon: \"tune\"\n"
+                    "                from: index + 1\n"
+                    "                to: 10 - (barConfigPage.monitorCount - 1 - index)\n"
+                    "                stopIndicatorValues: [Math.round(10 * (index + 1) / barConfigPage.monitorCount)]\n"
+                    "                onValueChanged: {\n"
+                    "                    const v = Math.round(value);\n"
+                    "                    if (v !== curEnd) {\n"
+                    "                        barConfigPage.updateSplit(index, v);\n"
+                    "                    }\n"
+                    "                }\n"
+                    "            }\n"
+                    "        }\n\n"
+                    "        ConfigSpinBox {\n"
+                    "            icon: \"view_column\"\n"
+                    "            text: Translation.tr(\"Workspaces shown\")",
+                ),
+            ],
+        )
 
-    # 12. AppSearch.qml: map zen window class -> zen-browser icon
-    ok &= patch_file(
-        ii / "services/AppSearch.qml",
-        [
-            (
-                '"zen": "zen-browser"',
-                '        "footclient": "foot",',
-                '        "footclient": "foot",\n'
-                '        "zen": "zen-browser",',
-            ),
-        ],
-    )
+    if has_feat("icon-cache"):
+        # 12. AppSearch.qml: map zen window class -> zen-browser icon
+        ok &= patch_file(
+            ii / "services/AppSearch.qml",
+            [
+                (
+                    '"zen": "zen-browser"',
+                    '        "footclient": "foot",',
+                    '        "footclient": "foot",\n'
+                    '        "zen": "zen-browser",',
+                ),
+            ],
+        )
 
-    # 13. GoogleCloud.qml: don't trigger keyring password popup on boot before LockScreen unlocks keyring
-    ok &= patch_file(
-        ii / "services/GoogleCloud.qml",
-        [
-            (
-                "if (!Config.options.lock.launchOnStartup) KeyringStorage.fetchKeyringData();",
-                "        } else {\n"
-                "            KeyringStorage.fetchKeyringData();\n"
-                "        }",
-                "        } else {\n"
-                "            if (!Config.options.lock.launchOnStartup) KeyringStorage.fetchKeyringData();\n"
-                "        }",
-            ),
-        ],
-    )
+    if has_feat("ai-sidebar"):
+        # 13. GoogleCloud.qml: don't trigger keyring password popup on boot before LockScreen unlocks keyring
+        ok &= patch_file(
+            ii / "services/GoogleCloud.qml",
+            [
+                (
+                    "if (!Config.options.lock.launchOnStartup) KeyringStorage.fetchKeyringData();",
+                    "        } else {\n"
+                    "            KeyringStorage.fetchKeyringData();\n"
+                    "        }",
+                    "        } else {\n"
+                    "            if (!Config.options.lock.launchOnStartup) KeyringStorage.fetchKeyringData();\n"
+                    "        }",
+                ),
+            ],
+        )
 
-    # 14. Config.qml: screensaver options
-    ok &= patch_file(
-        ii / "modules/common/Config.qml",
-        [
-            (
-                "property JsonObject screensaver:",
-                "            property JsonObject lock: JsonObject {",
-                "            property JsonObject screensaver: JsonObject {\n"
-                "                property bool enable: false\n"
-                "                property int timeoutMinutes: 3\n"
-                "                property bool perMonitor: false\n"
-                "                property var monitors: ({})\n"
-                "                property string mode: \"dvd\"\n"
-                "                property string color: \"#000000\"\n"
-                "                property string customPath: \"\"\n"
-                "                property var customItems: []\n"
-                "                property string imageAnimation: \"breathe\"\n"
-                "                property real speed: 1.0\n"
-                "            }\n\n"
-                "            property JsonObject lock: JsonObject {\n"
-                "                property JsonObject idle: JsonObject {\n"
-                "                    property bool enableLock: true\n"
-                "                    property int lockMinutes: 5\n"
-                "                    property bool enableDpms: true\n"
-                "                    property int dpmsMinutes: 10\n"
-                "                    property bool enableSuspend: false\n"
-                "                    property int suspendMinutes: 15\n"
-                "                }",
-            ),
-        ],
-    )
+    if has_feat("screensaver") or has_feat("lock-power"):
+        # 14. Config.qml: screensaver options
+        ok &= patch_file(
+            ii / "modules/common/Config.qml",
+            [
+                (
+                    "property JsonObject screensaver:",
+                    "            property JsonObject lock: JsonObject {",
+                    "            property JsonObject screensaver: JsonObject {\n"
+                    "                property bool enable: false\n"
+                    "                property int timeoutMinutes: 3\n"
+                    "                property bool perMonitor: false\n"
+                    "                property var monitors: ({})\n"
+                    "                property string mode: \"dvd\"\n"
+                    "                property string color: \"#000000\"\n"
+                    "                property string customPath: \"\"\n"
+                    "                property var customItems: []\n"
+                    "                property string imageAnimation: \"breathe\"\n"
+                    "                property real speed: 1.0\n"
+                    "            }\n\n"
+                    "            property JsonObject lock: JsonObject {\n"
+                    "                property JsonObject idle: JsonObject {\n"
+                    "                    property bool enableLock: true\n"
+                    "                    property int lockMinutes: 5\n"
+                    "                    property bool enableDpms: true\n"
+                    "                    property int dpmsMinutes: 10\n"
+                    "                    property bool enableSuspend: false\n"
+                    "                    property int suspendMinutes: 15\n"
+                    "                }",
+                ),
+            ],
+        )
 
-    # 15. settings.qml: register Screensaver page in left navigation
-    ok &= patch_file(
-        ii / "settings.qml",
-        [
-            (
-                "ScreensaverConfig.qml",
-                '        {\n'
-                '            name: Translation.tr("Background"),\n'
-                '            icon: "texture",\n'
-                '            component: "modules/settings/BackgroundConfig.qml"\n'
-                '        },',
-                '        {\n'
-                '            name: Translation.tr("Background"),\n'
-                '            icon: "texture",\n'
-                '            component: "modules/settings/BackgroundConfig.qml"\n'
-                '        },\n'
-                '        {\n'
-                '            name: Translation.tr("Screensaver"),\n'
-                '            icon: "tv",\n'
-                '            component: "modules/settings/ScreensaverConfig.qml"\n'
-                '        },',
-            ),
-        ],
-    )
+    if has_feat("screensaver"):
+        # 15. settings.qml: register Screensaver page in left navigation
+        ok &= patch_file(
+            ii / "settings.qml",
+            [
+                (
+                    "ScreensaverConfig.qml",
+                    '        {\n'
+                    '            name: Translation.tr("Background"),\n'
+                    '            icon: "texture",\n'
+                    '            component: "modules/settings/BackgroundConfig.qml"\n'
+                    '        },',
+                    '        {\n'
+                    '            name: Translation.tr("Background"),\n'
+                    '            icon: "texture",\n'
+                    '            component: "modules/settings/BackgroundConfig.qml"\n'
+                    '        },\n'
+                    '        {\n'
+                    '            name: Translation.tr("Screensaver"),\n'
+                    '            icon: "tv",\n'
+                    '            component: "modules/settings/ScreensaverConfig.qml"\n'
+                    '        },',
+                ),
+            ],
+        )
 
-    # 16. shell.qml: mount global ScreensaverOverlay + IPC handler
-    ok &= patch_file(
-        ii / "shell.qml",
-        [
-            (
-                '"modules/ii/screensaver"',
-                'import "modules/common"\n',
-                'import "modules/common"\nimport "modules/ii/screensaver"\n',
-            ),
-            (
-                "ScreensaverOverlay {}",
-                "    ReloadPopup {}\n",
-                "    ReloadPopup {}\n    ScreensaverOverlay {}\n",
-            ),
-        ],
-    )
+        # 16. shell.qml: mount global ScreensaverOverlay + IPC handler
+        ok &= patch_file(
+            ii / "shell.qml",
+            [
+                (
+                    '"modules/ii/screensaver"',
+                    'import "modules/common"\n',
+                    'import "modules/common"\nimport "modules/ii/screensaver"\n',
+                ),
+                (
+                    "ScreensaverOverlay {}",
+                    "    ReloadPopup {}\n",
+                    "    ReloadPopup {}\n    ScreensaverOverlay {}\n",
+                ),
+            ],
+        )
 
-    # 17. GeneralConfig.qml: Lock section (Lock, DPMS, Suspend toggles + timeouts + Plymouth boot logo picker)
-    ok &= patch_file(
-        ii / "modules/settings/GeneralConfig.qml",
-        [
-            (
-                "import QtQuick.Dialogs",
-                "import QtQuick\n"
-                "import Quickshell",
-                "import QtQuick\n"
-                "import QtQuick.Dialogs\n"
-                "import Quickshell",
-            ),
-            (
-                "property bool plymouthXanaInstalled:",
-                "ContentPage {\n"
-                "    forceWidth: true",
-                "ContentPage {\n"
-                "    id: generalPage\n"
-                "    forceWidth: true\n"
-                "    property bool plymouthXanaInstalled: false\n\n"
-                "    Timer {\n"
-                "        id: generalIdleTimer\n"
-                "        interval: 200\n"
-                "        repeat: false\n"
-                "        onTriggered: {\n"
-                "            generalIdleProc.running = false;\n"
-                "            generalIdleProc.running = true;\n"
-                "        }\n"
-                "    }\n\n"
-                "    Process {\n"
-                "        id: generalIdleProc\n"
-                "        command: [\"python3\", Quickshell.shellPath(\"scripts/apply-screensaver-idle.py\")]\n"
-                "    }\n\n"
-                "    Process {\n"
-                "        id: plymouthCheckProc\n"
-                "        running: true\n"
-                "        command: [\"bash\", \"-c\", \"[ -f /usr/share/plymouth/themes/xana/xana.plymouth ] && echo 1 || echo 0\"]\n"
-                "        stdout: StdioCollector {\n"
-                "            onStreamFinished: generalPage.plymouthXanaInstalled = (text.trim() === \"1\")\n"
-                "        }\n"
-                "    }\n\n"
-                "    FileDialog {\n"
-                "        id: plymouthLogoPicker\n"
-                "        title: Translation.tr(\"Select boot splash logo\")\n"
-                "        nameFilters: [\"Images & Vector (*.png *.svg *.jpg *.jpeg *.webp *.pdf)\", \"All files (*)\"]\n"
-                "        onAccepted: {\n"
-                "            const p = selectedFile.toString().replace(/^file:\\/\\//, \"\");\n"
-                "            const script = Quickshell.shellPath(\"scripts/apply-plymouth-logo.sh\");\n"
-                "            Quickshell.execDetached([\"bash\", \"-c\", `${Config.options.apps.terminal} -e bash -c '\"${0}\" \"${1}\"; echo; read -p \"Press Enter to close...\"' \"${script}\" \"${p}\"`]);\n"
-                "        }\n"
-                "    }",
-            ),
-            (
-                'title: Translation.tr("Lock")',
-                "            onCheckedChanged: {\n"
-                "                Config.options.workSafety.enable.wallpaper = checked;\n"
-                "            }\n"
-                "        }\n"
-                "    }\n"
-                "}",
-                "            onCheckedChanged: {\n"
-                "                Config.options.workSafety.enable.wallpaper = checked;\n"
-                "            }\n"
-                "        }\n"
-                "    }\n\n"
-                "    ContentSection {\n"
-                "        icon: \"lock\"\n"
-                "        title: Translation.tr(\"Lock\")\n\n"
-                "        ConfigSwitch {\n"
-                "            buttonIcon: \"lock_clock\"\n"
-                "            text: Translation.tr(\"Lock screen on idle\")\n"
-                "            checked: Config.options.lock.idle.enableLock\n"
-                "            onCheckedChanged: {\n"
-                "                if (Config.options.lock.idle.enableLock !== checked) {\n"
-                "                    Config.options.lock.idle.enableLock = checked;\n"
-                "                    generalIdleTimer.restart();\n"
-                "                }\n"
-                "            }\n"
-                "        }\n\n"
-                "        ConfigSpinBox {\n"
-                "            visible: Config.options.lock.idle.enableLock\n"
-                "            icon: \"timer\"\n"
-                "            text: Translation.tr(\"Lock timeout (minutes)\")\n"
-                "            value: Config.options.lock.idle.lockMinutes\n"
-                "            from: 1\n"
-                "            to: 120\n"
-                "            stepSize: 1\n"
-                "            onValueChanged: {\n"
-                "                if (Config.options.lock.idle.lockMinutes !== value) {\n"
-                "                    Config.options.lock.idle.lockMinutes = value;\n"
-                "                    generalIdleTimer.restart();\n"
-                "                }\n"
-                "            }\n"
-                "        }\n\n"
-                "        ConfigSwitch {\n"
-                "            buttonIcon: \"monitor\"\n"
-                "            text: Translation.tr(\"Turn off display (DPMS)\")\n"
-                "            checked: Config.options.lock.idle.enableDpms\n"
-                "            onCheckedChanged: {\n"
-                "                if (Config.options.lock.idle.enableDpms !== checked) {\n"
-                "                    Config.options.lock.idle.enableDpms = checked;\n"
-                "                    generalIdleTimer.restart();\n"
-                "                }\n"
-                "            }\n"
-                "        }\n\n"
-                "        ConfigSpinBox {\n"
-                "            visible: Config.options.lock.idle.enableDpms\n"
-                "            icon: \"timer\"\n"
-                "            text: Translation.tr(\"Display off timeout (minutes)\")\n"
-                "            value: Config.options.lock.idle.dpmsMinutes\n"
-                "            from: 1\n"
-                "            to: 180\n"
-                "            stepSize: 1\n"
-                "            onValueChanged: {\n"
-                "                if (Config.options.lock.idle.dpmsMinutes !== value) {\n"
-                "                    Config.options.lock.idle.dpmsMinutes = value;\n"
-                "                    generalIdleTimer.restart();\n"
-                "                }\n"
-                "            }\n"
-                "        }\n\n"
-                "        ConfigSwitch {\n"
-                "            buttonIcon: \"bedtime\"\n"
-                "            text: Translation.tr(\"Deep sleep (Suspend)\")\n"
-                "            checked: Config.options.lock.idle.enableSuspend\n"
-                "            onCheckedChanged: {\n"
-                "                if (Config.options.lock.idle.enableSuspend !== checked) {\n"
-                "                    Config.options.lock.idle.enableSuspend = checked;\n"
-                "                    generalIdleTimer.restart();\n"
-                "                }\n"
-                "            }\n"
-                "        }\n\n"
-                "        ConfigSpinBox {\n"
-                "            visible: Config.options.lock.idle.enableSuspend\n"
-                "            icon: \"timer\"\n"
-                "            text: Translation.tr(\"Suspend timeout (minutes)\")\n"
-                "            value: Config.options.lock.idle.suspendMinutes\n"
-                "            from: 5\n"
-                "            to: 360\n"
-                "            stepSize: 5\n"
-                "            onValueChanged: {\n"
-                "                if (Config.options.lock.idle.suspendMinutes !== value) {\n"
-                "                    Config.options.lock.idle.suspendMinutes = value;\n"
-                "                    generalIdleTimer.restart();\n"
-                "                }\n"
-                "            }\n"
-                "        }\n\n"
-                "        RowLayout {\n"
-                "            visible: generalPage.plymouthXanaInstalled\n"
-                "            Layout.fillWidth: true\n"
-                "            spacing: 8\n"
-                "            MaterialSymbol {\n"
-                "                text: \"image\"\n"
-                "                iconSize: 20\n"
-                "                color: Appearance.m3colors.m3onSurface\n"
-                "            }\n"
-                "            StyledText {\n"
-                "                Layout.fillWidth: true\n"
-                "                text: Translation.tr(\"Boot splash logo (Plymouth)\")\n"
-                "                color: Appearance.m3colors.m3onSurface\n"
-                "                font.pixelSize: Appearance.font.pixelSize.small\n"
-                "            }\n"
-                "            RippleButton {\n"
-                "                implicitWidth: plymouthBtnTxt.implicitWidth + 24\n"
-                "                implicitHeight: 34\n"
-                "                buttonRadius: Appearance.rounding.full\n"
-                "                colBackground: Appearance.colors.colSecondaryContainer\n"
-                "                onClicked: plymouthLogoPicker.open()\n"
-                "                contentItem: StyledText {\n"
-                "                    id: plymouthBtnTxt\n"
-                "                    anchors.centerIn: parent\n"
-                "                    text: Translation.tr(\"Choose File\")\n"
-                "                    color: Appearance.colors.colOnSecondaryContainer\n"
-                "                    font.pixelSize: Appearance.font.pixelSize.small\n"
-                "                    font.weight: Font.Medium\n"
-                "                }\n"
-                "            }\n"
-                "        }\n"
-                "    }\n"
-                "}",
-            ),
-        ],
-    )
+    if has_feat("lock-power"):
+        # 17. GeneralConfig.qml: Lock section (Lock, DPMS, Suspend toggles + timeouts + Plymouth boot logo picker)
+        ok &= patch_file(
+            ii / "modules/settings/GeneralConfig.qml",
+            [
+                (
+                    "import QtQuick.Dialogs",
+                    "import QtQuick\n"
+                    "import Quickshell",
+                    "import QtQuick\n"
+                    "import QtQuick.Dialogs\n"
+                    "import Quickshell",
+                ),
+                (
+                    "property bool plymouthXanaInstalled:",
+                    "ContentPage {\n"
+                    "    forceWidth: true",
+                    "ContentPage {\n"
+                    "    id: generalPage\n"
+                    "    forceWidth: true\n"
+                    "    property bool plymouthXanaInstalled: false\n\n"
+                    "    Timer {\n"
+                    "        id: generalIdleTimer\n"
+                    "        interval: 200\n"
+                    "        repeat: false\n"
+                    "        onTriggered: {\n"
+                    "            generalIdleProc.running = false;\n"
+                    "            generalIdleProc.running = true;\n"
+                    "        }\n"
+                    "    }\n\n"
+                    "    Process {\n"
+                    "        id: generalIdleProc\n"
+                    "        command: [\"python3\", Quickshell.shellPath(\"scripts/apply-screensaver-idle.py\")]\n"
+                    "    }\n\n"
+                    "    Process {\n"
+                    "        id: plymouthCheckProc\n"
+                    "        running: true\n"
+                    "        command: [\"bash\", \"-c\", \"[ -f /usr/share/plymouth/themes/xana/xana.plymouth ] && echo 1 || echo 0\"]\n"
+                    "        stdout: StdioCollector {\n"
+                    "            onStreamFinished: generalPage.plymouthXanaInstalled = (text.trim() === \"1\")\n"
+                    "        }\n"
+                    "    }\n\n"
+                    "    FileDialog {\n"
+                    "        id: plymouthLogoPicker\n"
+                    "        title: Translation.tr(\"Select boot splash logo\")\n"
+                    "        nameFilters: [\"Images & Vector (*.png *.svg *.jpg *.jpeg *.webp *.pdf)\", \"All files (*)\"]\n"
+                    "        onAccepted: {\n"
+                    "            const p = selectedFile.toString().replace(/^file:\\/\\//, \"\");\n"
+                    "            const script = Quickshell.shellPath(\"scripts/apply-plymouth-logo.sh\");\n"
+                    "            Quickshell.execDetached([\"bash\", \"-c\", `${Config.options.apps.terminal} -e bash -c '\"${0}\" \"${1}\"; echo; read -p \"Press Enter to close...\"' \"${script}\" \"${p}\"`]);\n"
+                    "        }\n"
+                    "    }",
+                ),
+                (
+                    'title: Translation.tr("Lock")',
+                    "            onCheckedChanged: {\n"
+                    "                Config.options.workSafety.enable.wallpaper = checked;\n"
+                    "            }\n"
+                    "        }\n"
+                    "    }\n"
+                    "}",
+                    "            onCheckedChanged: {\n"
+                    "                Config.options.workSafety.enable.wallpaper = checked;\n"
+                    "            }\n"
+                    "        }\n"
+                    "    }\n\n"
+                    "    ContentSection {\n"
+                    "        icon: \"lock\"\n"
+                    "        title: Translation.tr(\"Lock\")\n\n"
+                    "        ConfigSwitch {\n"
+                    "            buttonIcon: \"lock_clock\"\n"
+                    "            text: Translation.tr(\"Lock screen on idle\")\n"
+                    "            checked: Config.options.lock.idle.enableLock\n"
+                    "            onCheckedChanged: {\n"
+                    "                if (Config.options.lock.idle.enableLock !== checked) {\n"
+                    "                    Config.options.lock.idle.enableLock = checked;\n"
+                    "                    generalIdleTimer.restart();\n"
+                    "                }\n"
+                    "            }\n"
+                    "        }\n\n"
+                    "        ConfigSpinBox {\n"
+                    "            visible: Config.options.lock.idle.enableLock\n"
+                    "            icon: \"timer\"\n"
+                    "            text: Translation.tr(\"Lock timeout (minutes)\")\n"
+                    "            value: Config.options.lock.idle.lockMinutes\n"
+                    "            from: 1\n"
+                    "            to: 120\n"
+                    "            stepSize: 1\n"
+                    "            onValueChanged: {\n"
+                    "                if (Config.options.lock.idle.lockMinutes !== value) {\n"
+                    "                    Config.options.lock.idle.lockMinutes = value;\n"
+                    "                    generalIdleTimer.restart();\n"
+                    "                }\n"
+                    "            }\n"
+                    "        }\n\n"
+                    "        ConfigSwitch {\n"
+                    "            buttonIcon: \"monitor\"\n"
+                    "            text: Translation.tr(\"Turn off display (DPMS)\")\n"
+                    "            checked: Config.options.lock.idle.enableDpms\n"
+                    "            onCheckedChanged: {\n"
+                    "                if (Config.options.lock.idle.enableDpms !== checked) {\n"
+                    "                    Config.options.lock.idle.enableDpms = checked;\n"
+                    "                    generalIdleTimer.restart();\n"
+                    "                }\n"
+                    "            }\n"
+                    "        }\n\n"
+                    "        ConfigSpinBox {\n"
+                    "            visible: Config.options.lock.idle.enableDpms\n"
+                    "            icon: \"timer\"\n"
+                    "            text: Translation.tr(\"Display off timeout (minutes)\")\n"
+                    "            value: Config.options.lock.idle.dpmsMinutes\n"
+                    "            from: 1\n"
+                    "            to: 180\n"
+                    "            stepSize: 1\n"
+                    "            onValueChanged: {\n"
+                    "                if (Config.options.lock.idle.dpmsMinutes !== value) {\n"
+                    "                    Config.options.lock.idle.dpmsMinutes = value;\n"
+                    "                    generalIdleTimer.restart();\n"
+                    "                }\n"
+                    "            }\n"
+                    "        }\n\n"
+                    "        ConfigSwitch {\n"
+                    "            buttonIcon: \"bedtime\"\n"
+                    "            text: Translation.tr(\"Deep sleep (Suspend)\")\n"
+                    "            checked: Config.options.lock.idle.enableSuspend\n"
+                    "            onCheckedChanged: {\n"
+                    "                if (Config.options.lock.idle.enableSuspend !== checked) {\n"
+                    "                    Config.options.lock.idle.enableSuspend = checked;\n"
+                    "                    generalIdleTimer.restart();\n"
+                    "                }\n"
+                    "            }\n"
+                    "        }\n\n"
+                    "        ConfigSpinBox {\n"
+                    "            visible: Config.options.lock.idle.enableSuspend\n"
+                    "            icon: \"timer\"\n"
+                    "            text: Translation.tr(\"Suspend timeout (minutes)\")\n"
+                    "            value: Config.options.lock.idle.suspendMinutes\n"
+                    "            from: 5\n"
+                    "            to: 360\n"
+                    "            stepSize: 5\n"
+                    "            onValueChanged: {\n"
+                    "                if (Config.options.lock.idle.suspendMinutes !== value) {\n"
+                    "                    Config.options.lock.idle.suspendMinutes = value;\n"
+                    "                    generalIdleTimer.restart();\n"
+                    "                }\n"
+                    "            }\n"
+                    "        }\n\n"
+                    "        RowLayout {\n"
+                    "            visible: generalPage.plymouthXanaInstalled\n"
+                    "            Layout.fillWidth: true\n"
+                    "            spacing: 8\n"
+                    "            MaterialSymbol {\n"
+                    "                text: \"image\"\n"
+                    "                iconSize: 20\n"
+                    "                color: Appearance.m3colors.m3onSurface\n"
+                    "            }\n"
+                    "            StyledText {\n"
+                    "                Layout.fillWidth: true\n"
+                    "                text: Translation.tr(\"Boot splash logo (Plymouth)\")\n"
+                    "                color: Appearance.m3colors.m3onSurface\n"
+                    "                font.pixelSize: Appearance.font.pixelSize.small\n"
+                    "            }\n"
+                    "            RippleButton {\n"
+                    "                implicitWidth: plymouthBtnTxt.implicitWidth + 24\n"
+                    "                implicitHeight: 34\n"
+                    "                buttonRadius: Appearance.rounding.full\n"
+                    "                colBackground: Appearance.colors.colSecondaryContainer\n"
+                    "                onClicked: plymouthLogoPicker.open()\n"
+                    "                contentItem: StyledText {\n"
+                    "                    id: plymouthBtnTxt\n"
+                    "                    anchors.centerIn: parent\n"
+                    "                    text: Translation.tr(\"Choose File\")\n"
+                    "                    color: Appearance.colors.colOnSecondaryContainer\n"
+                    "                    font.pixelSize: Appearance.font.pixelSize.small\n"
+                    "                    font.weight: Font.Medium\n"
+                    "                }\n"
+                    "            }\n"
+                    "        }\n"
+                    "    }\n"
+                    "}",
+                ),
+            ],
+        )
 
-    # 18. Workspaces.qml: dim active workspace indicator on unfocused monitors
-    ok &= patch_file(
-        ii / "modules/ii/bar/Workspaces.qml",
-        [
-            (
-                "monitorIsFocused",
-                "    readonly property HyprlandMonitor monitor: Hyprland.monitorFor(root.QsWindow.window?.screen)",
-                "    readonly property HyprlandMonitor monitor: Hyprland.monitorFor(root.QsWindow.window?.screen)\n"
-                "    readonly property bool monitorIsFocused: (Hyprland.focusedMonitor?.id == monitor?.id)",
-            ),
-            (
-                "root.monitorIsFocused ? Appearance.colors.colPrimary",
-                "        TrailingIndicator {\n"
-                "            id: activeIndicator\n"
-                "            anchors.fill: parent\n"
-                "            z: 2\n\n"
-                "            index: root.workspaceIndexInGroup\n"
-                "        }",
-                "        TrailingIndicator {\n"
-                "            id: activeIndicator\n"
-                "            anchors.fill: parent\n"
-                "            z: 2\n\n"
-                "            index: root.workspaceIndexInGroup\n"
-                "            color: root.monitorIsFocused ? Appearance.colors.colPrimary : ColorUtils.transparentize(Appearance.colors.colSecondary, 0.55)\n"
-                "        }",
-            ),
-            (
-                "Behavior on color { ColorAnimation",
-                "            contentLayer: StyledRectangle.ContentLayer.Group\n"
-                "            radius: indicatorThickness / 2\n"
-                "            color: Appearance.colors.colPrimary",
-                "            contentLayer: StyledRectangle.ContentLayer.Group\n"
-                "            radius: indicatorThickness / 2\n"
-                "            color: Appearance.colors.colPrimary\n"
-                "            Behavior on color { ColorAnimation { duration: 150 } }",
-            ),
-        ],
-    )
+    if has_feat("workspace-split"):
+        # 18. Workspaces.qml: dim active workspace indicator on unfocused monitors
+        ok &= patch_file(
+            ii / "modules/ii/bar/Workspaces.qml",
+            [
+                (
+                    "monitorIsFocused",
+                    "    readonly property HyprlandMonitor monitor: Hyprland.monitorFor(root.QsWindow.window?.screen)",
+                    "    readonly property HyprlandMonitor monitor: Hyprland.monitorFor(root.QsWindow.window?.screen)\n"
+                    "    readonly property bool monitorIsFocused: (Hyprland.focusedMonitor?.id == monitor?.id)",
+                ),
+                (
+                    "root.monitorIsFocused ? Appearance.colors.colPrimary",
+                    "        TrailingIndicator {\n"
+                    "            id: activeIndicator\n"
+                    "            anchors.fill: parent\n"
+                    "            z: 2\n\n"
+                    "            index: root.workspaceIndexInGroup\n"
+                    "        }",
+                    "        TrailingIndicator {\n"
+                    "            id: activeIndicator\n"
+                    "            anchors.fill: parent\n"
+                    "            z: 2\n\n"
+                    "            index: root.workspaceIndexInGroup\n"
+                    "            color: root.monitorIsFocused ? Appearance.colors.colPrimary : ColorUtils.transparentize(Appearance.colors.colSecondary, 0.55)\n"
+                    "        }",
+                ),
+                (
+                    "Behavior on color { ColorAnimation",
+                    "            contentLayer: StyledRectangle.ContentLayer.Group\n"
+                    "            radius: indicatorThickness / 2\n"
+                    "            color: Appearance.colors.colPrimary",
+                    "            contentLayer: StyledRectangle.ContentLayer.Group\n"
+                    "            radius: indicatorThickness / 2\n"
+                    "            color: Appearance.colors.colPrimary\n"
+                    "            Behavior on color { ColorAnimation { duration: 150 } }",
+                ),
+            ],
+        )
 
     return 0 if ok else 1
 
