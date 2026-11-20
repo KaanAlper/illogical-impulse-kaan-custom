@@ -227,13 +227,16 @@ def install_files(item: dict, repo: Path) -> list[str]:
     return copied
 
 
-def build_terminal_script(items: list[dict], repo: Path) -> str:
+def build_terminal_script(items: list[dict], repo: Path, feature_map: dict[str, str] | None = None) -> str:
     lines = ["#!/bin/bash", "fail=0"]
+    fmap = feature_map or {}
     for item in items:
         cmd = item["install"].replace("{repo}", shlex.quote(str(repo)))
+        feats = shlex.quote(fmap.get(item["id"], "all"))
         lines += [
             f"# {item['id']}",
             f"echo; echo '== {item.get('title', item['id'])}'",
+            f"export DOTSYNC_FEATURES={feats}",
             f"{cmd} || {{ echo 'HATA: {item['id']}'; fail=1; }}",
         ]
     lines += ["echo", "read -rp 'Kapatmak için Enter...' _", "exit $fail"]
@@ -377,7 +380,7 @@ def cmd_apply(args: argparse.Namespace) -> int:
         for item in terminal_batch:
             _emit(event="start", id=item["id"])
         with tempfile.NamedTemporaryFile("w", suffix=".sh", delete=False) as fh:
-            fh.write(build_terminal_script(terminal_batch, repo))
+            fh.write(build_terminal_script(terminal_batch, repo, feature_map))
             script = Path(fh.name)
         cmd = find_terminal("dotsync", script)
         if cmd is None:

@@ -37,12 +37,6 @@
         },
         {
           "file_has": [
-            "~/.config/quickshell/ii/modules/ii/lock/LockSurface.qml",
-            "faceState"
-          ]
-        },
-        {
-          "file_has": [
             "~/.config/quickshell/ii/modules/ii/overview/Overview.qml",
             "overviewFilesToggle"
           ]
