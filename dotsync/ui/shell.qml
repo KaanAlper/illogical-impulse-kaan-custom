@@ -49,10 +49,38 @@ ShellRoot {
     ListModel { id: items }      // id,title,desc,kind,terminal,missing,checked,partial,expanded,featuresJson,runState,detail
     ListModel { id: resultRows }
 
+    function _syncParentFromFeats(idx, feats) {
+        var total = 0, sel = 0;
+        for (var j = 0; j < feats.length; j++) {
+            var f = feats[j];
+            var sub = f.features || [];
+            if (sub.length > 0) {
+                var subSel = 0;
+                for (var k = 0; k < sub.length; k++) if (sub[k].checked) subSel++;
+                f.checked = subSel > 0;
+                f.partial = subSel > 0 && subSel < sub.length;
+                total += sub.length;
+                sel += subSel;
+            } else {
+                total += 1;
+                if (f.checked) sel += 1;
+            }
+        }
+        items.setProperty(idx, "featuresJson", JSON.stringify(feats));
+        items.setProperty(idx, "checked", sel > 0);
+        items.setProperty(idx, "partial", sel > 0 && sel < total);
+        root.recount();
+    }
+
     function toggleAllFeatures(idx, newVal) {
         var it = items.get(idx);
         var feats = JSON.parse(it.featuresJson || "[]");
-        for (var j = 0; j < feats.length; j++) feats[j].checked = newVal;
+        for (var j = 0; j < feats.length; j++) {
+            feats[j].checked = newVal;
+            feats[j].partial = false;
+            var sub = feats[j].features || [];
+            for (var k = 0; k < sub.length; k++) sub[k].checked = newVal;
+        }
         items.setProperty(idx, "featuresJson", JSON.stringify(feats));
         items.setProperty(idx, "checked", newVal);
         items.setProperty(idx, "partial", false);
@@ -63,13 +91,35 @@ ShellRoot {
         var it = items.get(idx);
         var feats = JSON.parse(it.featuresJson || "[]");
         if (featIdx < 0 || featIdx >= feats.length) return;
-        feats[featIdx].checked = !feats[featIdx].checked;
-        var sel = 0;
-        for (var j = 0; j < feats.length; j++) if (feats[j].checked) sel++;
+        var f = feats[featIdx];
+        var sub = f.features || [];
+        if (sub.length > 0) {
+            var newVal = !(f.checked && !f.partial);
+            f.checked = newVal;
+            f.partial = false;
+            for (var k = 0; k < sub.length; k++) sub[k].checked = newVal;
+        } else {
+            f.checked = !f.checked;
+        }
+        root._syncParentFromFeats(idx, feats);
+    }
+
+    function toggleNestedFeature(idx, featIdx, subIdx) {
+        var it = items.get(idx);
+        var feats = JSON.parse(it.featuresJson || "[]");
+        if (featIdx < 0 || featIdx >= feats.length) return;
+        var sub = feats[featIdx].features || [];
+        if (subIdx < 0 || subIdx >= sub.length) return;
+        sub[subIdx].checked = !sub[subIdx].checked;
+        root._syncParentFromFeats(idx, feats);
+    }
+
+    function toggleFeatureExpand(idx, featIdx) {
+        var it = items.get(idx);
+        var feats = JSON.parse(it.featuresJson || "[]");
+        if (featIdx < 0 || featIdx >= feats.length) return;
+        feats[featIdx].expanded = !feats[featIdx].expanded;
         items.setProperty(idx, "featuresJson", JSON.stringify(feats));
-        items.setProperty(idx, "checked", sel > 0);
-        items.setProperty(idx, "partial", sel > 0 && sel < feats.length);
-        root.recount();
     }
 
     function recount() {
@@ -92,9 +142,18 @@ ShellRoot {
                 ids.push(it.id);
                 var feats = JSON.parse(it.featuresJson || "[]");
                 if (feats.length > 0) {
-                    var chosen = [];
-                    for (var j = 0; j < feats.length; j++) if (feats[j].checked) chosen.push(feats[j].id);
-                    if (chosen.length > 0 && chosen.length < feats.length) {
+                    var chosen = [], totalFeats = 0;
+                    for (var j = 0; j < feats.length; j++) {
+                        var sub = feats[j].features || [];
+                        if (sub.length > 0) {
+                            totalFeats += sub.length;
+                            for (var k = 0; k < sub.length; k++) if (sub[k].checked) chosen.push(sub[k].id);
+                        } else {
+                            totalFeats += 1;
+                            if (feats[j].checked) chosen.push(feats[j].id);
+                        }
+                    }
+                    if (chosen.length > 0 && chosen.length < totalFeats) {
                         featArgs.push(it.id + ":" + chosen.join(","));
                     }
                 }
@@ -152,11 +211,26 @@ ShellRoot {
                         var feats = [];
                         for (var j = 0; j < rawFeats.length; j++) {
                             var f = rawFeats[j];
+                            var fChecked = defChecked && (f.default !== false);
+                            var subRaw = f.features || [];
+                            var subList = [];
+                            for (var k = 0; k < subRaw.length; k++) {
+                                var sf = subRaw[k];
+                                subList.push({
+                                    id: sf.id,
+                                    title: sf.title || sf.id,
+                                    desc: sf.desc || "",
+                                    checked: fChecked && (sf.default !== false)
+                                });
+                            }
                             feats.push({
                                 id: f.id,
                                 title: f.title || f.id,
                                 desc: f.desc || "",
-                                checked: defChecked && (f.default !== false)
+                                checked: fChecked,
+                                partial: false,
+                                expanded: false,
+                                features: subList
                             });
                         }
                         items.append({
@@ -470,43 +544,133 @@ ShellRoot {
 
                                             Repeater {
                                                 model: card.feats
-                                                delegate: Rectangle {
+                                                delegate: ColumnLayout {
+                                                    id: featWrap
                                                     required property var modelData
                                                     required property int index
+                                                    readonly property int featIdx: index
+                                                    readonly property var subFeats: modelData.features || []
+                                                    readonly property int selSubCount: {
+                                                        var c = 0;
+                                                        for (var k = 0; k < subFeats.length; k++) if (subFeats[k].checked) c++;
+                                                        return c;
+                                                    }
                                                     Layout.fillWidth: true
-                                                    implicitHeight: subRow.implicitHeight + 14
-                                                    radius: 10
-                                                    color: subArea.containsMouse ? Qt.rgba(1, 1, 1, 0.06) : Qt.rgba(0, 0, 0, 0.18)
-                                                    border.color: modelData.checked ? Qt.rgba(0.714, 0.616, 0.973, 0.35) : "transparent"
-                                                    border.width: 1
+                                                    spacing: 4
 
-                                                    MouseArea {
-                                                        id: subArea
-                                                        anchors.fill: parent
-                                                        hoverEnabled: true
-                                                        cursorShape: Qt.PointingHandCursor
-                                                        onClicked: mouse => {
-                                                            mouse.accepted = true;
-                                                            root.toggleSubFeature(card.cardIdx, index);
+                                                    Rectangle {
+                                                        Layout.fillWidth: true
+                                                        implicitHeight: subRow.implicitHeight + 14
+                                                        radius: 10
+                                                        color: subArea.containsMouse ? Qt.rgba(1, 1, 1, 0.06) : Qt.rgba(0, 0, 0, 0.18)
+                                                        border.color: modelData.checked ? Qt.rgba(0.714, 0.616, 0.973, 0.35) : "transparent"
+                                                        border.width: 1
+
+                                                        MouseArea {
+                                                            id: subArea
+                                                            anchors.fill: parent
+                                                            hoverEnabled: true
+                                                            cursorShape: Qt.PointingHandCursor
+                                                            onClicked: mouse => {
+                                                                mouse.accepted = true;
+                                                                root.toggleSubFeature(card.cardIdx, featWrap.featIdx);
+                                                            }
+                                                        }
+
+                                                        RowLayout {
+                                                            id: subRow
+                                                            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 10 }
+                                                            spacing: 10
+                                                            Rectangle {
+                                                                width: 18; height: 18; radius: 5
+                                                                color: modelData.checked ? root.cAccent : "transparent"
+                                                                border.color: modelData.checked ? root.cAccent : root.cDim
+                                                                border.width: 2
+                                                                Text { anchors.centerIn: parent; text: modelData.partial ? "−" : "✓"; visible: modelData.checked; color: root.cBg; font.pixelSize: 12; font.weight: Font.Bold }
+                                                            }
+                                                            ColumnLayout {
+                                                                Layout.fillWidth: true
+                                                                spacing: 2
+                                                                Text { Layout.fillWidth: true; text: modelData.title; color: root.cFg; font.pixelSize: 13; font.weight: Font.Medium }
+                                                                Text { visible: modelData.desc !== ""; Layout.fillWidth: true; wrapMode: Text.WordWrap; text: modelData.desc; color: root.cSub; font.pixelSize: 11 }
+                                                            }
+                                                            Rectangle {
+                                                                visible: featWrap.subFeats.length > 0
+                                                                radius: 7
+                                                                color: subExpArea.containsMouse ? root.cSurface : root.cSurface2
+                                                                border.color: Qt.rgba(0.714, 0.616, 0.973, 0.35)
+                                                                border.width: 1
+                                                                implicitWidth: subExpRow.implicitWidth + 14
+                                                                implicitHeight: 22
+                                                                RowLayout {
+                                                                    id: subExpRow
+                                                                    anchors.centerIn: parent
+                                                                    spacing: 4
+                                                                    Text { text: featWrap.selSubCount + "/" + featWrap.subFeats.length; color: root.cSub; font.pixelSize: 10 }
+                                                                    Text { text: modelData.expanded ? "▾" : "▸"; color: root.cFg; font.pixelSize: 11 }
+                                                                }
+                                                                MouseArea {
+                                                                    id: subExpArea
+                                                                    anchors.fill: parent
+                                                                    hoverEnabled: true
+                                                                    cursorShape: Qt.PointingHandCursor
+                                                                    onClicked: mouse => {
+                                                                        mouse.accepted = true;
+                                                                        root.toggleFeatureExpand(card.cardIdx, featWrap.featIdx);
+                                                                    }
+                                                                }
+                                                            }
                                                         }
                                                     }
 
-                                                    RowLayout {
-                                                        id: subRow
-                                                        anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 10 }
-                                                        spacing: 10
-                                                        Rectangle {
-                                                            width: 18; height: 18; radius: 5
-                                                            color: modelData.checked ? root.cAccent : "transparent"
-                                                            border.color: modelData.checked ? root.cAccent : root.cDim
-                                                            border.width: 2
-                                                            Text { anchors.centerIn: parent; text: "✓"; visible: modelData.checked; color: root.cBg; font.pixelSize: 12; font.weight: Font.Bold }
-                                                        }
-                                                        ColumnLayout {
-                                                            Layout.fillWidth: true
-                                                            spacing: 2
-                                                            Text { Layout.fillWidth: true; text: modelData.title; color: root.cFg; font.pixelSize: 13; font.weight: Font.Medium }
-                                                            Text { visible: modelData.desc !== ""; Layout.fillWidth: true; wrapMode: Text.WordWrap; text: modelData.desc; color: root.cSub; font.pixelSize: 11 }
+                                                    ColumnLayout {
+                                                        visible: modelData.expanded && featWrap.subFeats.length > 0
+                                                        Layout.fillWidth: true
+                                                        Layout.leftMargin: 22
+                                                        spacing: 4
+
+                                                        Repeater {
+                                                            model: featWrap.subFeats
+                                                            delegate: Rectangle {
+                                                                required property var modelData
+                                                                required property int index
+                                                                Layout.fillWidth: true
+                                                                implicitHeight: nestedRow.implicitHeight + 10
+                                                                radius: 8
+                                                                color: nestedArea.containsMouse ? Qt.rgba(1, 1, 1, 0.05) : Qt.rgba(0, 0, 0, 0.12)
+                                                                border.color: modelData.checked ? Qt.rgba(0.714, 0.616, 0.973, 0.3) : "transparent"
+                                                                border.width: 1
+
+                                                                MouseArea {
+                                                                    id: nestedArea
+                                                                    anchors.fill: parent
+                                                                    hoverEnabled: true
+                                                                    cursorShape: Qt.PointingHandCursor
+                                                                    onClicked: mouse => {
+                                                                        mouse.accepted = true;
+                                                                        root.toggleNestedFeature(card.cardIdx, featWrap.featIdx, index);
+                                                                    }
+                                                                }
+
+                                                                RowLayout {
+                                                                    id: nestedRow
+                                                                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 8 }
+                                                                    spacing: 8
+                                                                    Rectangle {
+                                                                        width: 16; height: 16; radius: 4
+                                                                        color: modelData.checked ? root.cAccent : "transparent"
+                                                                        border.color: modelData.checked ? root.cAccent : root.cDim
+                                                                        border.width: 2
+                                                                        Text { anchors.centerIn: parent; text: "✓"; visible: modelData.checked; color: root.cBg; font.pixelSize: 11; font.weight: Font.Bold }
+                                                                    }
+                                                                    ColumnLayout {
+                                                                        Layout.fillWidth: true
+                                                                        spacing: 1
+                                                                        Text { Layout.fillWidth: true; text: modelData.title; color: root.cFg; font.pixelSize: 12; font.weight: Font.Medium }
+                                                                        Text { visible: modelData.desc !== ""; Layout.fillWidth: true; wrapMode: Text.WordWrap; text: modelData.desc; color: root.cSub; font.pixelSize: 10 }
+                                                                    }
+                                                                }
+                                                            }
                                                         }
                                                     }
                                                 }

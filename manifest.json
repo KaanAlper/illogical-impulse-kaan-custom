@@ -58,12 +58,23 @@
         "bash ~/.config/quickshell-custom/apply.sh"
       ],
       "features": [
-        { "id": "bar-widgets", "title": "Bar widget'ları", "desc": "Ses mikseri, mono geçişi, çıkış seçici, uyku engelleme", "default": true },
-        { "id": "screensaver-lock", "title": "Ekran koruyucu, kilit & güç ayarları", "desc": "Ekran koruyucu (çoklu monitör, renk, özel medya), kilit/DPMS/uyku, Plymouth logo ve ilgili çeviriler", "default": true },
+        {
+          "id": "bar-widgets",
+          "title": "Bar widget'ları",
+          "desc": "Üst bar için özel ses ve güç kontrolleri",
+          "default": true,
+          "features": [
+            { "id": "app-volume-mixer", "title": "Uygulama ses mikseri", "desc": "Uygulama bazlı ses kontrolü", "default": true },
+            { "id": "audio-mono-toggle", "title": "Mono ses geçişi", "desc": "Tek tıkla mono/stereo geçişi", "default": true },
+            { "id": "audio-output-switcher", "title": "Ses çıkış seçici", "desc": "Hızlı çıkış cihazı değiştirme", "default": true },
+            { "id": "sleep-inhibit-toggle", "title": "Uyku engelleme düğmesi", "desc": "Ekran kapanma/uyku engelleme anahtarı", "default": true }
+          ]
+        },
+        { "id": "screensaver", "title": "Ekran koruyucu", "desc": "DVD, Matrix, Starfield, Mystify, XANA, Renk şablonu, özel medya, her monitöre ayrı ayar ve çevirileri", "default": true },
+        { "id": "lock-power", "title": "Kilit & güç ayarları", "desc": "Genel -> Kilit bölümü (Ekran kilidi, DPMS, Derin uyku, Plymouth XANA logo seçici) ve çevirileri", "default": true },
         { "id": "ai-sidebar", "title": "Sol panel AI (Agy, Claude, Codex & Anime)", "desc": "AI sohbet sekmeleri, model seçiciler, anime görüntüleyici ve ilgili çeviriler", "default": true },
-        { "id": "everything-search", "title": "Everything dosya arama", "desc": "Dosya/klasör arama, indeksleme ve araç çubuğu", "default": true },
+        { "id": "everything-search", "title": "Everything dosya arama", "desc": "Win+H kısayolu, dosya/klasör arama, indeksleme ve araç çubuğu", "default": true },
         { "id": "workspace-split", "title": "Çoklu monitör çalışma alanı", "desc": "Monitöre göre bölme ve odaklanmayan monitör vurgusu", "default": true },
-        { "id": "howdy-lock", "title": "Kilit ekranı yüz tanıma", "desc": "Howdy kilit ekranı arayüz yaması", "default": true },
         { "id": "icon-cache", "title": "Uygulama ikon önbelleği", "desc": "Zen Browser ve ArtCraft ikon önbellek düzeltmesi", "default": true }
       ]
     },
@@ -81,7 +92,7 @@
         "flameshot"
       ],
       "features": [
-        { "id": "keybinds", "title": "Özel kısayollar", "desc": "keybinds.lua (Win+H Everything vb.)", "default": true },
+        { "id": "keybinds", "title": "Özel kısayollar", "desc": "keybinds.lua", "default": true },
         { "id": "rules", "title": "Pencere kuralları", "desc": "rules.lua ve rules.conf", "default": true },
         { "id": "alttab", "title": "Alt+Tab pencere değiştirici", "desc": "alttab/ yapılandırması", "default": true },
         { "id": "hypridle", "title": "Boşta kalma / kilit zamanlayıcısı", "desc": "hypridle.conf", "default": true },
@@ -134,28 +145,9 @@
       "features": [
         { "id": "howdy-packages", "title": "Howdy paketleri", "desc": "python-dlib ve howdy-git derleme/kurulumu", "default": true },
         { "id": "howdy-config", "title": "IR kamera & cv2 ayarı", "desc": "/etc/howdy/config.ini ve cv2 düzeltmesi", "default": true },
-        { "id": "howdy-stub", "title": "Açılır pencere bastırıcı", "desc": "~/.local/bin/howdy-gtk", "default": true }
+        { "id": "howdy-stub", "title": "Açılır pencere bastırıcı", "desc": "~/.local/bin/howdy-gtk", "default": true },
+        { "id": "howdy-lock", "title": "Kilit ekranı yüz tanıma", "desc": "Howdy kilit ekranı arayüz yaması (LockContext & LockSurface)", "default": true }
       ]
-    },
-    {
-      "id": "sddm-face",
-      "title": "SDDM giriş ekranında yüz tanıma",
-      "desc": "Açılıştaki giriş ekranına yüz tanıma ekler; parola aynen çalışır. Parolayı boş bırakıp Enter'a basınca kamera taranır. Dikkat: Howdy canlılık denetimi yapmaz, yüzle girişte anahtarlık kilitli kalır. Varsayılan olarak işaretsiz.",
-      "kind": "check",
-      "check": [
-        {
-          "file_has": [
-            "/etc/pam.d/sddm",
-            "pam_howdy.so"
-          ]
-        }
-      ],
-      "requires": [
-        "howdy"
-      ],
-      "terminal": true,
-      "default": false,
-      "install": "sudo bash {repo}/items/sddm-face/enable.sh"
     },
     {
       "id": "autologin-lock",
