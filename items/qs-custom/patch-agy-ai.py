@@ -1296,6 +1296,68 @@ def main() -> int:
         ],
     )
 
+    # 14. Config.qml: screensaver options
+    ok &= patch_file(
+        ii / "modules/common/Config.qml",
+        [
+            (
+                "property JsonObject screensaver:",
+                "            property JsonObject lock: JsonObject {",
+                "            property JsonObject screensaver: JsonObject {\n"
+                "                property bool enable: false\n"
+                "                property int timeoutMinutes: 3\n"
+                "                property string mode: \"dvd\"\n"
+                "                property string customPath: \"\"\n"
+                "                property string imageAnimation: \"breathe\"\n"
+                "                property real speed: 1.0\n"
+                "            }\n\n"
+                "            property JsonObject lock: JsonObject {",
+            ),
+        ],
+    )
+
+    # 15. settings.qml: register Screensaver page in left navigation
+    ok &= patch_file(
+        ii / "settings.qml",
+        [
+            (
+                "ScreensaverConfig.qml",
+                '        {\n'
+                '            name: Translation.tr("Background"),\n'
+                '            icon: "texture",\n'
+                '            component: "modules/settings/BackgroundConfig.qml"\n'
+                '        },',
+                '        {\n'
+                '            name: Translation.tr("Background"),\n'
+                '            icon: "texture",\n'
+                '            component: "modules/settings/BackgroundConfig.qml"\n'
+                '        },\n'
+                '        {\n'
+                '            name: Translation.tr("Screensaver"),\n'
+                '            icon: "tv",\n'
+                '            component: "modules/settings/ScreensaverConfig.qml"\n'
+                '        },',
+            ),
+        ],
+    )
+
+    # 16. shell.qml: mount global ScreensaverOverlay + IPC handler
+    ok &= patch_file(
+        ii / "shell.qml",
+        [
+            (
+                '"modules/ii/screensaver"',
+                'import "modules/common"\n',
+                'import "modules/common"\nimport "modules/ii/screensaver"\n',
+            ),
+            (
+                "ScreensaverOverlay {}",
+                "    ReloadPopup {}\n",
+                "    ReloadPopup {}\n    ScreensaverOverlay {}\n",
+            ),
+        ],
+    )
+
     return 0 if ok else 1
 
 
