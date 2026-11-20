@@ -39,9 +39,18 @@ command = "start-hyprland"
 user = "$USER_NAME"
 EOF
 
-# Remove any old plymouth drop-in that could deadlock with After=plymouth-quit-wait.service
-rm -f /etc/systemd/system/greetd.service.d/plymouth.conf
-rmdir --ignore-fail-on-non-empty /etc/systemd/system/greetd.service.d 2>/dev/null || true
+# Keep Plymouth logo on screen until greetd releases DRM master right before start-hyprland (no deadlock, no flicker)
+systemctl mask plymouth-quit-wait.service 2>/dev/null || true
+mkdir -p /etc/systemd/system/greetd.service.d
+cat > /etc/systemd/system/greetd.service.d/plymouth.conf <<'EOF'
+[Unit]
+After=
+After=systemd-user-sessions.service plymouth-start.service getty@tty1.service
+Conflicts=getty@tty1.service plymouth-quit.service
+
+[Service]
+ExecStartPre=-/usr/bin/plymouth quit --retain-splash
+EOF
 
 systemctl daemon-reload
 systemctl enable greetd.service
