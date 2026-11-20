@@ -13,7 +13,7 @@ ShellRoot {
     readonly property color cSurface: "#1d1b20"
     readonly property color cSurface2: "#2b2930"
     readonly property color cOutline: "#49454f"
-    readonly property color cOutlineSoft: Qt.rgba(0.286, 0.271, 0.310, 0.45)
+    readonly property color cOutlineSoft: Qt.rgba(1, 1, 1, 0.12)
     readonly property color cFg: "#e6e0e9"
     readonly property color cSub: "#cac4d0"
     readonly property color cDim: "#938f99"
@@ -456,7 +456,7 @@ ShellRoot {
                                     height: rowCol.implicitHeight + 28
                                     radius: 14
                                     color: rowArea.containsMouse ? root.cSurface2 : root.cSurface
-                                    border.color: model.checked ? Qt.rgba(0.714, 0.616, 0.973, 0.45) : root.cOutlineSoft
+                                    border.color: model.checked ? Qt.rgba(0.714, 0.616, 0.973, 0.5) : Qt.rgba(1, 1, 1, 0.10)
                                     border.width: 1
                                     Behavior on color { ColorAnimation { duration: 120 } }
 
@@ -569,7 +569,7 @@ ShellRoot {
                                                         implicitHeight: subRow.implicitHeight + 14
                                                         radius: 10
                                                         color: subArea.containsMouse ? Qt.rgba(1, 1, 1, 0.06) : Qt.rgba(0, 0, 0, 0.18)
-                                                        border.color: modelData.checked ? Qt.rgba(0.714, 0.616, 0.973, 0.32) : Qt.rgba(0.286, 0.271, 0.310, 0.3)
+                                                        border.color: modelData.checked ? Qt.rgba(0.714, 0.616, 0.973, 0.35) : Qt.rgba(1, 1, 1, 0.08)
                                                         border.width: 1
 
                                                         MouseArea {
@@ -644,7 +644,7 @@ ShellRoot {
                                                                 implicitHeight: nestedRow.implicitHeight + 10
                                                                 radius: 8
                                                                 color: nestedArea.containsMouse ? Qt.rgba(1, 1, 1, 0.05) : Qt.rgba(0, 0, 0, 0.12)
-                                                                border.color: modelData.checked ? Qt.rgba(0.714, 0.616, 0.973, 0.28) : Qt.rgba(0.286, 0.271, 0.310, 0.25)
+                                                                border.color: modelData.checked ? Qt.rgba(0.714, 0.616, 0.973, 0.3) : Qt.rgba(1, 1, 1, 0.06)
                                                                 border.width: 1
 
                                                                 MouseArea {
