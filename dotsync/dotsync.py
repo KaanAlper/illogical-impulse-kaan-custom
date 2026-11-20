@@ -275,8 +275,9 @@ def sync(repo: Path, name: str) -> bool:
     if not (repo / ".git").is_dir():
         repo.parent.mkdir(parents=True, exist_ok=True)
         try:
+            url = name if "://" in name else f"https://github.com/{name}.git"
             return subprocess.run(
-                ["gh", "repo", "clone", name, str(repo), "--", "--depth", "1"],
+                ["git", "clone", "--depth", "1", url, str(repo)],
                 capture_output=True,
                 timeout=CLONE_TIMEOUT_S,
                 check=False,

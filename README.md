@@ -5,14 +5,13 @@ Personal customization suite and declarative installer (`dotsync`) for **end-4 /
 ## Quick Install
 
 ```bash
-gh api repos/KaanAlper/illogical-impulse-kaan-custom/contents/install.sh -H "Accept: application/vnd.github.raw" | bash
+curl -fsSL https://raw.githubusercontent.com/KaanAlper/illogical-impulse-kaan-custom/main/install.sh | bash
 ```
 
 Or clone and bootstrap manually:
 
 ```bash
-gh auth login
-gh repo clone KaanAlper/illogical-impulse-kaan-custom ~/kaan-dots
+git clone https://github.com/KaanAlper/illogical-impulse-kaan-custom.git ~/kaan-dots
 ~/kaan-dots/bootstrap.sh
 ```
 

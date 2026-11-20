@@ -1,6 +1,6 @@
 #!/bin/bash
-# illogical-impulse-kaan-custom tek satır kurulum (private repo: gh girişi gerekir):
-#   gh api repos/KaanAlper/illogical-impulse-kaan-custom/contents/install.sh -H "Accept: application/vnd.github.raw" | bash
+# illogical-impulse-kaan-custom tek satır kurulum:
+#   curl -fsSL https://raw.githubusercontent.com/KaanAlper/illogical-impulse-kaan-custom/main/install.sh | bash
 #
 # Akış: ~/kaan-dots'u klonlar (varsa günceller) -> kurulum penceresi açılır:
 #   1) "Kuruluma hoş geldin": installer (dotsync) kurulur  [yalnızca ilk kurulumda]
@@ -14,20 +14,19 @@ DEST="${KAAN_DOTS_DIR:-$HOME/kaan-dots}"
 
 missing_pkgs=()
 command -v git >/dev/null || missing_pkgs+=(git)
-command -v gh >/dev/null || missing_pkgs+=(github-cli)
+command -v curl >/dev/null || missing_pkgs+=(curl)
 command -v python3 >/dev/null || missing_pkgs+=(python)
 if [ ${#missing_pkgs[@]} -gt 0 ]; then
     echo "→ Eksik temel araçlar kuruluyor: ${missing_pkgs[*]}"
     sudo pacman -S --needed --noconfirm "${missing_pkgs[@]}"
 fi
-gh auth status >/dev/null 2>&1 || { echo "GitHub girişi yok: açılan ekrandan giriş yap..." && gh auth login; }
 
 if [ -d "$DEST/.git" ]; then
     echo "→ $DEST güncelleniyor"
-    git -C "$DEST" -c credential.helper= -c "credential.helper=!gh auth git-credential" pull --ff-only
+    git -C "$DEST" pull --ff-only
 else
     echo "→ $REPO klonlanıyor: $DEST"
-    gh repo clone "$REPO" "$DEST"
+    git clone "https://github.com/$REPO.git" "$DEST"
 fi
 
 export PATH="$HOME/.local/bin:$PATH"
