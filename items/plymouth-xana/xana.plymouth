@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=XANA
+Description=Centered dark-red XANA vector logo boot splash
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/xana
+ScriptFile=/usr/share/plymouth/themes/xana/xana.script

@@ -1,0 +1,26 @@
+Window.SetBackgroundTopColor(0.02, 0.01, 0.02);
+Window.SetBackgroundBottomColor(0.02, 0.01, 0.02);
+
+raw_logo = Image("logo.png");
+target_h = Math.Int(Window.GetHeight() * 0.28);
+if (target_h < 140) target_h = 140;
+target_w = Math.Int(raw_logo.GetWidth() * target_h / raw_logo.GetHeight());
+
+scaled_logo = raw_logo.Scale(target_w, target_h);
+logo_sprite = Sprite(scaled_logo);
+logo_sprite.SetX(Math.Int((Window.GetWidth() - target_w) / 2));
+logo_sprite.SetY(Math.Int((Window.GetHeight() - target_h) / 2));
+logo_sprite.SetZ(10);
+
+tick = 0;
+fun refresh_callback() {
+    tick++;
+    # Gentle breathing pulse (0.80 .. 1.00)
+    pulse = 0.90 + 0.10 * Math.Sin(tick * 0.08);
+    logo_sprite.SetOpacity(pulse);
+}
+Plymouth.SetRefreshFunction(refresh_callback);
+
+# Keep clean splash without cluttering text messages
+fun message_callback(text) {}
+Plymouth.SetMessageFunction(message_callback);
