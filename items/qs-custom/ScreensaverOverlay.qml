@@ -11,6 +11,7 @@ Scope {
     id: root
 
     property bool active: false
+    property bool lockPending: false
     property real armedAt: 0
 
     readonly property string mode: Config.options?.screensaver?.mode ?? "dvd"
@@ -29,6 +30,7 @@ Scope {
     readonly property bool isStaticImage: root.mode === "custom" && root.customPath !== "" && !isVideo && !isGif && !isScr
 
     function show() {
+        root.lockPending = false;
         root.armedAt = Date.now();
         root.active = true;
         if (root.mode === "custom" && root.isScr && root.customPath !== "") {
@@ -38,8 +40,14 @@ Scope {
     }
 
     function hide() {
+        const shouldLock = root.lockPending;
+        root.lockPending = false;
         root.active = false;
         if (scrProc.running) scrProc.running = false;
+        if (shouldLock) {
+            lockProc.running = false;
+            lockProc.running = true;
+        }
     }
 
     IpcHandler {
@@ -47,12 +55,25 @@ Scope {
         function open(): void { root.show(); }
         function close(): void { root.hide(); }
         function toggle(): void { root.active ? root.hide() : root.show(); }
+        function armLock(): void {
+            if (root.active) {
+                root.lockPending = true;
+            } else {
+                lockProc.running = false;
+                lockProc.running = true;
+            }
+        }
+    }
+
+    Process {
+        id: lockProc
+        command: ["loginctl", "lock-session"]
     }
 
     Process {
         id: scrProc
         command: ["wine", root.customPath, "/s"]
-        onExited: root.active = false
+        onExited: root.hide()
     }
 
     Variants {

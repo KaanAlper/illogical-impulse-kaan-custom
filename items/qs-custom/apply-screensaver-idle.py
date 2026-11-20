@@ -53,7 +53,7 @@ def main() -> int:
     if lock_en:
         lines += [
             f"\nlistener {{\n    timeout = {lock_min * 60}\n",
-            "    on-timeout = loginctl lock-session\n}\n",
+            "    on-timeout = qs -c ii ipc call screensaver armLock || loginctl lock-session\n}\n",
         ]
     if dpms_en:
         lines += [
