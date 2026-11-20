@@ -47,6 +47,8 @@ ShellRoot {
         ListElement { sid: "cache"; label: "Ayar deposu hazırlanıyor"; st: "wait" }
     }
     ListModel { id: items }      // id,title,desc,kind,terminal,missing,checked,partial,expanded,featuresJson,runState,detail
+    ListModel { id: installedItems }
+    property bool showInstalled: false
     ListModel { id: resultRows }
 
     function _syncParentFromFeats(idx, feats) {
@@ -203,10 +205,12 @@ ShellRoot {
                 try {
                     var data = JSON.parse(text);
                     items.clear();
+                    installedItems.clear();
                     for (var i = 0; i < data.items.length; i++) {
                         var s = data.items[i];
-                        if (s.state !== "missing" || s.declined) continue;
-                        var defChecked = s.default !== false;
+                        var isInstalled = (s.state === "ok");
+                        if (!isInstalled && (s.state !== "missing" || s.declined)) continue;
+                        var defChecked = isInstalled ? true : (s.default !== false);
                         var rawFeats = s.features || [];
                         var feats = [];
                         for (var j = 0; j < rawFeats.length; j++) {
@@ -233,7 +237,8 @@ ShellRoot {
                                 features: subList
                             });
                         }
-                        items.append({
+                        var targetModel = isInstalled ? installedItems : items;
+                        targetModel.append({
                             id: s.id, title: s.title, desc: s.desc, kind: s.kind,
                             terminal: s.terminal, missing: s.missing.join(", "),
                             checked: defChecked, partial: false, expanded: false,
@@ -668,6 +673,184 @@ ShellRoot {
                                                                         spacing: 1
                                                                         Text { Layout.fillWidth: true; text: modelData.title; color: root.cFg; font.pixelSize: 12; font.weight: Font.Medium }
                                                                         Text { visible: modelData.desc !== ""; Layout.fillWidth: true; wrapMode: Text.WordWrap; text: modelData.desc; color: root.cSub; font.pixelSize: 10 }
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                                footer: ColumnLayout {
+                                    width: list.width
+                                    spacing: 10
+                                    visible: installedItems.count > 0
+
+                                    Rectangle {
+                                        Layout.fillWidth: true
+                                        Layout.topMargin: 10
+                                        implicitHeight: 38
+                                        radius: 12
+                                        color: instHdrArea.containsMouse ? root.cSurface2 : root.cSurface
+                                        border.color: Qt.rgba(0.651, 0.890, 0.631, 0.28)
+                                        border.width: 1
+
+                                        MouseArea {
+                                            id: instHdrArea
+                                            anchors.fill: parent
+                                            hoverEnabled: true
+                                            cursorShape: Qt.PointingHandCursor
+                                            onClicked: root.showInstalled = !root.showInstalled
+                                        }
+
+                                        RowLayout {
+                                            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 14 }
+                                            spacing: 8
+                                            Text { text: "✓"; color: root.cOk; font.pixelSize: 13; font.weight: Font.Bold }
+                                            Text {
+                                                text: "Zaten yüklü (" + installedItems.count + ")"
+                                                color: root.cFg; font.pixelSize: 13; font.weight: Font.Medium
+                                            }
+                                            Item { Layout.fillWidth: true }
+                                            Text {
+                                                text: root.showInstalled ? "▾" : "▸"
+                                                color: root.cSub; font.pixelSize: 14
+                                            }
+                                        }
+                                    }
+
+                                    Repeater {
+                                        model: root.showInstalled ? installedItems : null
+                                        delegate: Rectangle {
+                                            id: instCard
+                                            readonly property int instIdx: index
+                                            readonly property var feats: JSON.parse(model.featuresJson || "[]")
+                                            Layout.fillWidth: true
+                                            implicitHeight: instCol.implicitHeight + 24
+                                            radius: 14
+                                            color: root.cSurface
+                                            opacity: 0.85
+                                            border.color: Qt.rgba(0.651, 0.890, 0.631, 0.25)
+                                            border.width: 1
+
+                                            ColumnLayout {
+                                                id: instCol
+                                                anchors { left: parent.left; right: parent.right; top: parent.top; margins: 16 }
+                                                spacing: 4
+
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 8
+                                                    Rectangle {
+                                                        radius: 6; color: Qt.rgba(0.651, 0.890, 0.631, 0.18)
+                                                        implicitWidth: okLbl.implicitWidth + 12; implicitHeight: 20
+                                                        Text { id: okLbl; anchors.centerIn: parent; text: "✓ Yüklü"; color: root.cOk; font.pixelSize: 11; font.weight: Font.Medium }
+                                                    }
+                                                    Text { text: model.title; color: root.cFg; font.pixelSize: 14; font.weight: Font.Medium }
+                                                    Item { Layout.fillWidth: true }
+                                                    Rectangle {
+                                                        visible: instCard.feats.length > 0
+                                                        radius: 8
+                                                        color: instExpArea.containsMouse ? root.cSurface2 : root.cBg
+                                                        border.color: Qt.rgba(0.651, 0.890, 0.631, 0.3)
+                                                        border.width: 1
+                                                        implicitWidth: instExpRow.implicitWidth + 16
+                                                        implicitHeight: 24
+                                                        RowLayout {
+                                                            id: instExpRow
+                                                            anchors.centerIn: parent
+                                                            spacing: 4
+                                                            Text { text: instCard.feats.length + " parça"; color: root.cSub; font.pixelSize: 11 }
+                                                            Text { text: model.expanded ? "▾" : "▸"; color: root.cFg; font.pixelSize: 12 }
+                                                        }
+                                                        MouseArea {
+                                                            id: instExpArea
+                                                            anchors.fill: parent
+                                                            hoverEnabled: true
+                                                            cursorShape: Qt.PointingHandCursor
+                                                            onClicked: installedItems.setProperty(instCard.instIdx, "expanded", !model.expanded)
+                                                        }
+                                                    }
+                                                }
+
+                                                Text { Layout.fillWidth: true; wrapMode: Text.WordWrap; text: model.desc; color: root.cSub; font.pixelSize: 12 }
+
+                                                ColumnLayout {
+                                                    visible: model.expanded && instCard.feats.length > 0
+                                                    Layout.fillWidth: true
+                                                    Layout.topMargin: 6
+                                                    spacing: 4
+
+                                                    Repeater {
+                                                        model: instCard.feats
+                                                        delegate: ColumnLayout {
+                                                            id: instFeatWrap
+                                                            required property var modelData
+                                                            required property int index
+                                                            readonly property var subFeats: modelData.features || []
+                                                            Layout.fillWidth: true
+                                                            spacing: 3
+
+                                                            Rectangle {
+                                                                Layout.fillWidth: true
+                                                                implicitHeight: instSubRow.implicitHeight + 10
+                                                                radius: 9
+                                                                color: Qt.rgba(0, 0, 0, 0.16)
+                                                                RowLayout {
+                                                                    id: instSubRow
+                                                                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 10 }
+                                                                    spacing: 8
+                                                                    Text { text: "•"; color: root.cOk; font.pixelSize: 13 }
+                                                                    ColumnLayout {
+                                                                        Layout.fillWidth: true
+                                                                        spacing: 1
+                                                                        Text { Layout.fillWidth: true; text: modelData.title; color: root.cFg; font.pixelSize: 12; font.weight: Font.Medium }
+                                                                        Text { visible: modelData.desc !== ""; Layout.fillWidth: true; wrapMode: Text.WordWrap; text: modelData.desc; color: root.cSub; font.pixelSize: 11 }
+                                                                    }
+                                                                    Rectangle {
+                                                                        visible: instFeatWrap.subFeats.length > 0
+                                                                        radius: 7
+                                                                        color: instSubExpArea.containsMouse ? root.cSurface2 : root.cBg
+                                                                        implicitWidth: instSubExpRow.implicitWidth + 12
+                                                                        implicitHeight: 20
+                                                                        RowLayout {
+                                                                            id: instSubExpRow
+                                                                            anchors.centerIn: parent
+                                                                            spacing: 4
+                                                                            Text { text: instFeatWrap.subFeats.length; color: root.cSub; font.pixelSize: 10 }
+                                                                            Text { text: modelData.expanded ? "▾" : "▸"; color: root.cFg; font.pixelSize: 11 }
+                                                                        }
+                                                                        MouseArea {
+                                                                            id: instSubExpArea
+                                                                            anchors.fill: parent
+                                                                            hoverEnabled: true
+                                                                            cursorShape: Qt.PointingHandCursor
+                                                                            onClicked: {
+                                                                                var f = JSON.parse(installedItems.get(instCard.instIdx).featuresJson || "[]");
+                                                                                f[instFeatWrap.index].expanded = !f[instFeatWrap.index].expanded;
+                                                                                installedItems.setProperty(instCard.instIdx, "featuresJson", JSON.stringify(f));
+                                                                            }
+                                                                        }
+                                                                    }
+                                                                }
+                                                            }
+
+                                                            ColumnLayout {
+                                                                visible: modelData.expanded && instFeatWrap.subFeats.length > 0
+                                                                Layout.fillWidth: true
+                                                                Layout.leftMargin: 20
+                                                                spacing: 3
+                                                                Repeater {
+                                                                    model: instFeatWrap.subFeats
+                                                                    delegate: RowLayout {
+                                                                        required property var modelData
+                                                                        Layout.fillWidth: true
+                                                                        spacing: 6
+                                                                        Text { text: "◦"; color: root.cOk; font.pixelSize: 12 }
+                                                                        Text { text: modelData.title; color: root.cFg; font.pixelSize: 11; font.weight: Font.Medium }
+                                                                        Text { visible: modelData.desc !== ""; Layout.fillWidth: true; elide: Text.ElideRight; text: "— " + modelData.desc; color: root.cSub; font.pixelSize: 10 }
                                                                     }
                                                                 }
                                                             }
