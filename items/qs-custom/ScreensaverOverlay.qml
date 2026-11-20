@@ -118,14 +118,14 @@ Scope {
                             }
                         }
 
-                        // Rounded rectangle frame with the Canvas DVD Video disc logo inside
+                        // Filled colored rectangle box with black Canvas DVD disc logo inside
                         Rectangle {
                             anchors.fill: parent
                             visible: root.mode === "dvd"
                             radius: 14
-                            color: "#08080c"
+                            color: dvdBox.palette[dvdBox.colorIdx]
                             border.width: 4
-                            border.color: dvdBox.palette[dvdBox.colorIdx]
+                            border.color: Qt.lighter(color, 1.35)
 
                             Canvas {
                                 id: dvdCanvas
@@ -137,8 +137,7 @@ Scope {
                                     const ctx = getContext("2d");
                                     if (!ctx) return;
                                     ctx.clearRect(0, 0, width, height);
-                                    const c = logoColor;
-                                    ctx.fillStyle = c;
+                                    ctx.fillStyle = "#000000";
 
                                     ctx.save();
                                     ctx.translate(width * 0.5, height * 0.38);
@@ -161,7 +160,7 @@ Scope {
                                     ctx.fill();
                                     ctx.restore();
 
-                                    ctx.fillStyle = "#08080c";
+                                    ctx.fillStyle = logoColor;
                                     ctx.font = "900 9px sans-serif";
                                     ctx.textAlign = "center";
                                     ctx.textBaseline = "middle";
