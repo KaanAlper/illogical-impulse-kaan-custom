@@ -464,65 +464,93 @@ Item {
         Rectangle {
             visible: root.cliInstalled && (!root.cliLoggedIn || loginProc.running)
             Layout.fillWidth: true
-            implicitHeight: authRow.implicitHeight + 16
+            implicitHeight: authCol.implicitHeight + 16
             radius: Appearance.rounding.normal
             color: Appearance.colors.colLayer2
             border.width: 1
             border.color: Appearance.colors.colOutlineVariant
 
-            RowLayout {
-                id: authRow
+            ColumnLayout {
+                id: authCol
                 anchors.fill: parent
                 anchors.margins: 8
-                spacing: 8
+                spacing: 6
 
-                MaterialLoadingIndicator {
-                    visible: loginProc.running
-                    implicitSize: 18
-                }
-                MaterialSymbol {
-                    visible: !loginProc.running
-                    text: "passkey"
-                    iconSize: 20
-                    color: Appearance.colors.colPrimary
-                }
-                StyledText {
+                RowLayout {
+                    id: authRow
                     Layout.fillWidth: true
-                    font.pixelSize: Appearance.font.pixelSize.smaller
-                    color: Appearance.m3colors.m3onSurface
-                    elide: Text.ElideRight
-                    text: loginProc.running
-                        ? Translation.tr("Signing in to %1...").arg(root.backend === "codex" ? "Codex" : "Claude")
-                        : Translation.tr("Sign in required to use %1").arg(root.backend === "codex" ? "Codex" : "Claude")
-                }
-                RippleButton {
-                    implicitWidth: loginBtnTxt.implicitWidth + 20
-                    implicitHeight: 28
-                    buttonRadius: Appearance.rounding.full
-                    enabled: !loginProc.running
-                    colBackground: Appearance.colors.colPrimary
-                    onClicked: root.openLogin()
-                    contentItem: StyledText {
-                        id: loginBtnTxt
-                        anchors.centerIn: parent
+                    spacing: 8
+
+                    MaterialLoadingIndicator {
+                        visible: loginProc.running
+                        implicitSize: 18
+                    }
+                    MaterialSymbol {
+                        visible: !loginProc.running
+                        text: "passkey"
+                        iconSize: 20
+                        color: Appearance.colors.colPrimary
+                    }
+                    StyledText {
+                        Layout.fillWidth: true
                         font.pixelSize: Appearance.font.pixelSize.smaller
-                        font.weight: Font.Medium
-                        color: Appearance.m3colors.m3onPrimary
-                        text: loginProc.running ? Translation.tr("Waiting...") : Translation.tr("Sign in")
+                        color: Appearance.m3colors.m3onSurface
+                        elide: Text.ElideRight
+                        text: loginProc.running
+                            ? Translation.tr("Signing in to %1...").arg(root.backend === "codex" ? "Codex" : "Claude")
+                            : Translation.tr("Sign in required to use %1").arg(root.backend === "codex" ? "Codex" : "Claude")
+                    }
+                    RippleButton {
+                        implicitWidth: loginBtnTxt.implicitWidth + 20
+                        implicitHeight: 28
+                        buttonRadius: Appearance.rounding.full
+                        enabled: !loginProc.running
+                        colBackground: Appearance.colors.colPrimary
+                        onClicked: root.openLogin()
+                        contentItem: StyledText {
+                            id: loginBtnTxt
+                            anchors.centerIn: parent
+                            font.pixelSize: Appearance.font.pixelSize.smaller
+                            font.weight: Font.Medium
+                            color: Appearance.m3colors.m3onPrimary
+                            text: loginProc.running ? Translation.tr("Waiting...") : Translation.tr("Sign in")
+                        }
+                    }
+                    RippleButton {
+                        implicitWidth: 28
+                        implicitHeight: 28
+                        buttonRadius: Appearance.rounding.full
+                        colBackground: "transparent"
+                        colBackgroundHover: Appearance.colors.colSurfaceContainerHigh
+                        onClicked: root.refreshMeta()
+                        contentItem: MaterialSymbol {
+                            anchors.centerIn: parent
+                            text: "refresh"
+                            iconSize: 16
+                            color: Appearance.colors.colSubtext
+                        }
                     }
                 }
-                RippleButton {
-                    implicitWidth: 28
-                    implicitHeight: 28
-                    buttonRadius: Appearance.rounding.full
-                    colBackground: "transparent"
-                    colBackgroundHover: Appearance.colors.colSurfaceContainerHigh
-                    onClicked: root.refreshMeta()
-                    contentItem: MaterialSymbol {
-                        anchors.centerIn: parent
-                        text: "refresh"
-                        iconSize: 16
-                        color: Appearance.colors.colSubtext
+
+                // Indeterminate progress bar while login terminal is active
+                Rectangle {
+                    visible: loginProc.running
+                    Layout.fillWidth: true
+                    implicitHeight: 4
+                    radius: Appearance.rounding.full
+                    color: Appearance.colors.colLayer3
+                    clip: true
+
+                    Rectangle {
+                        width: parent.width * 0.35
+                        height: parent.height
+                        radius: Appearance.rounding.full
+                        color: Appearance.colors.colPrimary
+                        SequentialAnimation on x {
+                            running: loginProc.running
+                            loops: Animation.Infinite
+                            NumberAnimation { from: -width; to: parent.width; duration: 1100; easing.type: Easing.InOutCubic }
+                        }
                     }
                 }
             }
