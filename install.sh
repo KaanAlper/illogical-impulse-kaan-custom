@@ -12,10 +12,15 @@ set -euo pipefail
 REPO="${KAAN_DOTS_REPO:-KaanAlper/kaan-dots}"
 DEST="${KAAN_DOTS_DIR:-$HOME/kaan-dots}"
 
-command -v git >/dev/null || { echo "git gerekli: sudo pacman -S git" >&2; exit 1; }
-command -v gh >/dev/null || { echo "gh gerekli: sudo pacman -S github-cli" >&2; exit 1; }
-command -v python3 >/dev/null || { echo "python3 gerekli" >&2; exit 1; }
-gh auth status >/dev/null 2>&1 || { echo "GitHub girişi yok: önce 'gh auth login' çalıştır." >&2; exit 1; }
+missing_pkgs=()
+command -v git >/dev/null || missing_pkgs+=(git)
+command -v gh >/dev/null || missing_pkgs+=(github-cli)
+command -v python3 >/dev/null || missing_pkgs+=(python)
+if [ ${#missing_pkgs[@]} -gt 0 ]; then
+    echo "→ Eksik temel araçlar kuruluyor: ${missing_pkgs[*]}"
+    sudo pacman -S --needed --noconfirm "${missing_pkgs[@]}"
+fi
+gh auth status >/dev/null 2>&1 || { echo "GitHub girişi yok: açılan ekrandan giriş yap..." && gh auth login; }
 
 if [ -d "$DEST/.git" ]; then
     echo "→ $DEST güncelleniyor"

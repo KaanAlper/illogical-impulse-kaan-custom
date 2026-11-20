@@ -11,6 +11,7 @@
       "dest": "~/.config/quickshell-custom",
       "executable": [
         "agy-config.py",
+        "apply-workspace-split.py",
         "apply.sh",
         "audio-mono-toggle.sh",
         "everything-query.py",
@@ -18,9 +19,11 @@
         "fetch-agy-commands.py",
         "fetch-agy-models.py",
         "fetch-cli-meta.py",
+        "parallel-fetch-image.py",
         "patch-agy-ai.py",
         "patch-everything.py",
         "patch-lock-howdy.py",
+        "pw-app-ancestry.py",
         "sleep-inhibit-toggle.sh"
       ],
       "check": [
@@ -137,7 +140,10 @@
       "kind": "check",
       "check": [
         {
-          "exists": "/etc/systemd/system/getty@tty1.service.d/autologin.conf"
+          "exists": "/etc/greetd/config.toml"
+        },
+        {
+          "exists": "/etc/systemd/system/greetd.service.d/plymouth.conf"
         }
       ],
       "requires": [

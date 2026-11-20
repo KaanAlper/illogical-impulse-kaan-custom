@@ -36,6 +36,8 @@ ShellRoot {
     property bool loading: true
     property string loadError: ""
     property int selectedCount: 0
+    property int applyTotal: 0
+    property int applyDone: 0
     property bool allOk: true
 
     ListModel {
@@ -69,6 +71,8 @@ ShellRoot {
         var args = ["python3", root.bin, "apply"].concat(ids);
         if (declines.length) args = args.concat(["--decline"]).concat(declines);
         applyProc.command = args;
+        applyTotal = ids.length;
+        applyDone = 0;
         allOk = true;
         page = 2;
         applyProc.running = true;
@@ -77,9 +81,11 @@ ShellRoot {
     function setRun(id, state, detail) {
         for (var i = 0; i < items.count; i++) {
             if (items.get(i).id === id) {
+                var prev = items.get(i).runState;
                 items.setProperty(i, "runState", state);
                 items.setProperty(i, "detail", detail || "");
                 if (state === "fail") allOk = false;
+                if ((state === "ok" || state === "fail") && prev !== "ok" && prev !== "fail") applyDone++;
             }
         }
     }
@@ -398,7 +404,24 @@ ShellRoot {
                         ColumnLayout {
                             anchors { fill: parent; leftMargin: 32; rightMargin: 32; topMargin: 4; bottomMargin: 24 }
                             spacing: 14
-                            Text { text: "Kuruluyor"; color: root.cFg; font.pixelSize: 24; font.weight: Font.DemiBold }
+                            RowLayout {
+                                Layout.fillWidth: true
+                                Text { text: "Kuruluyor"; color: root.cFg; font.pixelSize: 24; font.weight: Font.DemiBold; Layout.fillWidth: true }
+                                Text {
+                                    readonly property int pct: root.applyTotal > 0 ? Math.round(root.applyDone * 100 / root.applyTotal) : 0
+                                    text: root.applyDone + " / " + root.applyTotal + " (" + pct + "%)"
+                                    color: root.cAccent; font.pixelSize: 14; font.weight: Font.DemiBold
+                                }
+                            }
+                            Rectangle {
+                                Layout.fillWidth: true; implicitHeight: 6; radius: 3; color: root.cSurface2; clip: true
+                                Rectangle {
+                                    anchors { left: parent.left; top: parent.top; bottom: parent.bottom }
+                                    width: root.applyTotal > 0 ? parent.width * (root.applyDone / root.applyTotal) : 0
+                                    radius: 3; color: root.cAccent
+                                    Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
+                                }
+                            }
                             Text {
                                 Layout.fillWidth: true; wrapMode: Text.WordWrap
                                 text: "Terminal gerektirenler ayrı bir pencerede açılır; parolayı orada girersin."
