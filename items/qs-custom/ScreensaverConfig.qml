@@ -229,14 +229,14 @@ ContentPage {
                             implicitHeight: 34
                             buttonRadius: Appearance.rounding.full
                             colBackground: chipWrap.active ? Appearance.colors.colPrimaryContainer : Appearance.colors.colSurfaceContainerHigh
-                            acceptedButtons: Qt.LeftButton | Qt.RightButton
-                            onClicked: mouse => {
-                                if (mouse.button === Qt.RightButton) {
-                                    chipMenu.popup();
-                                } else {
-                                    Config.options.screensaver.customPath = chipWrap.modelData.path;
-                                    Config.options.screensaver.mode = "custom";
-                                }
+                            onClicked: {
+                                Config.options.screensaver.customPath = chipWrap.modelData.path;
+                                Config.options.screensaver.mode = "custom";
+                            }
+                            MouseArea {
+                                anchors.fill: parent
+                                acceptedButtons: Qt.RightButton
+                                onClicked: chipMenu.popup()
                             }
                             contentItem: RowLayout {
                                 id: chipRow
