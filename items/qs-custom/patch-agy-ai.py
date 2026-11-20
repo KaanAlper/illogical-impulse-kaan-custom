@@ -1280,6 +1280,22 @@ def main() -> int:
         ],
     )
 
+    # 13. GoogleCloud.qml: don't trigger keyring password popup on boot before LockScreen unlocks keyring
+    ok &= patch_file(
+        ii / "services/GoogleCloud.qml",
+        [
+            (
+                "if (!Config.options.lock.launchOnStartup) KeyringStorage.fetchKeyringData();",
+                "        } else {\n"
+                "            KeyringStorage.fetchKeyringData();\n"
+                "        }",
+                "        } else {\n"
+                "            if (!Config.options.lock.launchOnStartup) KeyringStorage.fetchKeyringData();\n"
+                "        }",
+            ),
+        ],
+    )
+
     return 0 if ok else 1
 
 
