@@ -460,9 +460,9 @@ Item {
             }
         }
 
-        // Auth prompt banner when CLI is installed but not logged in
+        // Auth prompt banner when CLI is installed and not logged in (or login in progress)
         Rectangle {
-            visible: root.cliInstalled && !root.cliLoggedIn
+            visible: root.cliInstalled && (!root.cliLoggedIn || loginProc.running)
             Layout.fillWidth: true
             implicitHeight: authRow.implicitHeight + 16
             radius: Appearance.rounding.normal
@@ -476,7 +476,12 @@ Item {
                 anchors.margins: 8
                 spacing: 8
 
+                MaterialLoadingIndicator {
+                    visible: loginProc.running
+                    implicitSize: 18
+                }
                 MaterialSymbol {
+                    visible: !loginProc.running
                     text: "passkey"
                     iconSize: 20
                     color: Appearance.colors.colPrimary
@@ -486,12 +491,15 @@ Item {
                     font.pixelSize: Appearance.font.pixelSize.smaller
                     color: Appearance.m3colors.m3onSurface
                     elide: Text.ElideRight
-                    text: Translation.tr("Sign in required to use %1").arg(root.backend === "codex" ? "Codex" : "Claude")
+                    text: loginProc.running
+                        ? Translation.tr("Signing in to %1...").arg(root.backend === "codex" ? "Codex" : "Claude")
+                        : Translation.tr("Sign in required to use %1").arg(root.backend === "codex" ? "Codex" : "Claude")
                 }
                 RippleButton {
                     implicitWidth: loginBtnTxt.implicitWidth + 20
                     implicitHeight: 28
                     buttonRadius: Appearance.rounding.full
+                    enabled: !loginProc.running
                     colBackground: Appearance.colors.colPrimary
                     onClicked: root.openLogin()
                     contentItem: StyledText {
@@ -500,7 +508,7 @@ Item {
                         font.pixelSize: Appearance.font.pixelSize.smaller
                         font.weight: Font.Medium
                         color: Appearance.m3colors.m3onPrimary
-                        text: Translation.tr("Sign in")
+                        text: loginProc.running ? Translation.tr("Waiting...") : Translation.tr("Sign in")
                     }
                 }
                 RippleButton {
