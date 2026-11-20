@@ -118,7 +118,7 @@ Scope {
                             }
                         }
 
-                        // Retro solid colored rectangle DVD box
+                        // Retro solid colored rectangle DVD box with classic disc oval inside
                         Rectangle {
                             anchors.fill: parent
                             visible: root.mode === "dvd"
@@ -129,19 +129,33 @@ Scope {
 
                             Column {
                                 anchors.centerIn: parent
-                                spacing: -2
+                                spacing: 2
                                 Text {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     text: "DVD"
-                                    font.pixelSize: 52
+                                    font.pixelSize: 44
                                     font.weight: Font.Black
                                     font.italic: true
                                     color: "#000000"
                                 }
+                                Rectangle {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    width: 156
+                                    height: 22
+                                    radius: 11
+                                    color: "#000000"
+                                    Rectangle {
+                                        anchors.centerIn: parent
+                                        width: 34
+                                        height: 6
+                                        radius: 3
+                                        color: dvdBox.palette[dvdBox.colorIdx]
+                                    }
+                                }
                                 Text {
                                     anchors.horizontalCenter: parent.horizontalCenter
                                     text: "V I D E O"
-                                    font.pixelSize: 13
+                                    font.pixelSize: 10
                                     font.weight: Font.Black
                                     color: "#000000"
                                 }
