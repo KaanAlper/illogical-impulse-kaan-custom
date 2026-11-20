@@ -1,3 +1,3 @@
--- This file will not be overwritten across dots-hyprland updates.
--- The file name is for the sake of organization and does not matter
--- See the corresponding files in ~/.config/hypr/hyprland for examples
+-- Fix blank white WebKitGTK views (BambuStudio, OrcaSlicer, Tauri, etc.) on NVIDIA + Wayland
+hl.env("WEBKIT_DISABLE_DMABUF_RENDERER", "1")
+hl.env("SSL_CERT_FILE", "/etc/ssl/certs/ca-certificates.crt")
