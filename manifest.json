@@ -73,8 +73,8 @@
         { "id": "screensaver", "title": "Ekran koruyucu", "desc": "DVD, Matrix, Starfield, Mystify, XANA, Renk şablonu, özel medya, her monitöre ayrı ayar ve çevirileri", "default": true },
         { "id": "lock-power", "title": "Kilit & güç ayarları", "desc": "Genel -> Kilit bölümü (Ekran kilidi, DPMS, Derin uyku, Plymouth XANA logo seçici) ve çevirileri", "default": true },
         { "id": "ai-sidebar", "title": "Sol panel AI (Agy, Claude, Codex & Anime)", "desc": "AI sohbet sekmeleri, model seçiciler, anime görüntüleyici ve ilgili çeviriler", "default": true },
-        { "id": "everything-search", "title": "Everything dosya arama", "desc": "Win+H kısayolu, dosya/klasör arama, indeksleme ve araç çubuğu", "default": true },
-        { "id": "workspace-split", "title": "Çoklu monitör çalışma alanı", "desc": "Monitöre göre bölme ve odaklanmayan monitör vurgusu", "default": true },
+        { "id": "everything-search", "title": "Everything dosya arama", "desc": "Super+B (Everything #) ve Super+P (Tüm uygulamalar !) kısayolları, dosya/klasör arama, indeksleme ve araç çubuğu", "default": true },
+        { "id": "workspace-split", "title": "Çoklu monitör çalışma alanı", "desc": "Monitöre göre bölme, odaklanmayan monitör vurgusu ve Ctrl+Super+Sol/Sağ (+Shift) monitörler arası geçiş kısayolları", "default": true },
         { "id": "icon-cache", "title": "Uygulama ikon önbelleği", "desc": "Zen Browser ve ArtCraft ikon önbellek düzeltmesi", "default": true }
       ]
     },
@@ -92,18 +92,19 @@
         "flameshot"
       ],
       "features": [
-        { "id": "keybinds", "title": "Özel kısayollar", "desc": "keybinds.lua", "default": true },
+        { "id": "keybinds", "title": "Pencere kapatma (Alt+F4)", "desc": "Super+Q kaldırılıp pencere kapatma yalnızca Alt+F4 yapılır", "default": true },
         { "id": "rules", "title": "Pencere kuralları", "desc": "rules.lua ve rules.conf", "default": true },
-        { "id": "alttab", "title": "Alt+Tab pencere değiştirici", "desc": "alttab/ yapılandırması", "default": true },
+        { "id": "alttab", "title": "Alt+Tab pencere değiştirici", "desc": "alttab/ yapılandırması ve Alt+Tab / Alt+Shift+Tab kısayolları", "default": true },
         { "id": "hypridle", "title": "Boşta kalma / kilit zamanlayıcısı", "desc": "hypridle.conf", "default": true },
         { "id": "bootsplash", "title": "Açılış logosu", "desc": "bootsplash/ görselleri", "default": true },
-        { "id": "execs-env", "title": "Açılış komutları ve ortam", "desc": "execs.lua, env.lua, general.lua, variables.lua", "default": true }
+        { "id": "execs-env", "title": "Açılış komutları ve ortam", "desc": "execs.lua, env.lua, general.lua, variables.lua", "default": true },
+        { "id": "msi-fan", "title": "MSI fan kısayolu (Super+F12)", "desc": "msi-fan-toggle ile Max/Auto geçişi", "default": true }
       ]
     },
     {
       "id": "flameshot",
       "title": "Flameshot ekran görüntüsü aracı",
-      "desc": "Ekran dondurmalı, ok ve etiketleme araçlı ekran görüntüsü aracı. Wayland üzerinde yüzen pencere (floating) kurallarıyla çalışır.",
+      "desc": "Ekran dondurmalı, ok ve etiketleme araçlı ekran görüntüsü aracı. Print kısayolu ve Wayland yüzen pencere (floating) kurallarıyla çalışır.",
       "kind": "pkgs",
       "pkgs": [
         "flameshot"
