@@ -46,8 +46,31 @@ ShellRoot {
         ListElement { sid: "client"; label: "Installer (dotsync) kuruluyor"; st: "wait" }
         ListElement { sid: "cache"; label: "Ayar deposu hazırlanıyor"; st: "wait" }
     }
-    ListModel { id: items }      // id,title,desc,kind,terminal,missing,checked,runState,detail
+    ListModel { id: items }      // id,title,desc,kind,terminal,missing,checked,partial,expanded,featuresJson,runState,detail
     ListModel { id: resultRows }
+
+    function toggleAllFeatures(idx, newVal) {
+        var it = items.get(idx);
+        var feats = JSON.parse(it.featuresJson || "[]");
+        for (var j = 0; j < feats.length; j++) feats[j].checked = newVal;
+        items.setProperty(idx, "featuresJson", JSON.stringify(feats));
+        items.setProperty(idx, "checked", newVal);
+        items.setProperty(idx, "partial", false);
+        root.recount();
+    }
+
+    function toggleSubFeature(idx, featIdx) {
+        var it = items.get(idx);
+        var feats = JSON.parse(it.featuresJson || "[]");
+        if (featIdx < 0 || featIdx >= feats.length) return;
+        feats[featIdx].checked = !feats[featIdx].checked;
+        var sel = 0;
+        for (var j = 0; j < feats.length; j++) if (feats[j].checked) sel++;
+        items.setProperty(idx, "featuresJson", JSON.stringify(feats));
+        items.setProperty(idx, "checked", sel > 0);
+        items.setProperty(idx, "partial", sel > 0 && sel < feats.length);
+        root.recount();
+    }
 
     function recount() {
         var n = 0;
@@ -62,14 +85,27 @@ ShellRoot {
     }
 
     function startApply() {
-        var ids = [], declines = [];
+        var ids = [], declines = [], featArgs = [];
         for (var i = 0; i < items.count; i++) {
             var it = items.get(i);
-            (it.checked ? ids : declines).push(it.id);
+            if (it.checked) {
+                ids.push(it.id);
+                var feats = JSON.parse(it.featuresJson || "[]");
+                if (feats.length > 0) {
+                    var chosen = [];
+                    for (var j = 0; j < feats.length; j++) if (feats[j].checked) chosen.push(feats[j].id);
+                    if (chosen.length > 0 && chosen.length < feats.length) {
+                        featArgs.push(it.id + ":" + chosen.join(","));
+                    }
+                }
+            } else {
+                declines.push(it.id);
+            }
             items.setProperty(i, "runState", it.checked ? "wait" : "skip");
         }
         var args = ["python3", root.bin, "apply"].concat(ids);
         if (declines.length) args = args.concat(["--decline"]).concat(declines);
+        if (featArgs.length) args = args.concat(["--features"]).concat(featArgs);
         applyProc.command = args;
         applyTotal = ids.length;
         applyDone = 0;
@@ -111,10 +147,24 @@ ShellRoot {
                     for (var i = 0; i < data.items.length; i++) {
                         var s = data.items[i];
                         if (s.state !== "missing" || s.declined) continue;
+                        var defChecked = s.default !== false;
+                        var rawFeats = s.features || [];
+                        var feats = [];
+                        for (var j = 0; j < rawFeats.length; j++) {
+                            var f = rawFeats[j];
+                            feats.push({
+                                id: f.id,
+                                title: f.title || f.id,
+                                desc: f.desc || "",
+                                checked: defChecked && (f.default !== false)
+                            });
+                        }
                         items.append({
                             id: s.id, title: s.title, desc: s.desc, kind: s.kind,
                             terminal: s.terminal, missing: s.missing.join(", "),
-                            checked: s.default !== false, runState: "idle", detail: ""
+                            checked: defChecked, partial: false, expanded: false,
+                            featuresJson: JSON.stringify(feats),
+                            runState: "idle", detail: ""
                         });
                     }
                     root.recount();
@@ -314,6 +364,14 @@ ShellRoot {
                                 model: items
                                 boundsBehavior: Flickable.StopAtBounds
                                 delegate: Rectangle {
+                                    id: card
+                                    readonly property int cardIdx: index
+                                    readonly property var feats: JSON.parse(model.featuresJson || "[]")
+                                    readonly property int selFeatCount: {
+                                        var c = 0;
+                                        for (var j = 0; j < feats.length; j++) if (feats[j].checked) c++;
+                                        return c;
+                                    }
                                     width: list.width
                                     height: rowCol.implicitHeight + 28
                                     radius: 14
@@ -327,7 +385,7 @@ ShellRoot {
                                         anchors.fill: parent
                                         hoverEnabled: true
                                         cursorShape: Qt.PointingHandCursor
-                                        onClicked: { items.setProperty(index, "checked", !model.checked); root.recount(); }
+                                        onClicked: root.toggleAllFeatures(index, !(model.checked && !model.partial))
                                     }
 
                                     Rectangle {
@@ -337,7 +395,14 @@ ShellRoot {
                                         border.color: model.checked ? root.cAccent : root.cDim
                                         border.width: 2
                                         Behavior on color { ColorAnimation { duration: 120 } }
-                                        Text { anchors.centerIn: parent; text: "✓"; visible: model.checked; color: root.cBg; font.pixelSize: 14; font.weight: Font.Bold }
+                                        Text {
+                                            anchors.centerIn: parent
+                                            text: model.partial ? "−" : "✓"
+                                            visible: model.checked
+                                            color: root.cBg
+                                            font.pixelSize: 14
+                                            font.weight: Font.Bold
+                                        }
                                     }
 
                                     ColumnLayout {
@@ -345,6 +410,7 @@ ShellRoot {
                                         anchors { left: box.right; leftMargin: 16; right: parent.right; rightMargin: 18; top: parent.top; topMargin: 14 }
                                         spacing: 4
                                         RowLayout {
+                                            Layout.fillWidth: true
                                             spacing: 8
                                             Text { text: model.title; color: root.cFg; font.pixelSize: 15; font.weight: Font.Medium }
                                             Rectangle {
@@ -353,12 +419,98 @@ ShellRoot {
                                                 implicitWidth: termLabel.implicitWidth + 14; implicitHeight: 20
                                                 Text { id: termLabel; anchors.centerIn: parent; text: "terminalde"; color: root.cSub; font.pixelSize: 11 }
                                             }
+                                            Item { Layout.fillWidth: true }
+                                            Rectangle {
+                                                visible: card.feats.length > 0
+                                                radius: 8
+                                                color: expArea.containsMouse ? root.cSurface : root.cSurface2
+                                                border.color: Qt.rgba(0.714, 0.616, 0.973, 0.35)
+                                                border.width: 1
+                                                implicitWidth: expRow.implicitWidth + 16
+                                                implicitHeight: 24
+                                                RowLayout {
+                                                    id: expRow
+                                                    anchors.centerIn: parent
+                                                    spacing: 4
+                                                    Text {
+                                                        text: card.selFeatCount + "/" + card.feats.length
+                                                        color: root.cSub
+                                                        font.pixelSize: 11
+                                                    }
+                                                    Text {
+                                                        text: model.expanded ? "▾" : "▸"
+                                                        color: root.cFg
+                                                        font.pixelSize: 12
+                                                    }
+                                                }
+                                                MouseArea {
+                                                    id: expArea
+                                                    anchors.fill: parent
+                                                    hoverEnabled: true
+                                                    cursorShape: Qt.PointingHandCursor
+                                                    onClicked: mouse => {
+                                                        mouse.accepted = true;
+                                                        items.setProperty(card.cardIdx, "expanded", !model.expanded);
+                                                    }
+                                                }
+                                            }
                                         }
                                         Text { Layout.fillWidth: true; wrapMode: Text.WordWrap; text: model.desc; color: root.cSub; font.pixelSize: 12 }
                                         Text {
                                             Layout.fillWidth: true; elide: Text.ElideRight
                                             text: "Eksik: " + model.missing
                                             color: root.cDim; font.pixelSize: 11
+                                        }
+
+                                        ColumnLayout {
+                                            visible: model.expanded && card.feats.length > 0
+                                            Layout.fillWidth: true
+                                            Layout.topMargin: 8
+                                            spacing: 6
+
+                                            Repeater {
+                                                model: card.feats
+                                                delegate: Rectangle {
+                                                    required property var modelData
+                                                    required property int index
+                                                    Layout.fillWidth: true
+                                                    implicitHeight: subRow.implicitHeight + 14
+                                                    radius: 10
+                                                    color: subArea.containsMouse ? Qt.rgba(1, 1, 1, 0.06) : Qt.rgba(0, 0, 0, 0.18)
+                                                    border.color: modelData.checked ? Qt.rgba(0.714, 0.616, 0.973, 0.35) : "transparent"
+                                                    border.width: 1
+
+                                                    MouseArea {
+                                                        id: subArea
+                                                        anchors.fill: parent
+                                                        hoverEnabled: true
+                                                        cursorShape: Qt.PointingHandCursor
+                                                        onClicked: mouse => {
+                                                            mouse.accepted = true;
+                                                            root.toggleSubFeature(card.cardIdx, index);
+                                                        }
+                                                    }
+
+                                                    RowLayout {
+                                                        id: subRow
+                                                        anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 10 }
+                                                        spacing: 10
+                                                        Rectangle {
+                                                            width: 18; height: 18; radius: 5
+                                                            color: modelData.checked ? root.cAccent : "transparent"
+                                                            border.color: modelData.checked ? root.cAccent : root.cDim
+                                                            border.width: 2
+                                                            Text { anchors.centerIn: parent; text: "✓"; visible: modelData.checked; color: root.cBg; font.pixelSize: 12; font.weight: Font.Bold }
+                                                        }
+                                                        ColumnLayout {
+                                                            Layout.fillWidth: true
+                                                            spacing: 2
+                                                            Text { Layout.fillWidth: true; text: modelData.title; color: root.cFg; font.pixelSize: 13; font.weight: Font.Medium }
+                                                            Text { visible: modelData.desc !== ""; Layout.fillWidth: true; wrapMode: Text.WordWrap; text: modelData.desc; color: root.cSub; font.pixelSize: 11 }
+                                                        }
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }

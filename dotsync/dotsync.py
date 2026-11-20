@@ -181,6 +181,7 @@ def compute_status(
                 "terminal": bool(item.get("terminal")),
                 "default": bool(item.get("default", True)),
                 "requires": item.get("requires", []),
+                "features": item.get("features", []),
             }
         )
     return status
@@ -308,19 +309,19 @@ def cmd_status(args: argparse.Namespace) -> int:
     return 0
 
 
-def _run_install(item: dict, repo: Path) -> bool:
+def _run_install(item: dict, repo: Path, env: dict[str, str] | None = None) -> bool:
     """Terminal gerektirmeyen öğelerin `install` komutu (varsa)."""
     cmd = item.get("install")
     if not cmd:
         return True
     cmd = cmd.replace("{repo}", shlex.quote(str(repo)))
-    return subprocess.run(["bash", "-c", cmd], check=False).returncode == 0
+    return subprocess.run(["bash", "-c", cmd], env=env, check=False).returncode == 0
 
 
-def _run_post(item: dict) -> bool:
+def _run_post(item: dict, env: dict[str, str] | None = None) -> bool:
     ok = True
     for cmd in item.get("post", []):
-        ok = subprocess.run(["bash", "-c", cmd], check=False).returncode == 0 and ok
+        ok = subprocess.run(["bash", "-c", cmd], env=env, check=False).returncode == 0 and ok
     return ok
 
 
@@ -334,6 +335,12 @@ def cmd_apply(args: argparse.Namespace) -> int:
 
     state = state_dir()
     save_declined(state, (load_declined(state) | set(args.decline)) - set(args.ids))
+
+    feature_map: dict[str, str] = {}
+    for spec in getattr(args, "features", []) or []:
+        if ":" in spec:
+            fid, flist = spec.split(":", 1)
+            feature_map[fid] = flist
 
     wanted = [i for i in manifest["items"] if i["id"] in set(args.ids)]
     healthy = {s["id"] for s in compute_status(manifest, repo, set()) if s["state"] == "ok"}
@@ -352,8 +359,9 @@ def cmd_apply(args: argparse.Namespace) -> int:
             continue
         _emit(event="start", id=iid)
         try:
+            item_env = {**os.environ, "DOTSYNC_FEATURES": feature_map.get(iid, "all")}
             copied = install_files(item, repo) if item["kind"] == "files" else []
-            ran = _run_install(item, repo) and _run_post(item)
+            ran = _run_install(item, repo, item_env) and _run_post(item, item_env)
             # Çıkış koduna değil gerçek duruma güven: öğe artık eksiksiz mi?
             now = {s["id"]: s for s in compute_status(manifest, repo, set())}[iid]
             ok = ran and now["state"] == "ok"
@@ -444,6 +452,7 @@ def main(argv: list[str] | None = None) -> int:
     p = sub.add_parser("apply")
     p.add_argument("ids", nargs="*", default=[])
     p.add_argument("--decline", nargs="*", default=[])
+    p.add_argument("--features", nargs="*", default=[], help="id:feat1,feat2 biçiminde alt özellik seçimi")
     p.set_defaults(fn=cmd_apply)
 
     p = sub.add_parser("decline")
