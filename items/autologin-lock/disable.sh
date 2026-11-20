@@ -8,6 +8,8 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 systemctl disable greetd.service 2>/dev/null || true
+rm -f /etc/systemd/system/greetd.service.d/plymouth.conf
+rmdir --ignore-fail-on-non-empty /etc/systemd/system/greetd.service.d 2>/dev/null || true
 rm -f /etc/systemd/system/getty@tty1.service.d/autologin.conf
 rmdir --ignore-fail-on-non-empty /etc/systemd/system/getty@tty1.service.d 2>/dev/null || true
 systemctl daemon-reload

@@ -39,6 +39,18 @@ command = "start-hyprland"
 user = "$USER_NAME"
 EOF
 
+# Keep Plymouth splash on screen until Hyprland draws its first frame (no tty1 flash)
+mkdir -p /etc/systemd/system/greetd.service.d
+cat > /etc/systemd/system/greetd.service.d/plymouth.conf <<'EOF'
+[Unit]
+Conflicts=plymouth-quit.service
+After=systemd-user-sessions.service plymouth-start.service
+
+[Service]
+ExecStartPre=-/usr/bin/plymouth quit --retain-splash
+EOF
+
+systemctl daemon-reload
 systemctl enable greetd.service
 echo "✓ Diger giris ekranlari (SDDM/DM) iptal edildi, greetd ($USER_NAME -> start-hyprland) etkinlestirildi."
 echo "  Yeniden baslatinca tty1/SDDM gorunmeden dogrudan Hyprland + ii Super+L kilit ekraninda acilacaktir."
