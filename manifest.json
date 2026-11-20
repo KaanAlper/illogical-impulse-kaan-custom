@@ -11,6 +11,7 @@
       "dest": "~/.config/quickshell-custom",
       "executable": [
         "agy-config.py",
+        "apply-plymouth-logo.sh",
         "apply-screensaver-idle.py",
         "apply-workspace-split.py",
         "apply.sh",

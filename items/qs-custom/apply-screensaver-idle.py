@@ -1,49 +1,76 @@
 #!/usr/bin/env python3
-"""Sync screensaver idle listener in ~/.config/hypr/custom/hypridle.conf and reload hypridle."""
+"""Sync hypridle.conf (screensaver, lock, DPMS, suspend) from illogical-impulse config.json."""
 
+import json
 import os
-import re
 import subprocess
-import sys
 
+CONFIG_JSON = os.path.expanduser("~/.config/illogical-impulse/config.json")
 HYPRIDLE_CONF = os.path.expanduser("~/.config/hypr/hypridle.conf")
-START_MARK = "# --- quickshell screensaver start ---"
-END_MARK = "# --- quickshell screensaver end ---"
 
 
 def main() -> int:
-    if len(sys.argv) < 3:
-        return 1
-    enabled = sys.argv[1] in ("1", "true", "True")
-    try:
-        minutes = max(1, min(60, int(float(sys.argv[2]))))
-    except ValueError:
-        minutes = 3
+    cfg = {}
+    if os.path.exists(CONFIG_JSON):
+        try:
+            with open(CONFIG_JSON, encoding="utf-8") as f:
+                cfg = json.load(f)
+        except Exception:
+            cfg = {}
 
-    if not os.path.exists(HYPRIDLE_CONF):
-        return 0
+    ss = cfg.get("screensaver", {})
+    idle = cfg.get("lock", {}).get("idle", {})
 
-    src = open(HYPRIDLE_CONF, encoding="utf-8").read()
-    pattern = re.compile(rf"\n?{re.escape(START_MARK)}.*?{re.escape(END_MARK)}\n?", re.S)
-    src = pattern.sub("\n", src).rstrip() + "\n"
+    ss_en = bool(ss.get("enable", False))
+    ss_min = max(1, min(60, int(ss.get("timeoutMinutes", 3))))
 
-    if enabled:
-        secs = minutes * 60
-        block = (
-            f"\n{START_MARK}\n"
-            f"listener {{\n"
-            f"    timeout = {secs}\n"
-            f"    on-timeout = qs -c ii ipc call screensaver open\n"
-            f"    on-resume = qs -c ii ipc call screensaver close\n"
-            f"}}\n"
-            f"{END_MARK}\n"
-        )
-        src += block
+    lock_en = bool(idle.get("enableLock", True))
+    lock_min = max(1, min(120, int(idle.get("lockMinutes", 5))))
 
+    dpms_en = bool(idle.get("enableDpms", True))
+    dpms_min = max(1, min(180, int(idle.get("dpmsMinutes", 10))))
+
+    susp_en = bool(idle.get("enableSuspend", False))
+    susp_min = max(5, min(360, int(idle.get("suspendMinutes", 15))))
+
+    lines = [
+        "$lock_cmd = hyprctl dispatch 'hl.dsp.global(\"quickshell:lock\")' & pidof qs quickshell hyprlock || hyprlock\n",
+        "$suspend_cmd = systemctl suspend || loginctl suspend\n\n",
+        "general {\n",
+        "    lock_cmd = $lock_cmd\n",
+        "    before_sleep_cmd = loginctl lock-session\n",
+        "    after_sleep_cmd = hyprctl dispatch 'hl.dsp.global(\"quickshell:lockFocus\")'\n",
+        "    inhibit_sleep = 3\n",
+        "}\n",
+    ]
+
+    if ss_en:
+        lines += [
+            f"\nlistener {{\n    timeout = {ss_min * 60}\n",
+            "    on-timeout = qs -c ii ipc call screensaver open\n",
+            "    on-resume = qs -c ii ipc call screensaver close\n}\n",
+        ]
+    if lock_en:
+        lines += [
+            f"\nlistener {{\n    timeout = {lock_min * 60}\n",
+            "    on-timeout = loginctl lock-session\n}\n",
+        ]
+    if dpms_en:
+        lines += [
+            f"\nlistener {{\n    timeout = {dpms_min * 60}\n",
+            "    on-timeout = hyprctl dispatch 'hl.dsp.dpms({ action = \"disable\" })'\n",
+            "    on-resume = hyprctl dispatch 'hl.dsp.dpms({ action = \"enable\" })'\n}\n",
+        ]
+    if susp_en:
+        lines += [
+            f"\nlistener {{\n    timeout = {susp_min * 60}\n",
+            "    on-timeout = $suspend_cmd\n}\n",
+        ]
+
+    os.makedirs(os.path.dirname(HYPRIDLE_CONF), exist_ok=True)
     with open(HYPRIDLE_CONF, "w", encoding="utf-8") as f:
-        f.write(src)
+        f.writelines(lines)
 
-    # Restart hypridle if currently running so the new timeout takes effect
     if subprocess.run(["pgrep", "-x", "hypridle"], stdout=subprocess.DEVNULL).returncode == 0:
         subprocess.run(["pkill", "-x", "hypridle"], check=False)
         subprocess.Popen(["hypridle"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
