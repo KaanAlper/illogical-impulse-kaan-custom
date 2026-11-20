@@ -59,3 +59,9 @@ hl.window_rule({
     rounding = 0,
     no_shadow = true
 })
+
+-- Picture-in-Picture: never draw WM border
+hl.window_rule({
+    match = {title = "^([Pp]icture[-\\s]?[Ii]n[-\\s]?[Pp]icture)(.*)$"},
+    border_size = 0
+})

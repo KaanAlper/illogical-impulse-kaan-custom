@@ -3,6 +3,13 @@
 -- See the corresponding files in ~/.config/hypr/hyprland for examples
 
 hl.config({
+    general = {
+        border_size = 1,
+        col = {
+            active_border = "rgba(b69df888)",
+            inactive_border = "rgba(49454f44)",
+        },
+    },
     input = {
         kb_layout = "tr",
         touchpad = {
