@@ -118,51 +118,33 @@ Scope {
                             }
                         }
 
-                        // Authentic classic DVD Video logo (tilted DVD + swept disc oval)
-                        Canvas {
-                            id: dvdCanvas
+                        // Retro solid colored rectangle DVD box
+                        Rectangle {
                             anchors.fill: parent
                             visible: root.mode === "dvd"
-                            property color logoColor: dvdBox.palette[dvdBox.colorIdx]
-                            onLogoColorChanged: requestPaint()
-                            Component.onCompleted: requestPaint()
-                            onPaint: {
-                                const ctx = getContext("2d");
-                                if (!ctx) return;
-                                ctx.clearRect(0, 0, width, height);
-                                const c = logoColor;
-                                ctx.fillStyle = c;
+                            radius: 14
+                            color: dvdBox.palette[dvdBox.colorIdx]
+                            border.width: 4
+                            border.color: Qt.lighter(color, 1.35)
 
-                                // Tilted bold "DVD"
-                                ctx.save();
-                                ctx.translate(width * 0.5, height * 0.44);
-                                ctx.transform(1, 0, -0.22, 1, 0, 0);
-                                ctx.font = "900 54px sans-serif";
-                                ctx.textAlign = "center";
-                                ctx.textBaseline = "middle";
-                                ctx.fillText("DVD", 0, 0);
-                                ctx.restore();
-
-                                // Classic oval disc under DVD
-                                ctx.save();
-                                ctx.translate(width * 0.5, height * 0.78);
-                                ctx.scale(1.0, 0.24);
-                                ctx.beginPath();
-                                ctx.arc(0, 0, 88, 0, Math.PI * 2);
-                                ctx.fill();
-                                // Inner disc hole
-                                ctx.globalCompositeOperation = "destination-out";
-                                ctx.beginPath();
-                                ctx.arc(0, 0, 22, 0, Math.PI * 2);
-                                ctx.fill();
-                                ctx.restore();
-
-                                // "VIDEO" label inside/below oval
-                                ctx.fillStyle = "#000000";
-                                ctx.font = "900 10px sans-serif";
-                                ctx.textAlign = "center";
-                                ctx.textBaseline = "middle";
-                                ctx.fillText("V I D E O", width * 0.5, height * 0.78);
+                            Column {
+                                anchors.centerIn: parent
+                                spacing: -2
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: "DVD"
+                                    font.pixelSize: 52
+                                    font.weight: Font.Black
+                                    font.italic: true
+                                    color: "#000000"
+                                }
+                                Text {
+                                    anchors.horizontalCenter: parent.horizontalCenter
+                                    text: "V I D E O"
+                                    font.pixelSize: 13
+                                    font.weight: Font.Black
+                                    color: "#000000"
+                                }
                             }
                         }
                     }
