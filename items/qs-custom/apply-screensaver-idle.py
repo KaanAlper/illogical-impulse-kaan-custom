@@ -33,8 +33,8 @@ def main() -> int:
             f"\n{START_MARK}\n"
             f"listener {{\n"
             f"    timeout = {secs}\n"
-            f"    on-timeout = qs ipc -c ii call screensaver show\n"
-            f"    on-resume = qs ipc -c ii call screensaver hide\n"
+            f"    on-timeout = qs -c ii ipc call screensaver show\n"
+            f"    on-resume = qs -c ii ipc call screensaver hide\n"
             f"}}\n"
             f"{END_MARK}\n"
         )
