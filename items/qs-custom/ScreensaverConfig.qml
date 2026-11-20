@@ -42,7 +42,7 @@ ContentPage {
 
     Process {
         id: previewProc
-        command: ["qs", "-c", "ii", "ipc", "call", "screensaver", "show"]
+        command: ["qs", "-c", "ii", "ipc", "call", "screensaver", "open"]
     }
 
     FileDialog {

@@ -44,8 +44,8 @@ Scope {
 
     IpcHandler {
         target: "screensaver"
-        function show(): void { root.show(); }
-        function hide(): void { root.hide(); }
+        function open(): void { root.show(); }
+        function close(): void { root.hide(); }
         function toggle(): void { root.active ? root.hide() : root.show(); }
     }
 
