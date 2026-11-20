@@ -233,6 +233,15 @@ def main() -> int:
                 '            }\n'
                 '            const result = requester.currentStrategy.onRequestFinished(requester.message);',
             ),
+            (
+                'models["antigravity"] ?? models[modelList[0]]',
+                '    function getModel() {\n'
+                '        return models[currentModelId];\n'
+                '    }',
+                '    function getModel() {\n'
+                '        return models[currentModelId] ?? models["antigravity"] ?? models[modelList[0]];\n'
+                '    }',
+            ),
         ],
     )
 
@@ -271,7 +280,13 @@ def main() -> int:
                 '            Ai.refreshAgyModels();\n'
                 '        }\n'
                 '    }\n\n'
-                '    Component.onCompleted: root.refreshAgyAuth()',
+                '    Component.onCompleted: root.refreshAgyAuth()\n'
+                '    onVisibleChanged: {\n'
+                '        if (visible) {\n'
+                '            root.refreshAgyAuth();\n'
+                '            if (Ai.agyFamilies.length === 0) Ai.refreshAgyModels();\n'
+                '        }\n'
+                '    }',
             ),
             (
                 'root.openAgyLogin()',
