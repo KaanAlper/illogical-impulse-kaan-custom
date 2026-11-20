@@ -92,13 +92,11 @@
         "flameshot"
       ],
       "features": [
-        { "id": "keybinds", "title": "Pencere kapatma (Alt+F4)", "desc": "Super+Q kaldırılıp pencere kapatma yalnızca Alt+F4 yapılır", "default": true },
         { "id": "rules", "title": "Pencere kuralları", "desc": "rules.lua ve rules.conf", "default": true },
         { "id": "alttab", "title": "Alt+Tab pencere değiştirici", "desc": "alttab/ yapılandırması ve Alt+Tab / Alt+Shift+Tab kısayolları", "default": true },
         { "id": "hypridle", "title": "Boşta kalma / kilit zamanlayıcısı", "desc": "hypridle.conf", "default": true },
         { "id": "bootsplash", "title": "Açılış logosu", "desc": "bootsplash/ görselleri", "default": true },
-        { "id": "execs-env", "title": "Açılış komutları ve ortam", "desc": "execs.lua, env.lua, general.lua, variables.lua", "default": true },
-        { "id": "msi-fan", "title": "MSI fan kısayolu (Super+F12)", "desc": "msi-fan-toggle ile Max/Auto geçişi", "default": true }
+        { "id": "execs-env", "title": "Açılış komutları ve ortam", "desc": "execs.lua, env.lua, general.lua, variables.lua", "default": true }
       ]
     },
     {
