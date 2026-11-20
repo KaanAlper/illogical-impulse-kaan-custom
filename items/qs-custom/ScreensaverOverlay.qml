@@ -118,46 +118,54 @@ Scope {
                             }
                         }
 
-                        // Retro solid colored rectangle DVD box with classic disc oval inside
+                        // Rounded rectangle frame with the Canvas DVD Video disc logo inside
                         Rectangle {
                             anchors.fill: parent
                             visible: root.mode === "dvd"
                             radius: 14
-                            color: dvdBox.palette[dvdBox.colorIdx]
+                            color: "#08080c"
                             border.width: 4
-                            border.color: Qt.lighter(color, 1.35)
+                            border.color: dvdBox.palette[dvdBox.colorIdx]
 
-                            Column {
-                                anchors.centerIn: parent
-                                spacing: 2
-                                Text {
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    text: "DVD"
-                                    font.pixelSize: 44
-                                    font.weight: Font.Black
-                                    font.italic: true
-                                    color: "#000000"
-                                }
-                                Rectangle {
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    width: 156
-                                    height: 22
-                                    radius: 11
-                                    color: "#000000"
-                                    Rectangle {
-                                        anchors.centerIn: parent
-                                        width: 34
-                                        height: 6
-                                        radius: 3
-                                        color: dvdBox.palette[dvdBox.colorIdx]
-                                    }
-                                }
-                                Text {
-                                    anchors.horizontalCenter: parent.horizontalCenter
-                                    text: "V I D E O"
-                                    font.pixelSize: 10
-                                    font.weight: Font.Black
-                                    color: "#000000"
+                            Canvas {
+                                id: dvdCanvas
+                                anchors.fill: parent
+                                property color logoColor: dvdBox.palette[dvdBox.colorIdx]
+                                onLogoColorChanged: requestPaint()
+                                Component.onCompleted: requestPaint()
+                                onPaint: {
+                                    const ctx = getContext("2d");
+                                    if (!ctx) return;
+                                    ctx.clearRect(0, 0, width, height);
+                                    const c = logoColor;
+                                    ctx.fillStyle = c;
+
+                                    ctx.save();
+                                    ctx.translate(width * 0.5, height * 0.38);
+                                    ctx.transform(1, 0, -0.22, 1, 0, 0);
+                                    ctx.font = "900 46px sans-serif";
+                                    ctx.textAlign = "center";
+                                    ctx.textBaseline = "middle";
+                                    ctx.fillText("DVD", 0, 0);
+                                    ctx.restore();
+
+                                    ctx.save();
+                                    ctx.translate(width * 0.5, height * 0.72);
+                                    ctx.scale(1.0, 0.24);
+                                    ctx.beginPath();
+                                    ctx.arc(0, 0, 78, 0, Math.PI * 2);
+                                    ctx.fill();
+                                    ctx.globalCompositeOperation = "destination-out";
+                                    ctx.beginPath();
+                                    ctx.arc(0, 0, 19, 0, Math.PI * 2);
+                                    ctx.fill();
+                                    ctx.restore();
+
+                                    ctx.fillStyle = "#08080c";
+                                    ctx.font = "900 9px sans-serif";
+                                    ctx.textAlign = "center";
+                                    ctx.textBaseline = "middle";
+                                    ctx.fillText("V I D E O", width * 0.5, height * 0.72);
                                 }
                             }
                         }
