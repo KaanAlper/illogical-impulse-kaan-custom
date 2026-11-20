@@ -1308,6 +1308,7 @@ def main() -> int:
                 "                property int timeoutMinutes: 3\n"
                 "                property string mode: \"dvd\"\n"
                 "                property string customPath: \"\"\n"
+                "                property var customItems: []\n"
                 "                property string imageAnimation: \"breathe\"\n"
                 "                property real speed: 1.0\n"
                 "            }\n\n"

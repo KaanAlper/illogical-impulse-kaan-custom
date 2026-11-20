@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Controls
 import QtQuick.Layouts
 import QtQuick.Dialogs
 import Quickshell
@@ -12,6 +13,7 @@ ContentPage {
     forceWidth: true
 
     readonly property string customPath: Config.options?.screensaver?.customPath ?? ""
+    readonly property var customItems: Config.options?.screensaver?.customItems ?? []
     readonly property string customExt: {
         const p = customPath.toLowerCase();
         const dot = p.lastIndexOf(".");
@@ -19,6 +21,46 @@ ContentPage {
     }
     readonly property bool isVideoOrGifOrScr: ["mp4", "webm", "mkv", "mov", "avi", "m4v", "gif", "webp", "apng", "scr"].includes(customExt)
     readonly property bool showImageAnimations: (Config.options?.screensaver?.mode ?? "dvd") === "custom" && customPath !== "" && !isVideoOrGifOrScr
+
+    property int renamingIndex: -1
+
+    function addCustomItem(path) {
+        const list = (Config.options.screensaver.customItems ?? []).slice();
+        const existing = list.findIndex(it => it.path === path);
+        if (existing === -1) {
+            const parts = path.split("/");
+            const base = parts[parts.length - 1] || path;
+            list.push({ name: base, path: path });
+            Config.options.screensaver.customItems = list;
+        }
+        Config.options.screensaver.customPath = path;
+        Config.options.screensaver.mode = "custom";
+    }
+
+    function renameCustomItem(idx, newName) {
+        const trimmed = newName.trim();
+        if (!trimmed) { root.renamingIndex = -1; return; }
+        const list = (Config.options.screensaver.customItems ?? []).map((it, i) =>
+            i === idx ? ({ name: trimmed, path: it.path }) : it
+        );
+        Config.options.screensaver.customItems = list;
+        root.renamingIndex = -1;
+    }
+
+    function deleteCustomItem(idx) {
+        const list = (Config.options.screensaver.customItems ?? []).slice();
+        const removed = list.splice(idx, 1)[0];
+        Config.options.screensaver.customItems = list;
+        if (removed && Config.options.screensaver.customPath === removed.path) {
+            if (list.length > 0) {
+                Config.options.screensaver.customPath = list[0].path;
+            } else {
+                Config.options.screensaver.customPath = "";
+                Config.options.screensaver.mode = "dvd";
+            }
+        }
+        if (root.renamingIndex === idx) root.renamingIndex = -1;
+    }
 
     Timer {
         id: idleSyncTimer
@@ -57,8 +99,7 @@ ContentPage {
         ]
         onAccepted: {
             const path = selectedFile.toString().replace(/^file:\/\//, "");
-            Config.options.screensaver.customPath = path;
-            Config.options.screensaver.mode = "custom";
+            root.addCustomItem(path);
         }
     }
 
@@ -147,6 +188,9 @@ ContentPage {
             currentValue: Config.options.screensaver.mode
             onSelected: newValue => {
                 Config.options.screensaver.mode = newValue;
+                if (newValue === "custom" && root.customPath === "" && root.customItems.length > 0) {
+                    Config.options.screensaver.customPath = root.customItems[0].path;
+                }
             }
             options: [
                 { displayName: "DVD", icon: "album", value: "dvd" },
@@ -157,12 +201,90 @@ ContentPage {
                 { displayName: Translation.tr("Custom"), icon: "folder_open", value: "custom" }
             ]
         }
+
+        ContentSubsection {
+            visible: root.customItems.length > 0
+            title: Translation.tr("Custom")
+
+            Flow {
+                Layout.fillWidth: true
+                spacing: 6
+
+                Repeater {
+                    model: root.customItems
+                    delegate: Item {
+                        id: chipWrap
+                        required property var modelData
+                        required property int index
+                        readonly property bool active: Config.options.screensaver.mode === "custom" && Config.options.screensaver.customPath === modelData.path
+                        readonly property bool isRenaming: root.renamingIndex === index
+                        implicitWidth: isRenaming ? 200 : chipBtn.implicitWidth
+                        implicitHeight: 34
+
+                        RippleButton {
+                            id: chipBtn
+                            visible: !chipWrap.isRenaming
+                            anchors.fill: parent
+                            implicitWidth: chipRow.implicitWidth + 20
+                            implicitHeight: 34
+                            buttonRadius: Appearance.rounding.full
+                            colBackground: chipWrap.active ? Appearance.colors.colPrimaryContainer : Appearance.colors.colSurfaceContainerHigh
+                            acceptedButtons: Qt.LeftButton | Qt.RightButton
+                            onClicked: mouse => {
+                                if (mouse.button === Qt.RightButton) {
+                                    chipMenu.popup();
+                                } else {
+                                    Config.options.screensaver.customPath = chipWrap.modelData.path;
+                                    Config.options.screensaver.mode = "custom";
+                                }
+                            }
+                            contentItem: RowLayout {
+                                id: chipRow
+                                anchors.centerIn: parent
+                                spacing: 6
+                                MaterialSymbol {
+                                    text: "perm_media"
+                                    iconSize: 16
+                                    color: chipWrap.active ? Appearance.colors.colPrimary : Appearance.m3colors.m3onSurface
+                                }
+                                StyledText {
+                                    text: chipWrap.modelData.name
+                                    color: chipWrap.active ? Appearance.colors.colOnPrimaryContainer : Appearance.m3colors.m3onSurface
+                                    font.pixelSize: Appearance.font.pixelSize.small
+                                }
+                            }
+
+                            Menu {
+                                id: chipMenu
+                                MenuItem {
+                                    text: Translation.tr("Rename")
+                                    onTriggered: root.renamingIndex = chipWrap.index
+                                }
+                                MenuItem {
+                                    text: Translation.tr("Delete")
+                                    onTriggered: root.deleteCustomItem(chipWrap.index)
+                                }
+                            }
+                        }
+
+                        TextField {
+                            visible: chipWrap.isRenaming
+                            anchors.fill: parent
+                            text: chipWrap.modelData.name
+                            onVisibleChanged: if (visible) { forceActiveFocus(); selectAll(); }
+                            onAccepted: root.renameCustomItem(chipWrap.index, text)
+                            Keys.onEscapePressed: root.renamingIndex = -1
+                        }
+                    }
+                }
+            }
+        }
     }
 
     ContentSection {
         visible: Config.options.screensaver.mode === "custom"
         icon: "perm_media"
-        title: Translation.tr("Custom Media / .scr")
+        title: Translation.tr("Add / Select Custom Media")
 
         RowLayout {
             Layout.fillWidth: true

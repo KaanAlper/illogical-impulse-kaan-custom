@@ -6,7 +6,7 @@ import re
 import subprocess
 import sys
 
-HYPRIDLE_CONF = os.path.expanduser("~/.config/hypr/custom/hypridle.conf")
+HYPRIDLE_CONF = os.path.expanduser("~/.config/hypr/hypridle.conf")
 START_MARK = "# --- quickshell screensaver start ---"
 END_MARK = "# --- quickshell screensaver end ---"
 
