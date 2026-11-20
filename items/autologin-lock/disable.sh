@@ -16,4 +16,10 @@ rmdir --ignore-fail-on-non-empty /etc/systemd/system/getty@tty1.service.d 2>/dev
 systemctl daemon-reload
 pacman -S --needed --noconfirm sddm
 systemctl enable sddm.service
+USER_NAME="${SUDO_USER:-kaanalper}"
+USER_HOME="$(getent passwd "$USER_NAME" | cut -d: -f6)"
+II_CFG="$USER_HOME/.config/illogical-impulse/config.json"
+if [ -f "$II_CFG" ]; then
+    sudo -u "$USER_NAME" python3 -c 'import json,sys; p=sys.argv[1]; d=json.load(open(p)); d.setdefault("lock",{})["launchOnStartup"]=False; json.dump(d,open(p,"w"),indent=4)' "$II_CFG" || true
+fi
 echo "✓ greetd/autologin kaldirildi, SDDM yeniden etkinlestirildi."

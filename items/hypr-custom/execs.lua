@@ -5,7 +5,4 @@ hl.on("hyprland.start", function ()
 
     -- AsenaDPI tray (Hyprland doesn't run ~/.config/autostart/*.desktop without dex)
     hl.exec_cmd("bash -c '[ -x /usr/local/bin/asena-dpi-tray ] && /usr/local/bin/asena-dpi-tray'")
-
-    -- When SDDM is disabled (greetd autologin), wait up to 15s for `qs -c ii` IPC + Lock.qml mount, then lock
-    hl.exec_cmd("bash -c 'if ! systemctl is-active --quiet sddm; then for i in $(seq 1 150); do qs ipc -c ii show >/dev/null 2>&1 && sleep 0.25 && loginctl lock-session && break; sleep 0.1; done; fi'")
 end)
