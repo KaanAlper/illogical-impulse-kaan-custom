@@ -1,6 +1,6 @@
 #!/bin/bash
-# kaan-dots tek satır kurulum (private repo: gh girişi gerekir):
-#   gh api repos/KaanAlper/kaan-dots/contents/install.sh -H "Accept: application/vnd.github.raw" | bash
+# illogical-impulse-kaan-custom tek satır kurulum (private repo: gh girişi gerekir):
+#   gh api repos/KaanAlper/illogical-impulse-kaan-custom/contents/install.sh -H "Accept: application/vnd.github.raw" | bash
 #
 # Akış: ~/kaan-dots'u klonlar (varsa günceller) -> kurulum penceresi açılır:
 #   1) "Kuruluma hoş geldin": installer (dotsync) kurulur  [yalnızca ilk kurulumda]
@@ -9,7 +9,7 @@
 # Sistem dosyalarına dokunmaz; "İndir" demeden hiçbir ayar/paket kurulmaz.
 set -euo pipefail
 
-REPO="${KAAN_DOTS_REPO:-KaanAlper/kaan-dots}"
+REPO="${KAAN_DOTS_REPO:-KaanAlper/illogical-impulse-kaan-custom}"
 DEST="${KAAN_DOTS_DIR:-$HOME/kaan-dots}"
 
 missing_pkgs=()

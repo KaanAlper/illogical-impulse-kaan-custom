@@ -1,6 +1,6 @@
 #!/bin/bash
 # Bu repo'dan dotsync istemcisini kurar (bir kez). Yeni bilgisayarda:
-#   gh auth login && gh repo clone KaanAlper/kaan-dots ~/kaan-dots && ~/kaan-dots/bootstrap.sh
+#   gh auth login && gh repo clone KaanAlper/illogical-impulse-kaan-custom ~/kaan-dots && ~/kaan-dots/bootstrap.sh
 # Ardından eksikleri görmek için: dotsync boot
 # İstemci repo'dan OTOMATİK güncellenmez (güvenlik): güncellemek için bu betiği tekrar çalıştır.
 set -euo pipefail

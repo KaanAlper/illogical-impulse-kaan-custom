@@ -23,7 +23,7 @@ import tempfile
 from pathlib import Path
 from typing import Callable, Iterable
 
-DEFAULT_REPO = "KaanAlper/kaan-dots"
+DEFAULT_REPO = "KaanAlper/illogical-impulse-kaan-custom"
 KINDS = {"files", "pkgs", "check"}
 SYNC_TIMEOUT_S = 20
 CLONE_TIMEOUT_S = 90

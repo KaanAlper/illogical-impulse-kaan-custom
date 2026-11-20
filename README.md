@@ -1,4 +1,4 @@
-# kaan-dots
+# illogical-impulse-kaan-custom
 
 Kişisel Hyprland / quickshell ayarlarım ve **eksik olanları otomatik tamamlayan** küçük bir istemci (`dotsync`).
 
@@ -27,7 +27,7 @@ Hiçbir şey eksik değilse pencere açılmaz.
 Repo private olduğu için GitHub girişi gerekir (`gh auth login`, bir kez). Sonra tek satır:
 
 ```sh
-gh api repos/KaanAlper/kaan-dots/contents/install.sh -H "Accept: application/vnd.github.raw" | bash
+gh api repos/KaanAlper/illogical-impulse-kaan-custom/contents/install.sh -H "Accept: application/vnd.github.raw" | bash
 ```
 
 Bu komut `~/kaan-dots`'u klonlar (varsa günceller) ve kurulum penceresini açar:
@@ -45,7 +45,7 @@ Gereksinimler: `git`, `gh` (GitHub CLI), `python3`; arayüz için `quickshell` (
 
 ```sh
 gh auth login
-gh repo clone KaanAlper/kaan-dots ~/kaan-dots
+gh repo clone KaanAlper/illogical-impulse-kaan-custom ~/kaan-dots
 ~/kaan-dots/bootstrap.sh
 dotsync boot        # eksikler penceresi
 ```
