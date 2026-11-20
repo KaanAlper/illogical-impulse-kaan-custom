@@ -67,5 +67,9 @@
   "Add / Select Custom Media": "Ajouter / sélectionner un média personnalisé",
   "No file selected (image, GIF, video, or .scr)": "Aucun fichier sélectionné (image, GIF, vidéo ou .scr)",
   "Image Animation": "Animation d'image",
-  "Select screensaver media or .scr": "Sélectionner un média d'économiseur ou .scr"
+  "Select screensaver media or .scr": "Sélectionner un média d'économiseur ou .scr",
+  "Separate per monitor": "Séparé par moniteur",
+  "Color": "Couleur",
+  "Pick Color": "Choisir une couleur",
+  "Select screensaver color": "Sélectionner la couleur de l'économiseur d'écran"
 }

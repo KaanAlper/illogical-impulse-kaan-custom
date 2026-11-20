@@ -67,5 +67,9 @@
   "Add / Select Custom Media": "Add / Select Custom Media",
   "No file selected (image, GIF, video, or .scr)": "No file selected (image, GIF, video, or .scr)",
   "Image Animation": "Image Animation",
-  "Select screensaver media or .scr": "Select screensaver media or .scr"
+  "Select screensaver media or .scr": "Select screensaver media or .scr",
+  "Separate per monitor": "Separate per monitor",
+  "Color": "Color",
+  "Pick Color": "Pick Color",
+  "Select screensaver color": "Select screensaver color"
 }

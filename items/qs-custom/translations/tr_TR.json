@@ -67,5 +67,9 @@
   "Add / Select Custom Media": "Özel Medya Ekle / Seç",
   "No file selected (image, GIF, video, or .scr)": "Dosya seçilmedi (görsel, GIF, video veya .scr)",
   "Image Animation": "Görsel Animasyonu",
-  "Select screensaver media or .scr": "Ekran koruyucu medyası veya .scr seç"
+  "Select screensaver media or .scr": "Ekran koruyucu medyası veya .scr seç",
+  "Separate per monitor": "Her Monitöre Ayrı",
+  "Color": "Renk",
+  "Pick Color": "Renk Seç",
+  "Select screensaver color": "Ekran koruyucu rengini seç"
 }

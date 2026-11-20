@@ -67,5 +67,9 @@
   "Add / Select Custom Media": "Eigene Medien hinzufügen / wählen",
   "No file selected (image, GIF, video, or .scr)": "Keine Datei gewählt (Bild, GIF, Video oder .scr)",
   "Image Animation": "Bildanimation",
-  "Select screensaver media or .scr": "Bildschirmschoner-Medium oder .scr wählen"
+  "Select screensaver media or .scr": "Bildschirmschoner-Medium oder .scr wählen",
+  "Separate per monitor": "Pro Monitor getrennt",
+  "Color": "Farbe",
+  "Pick Color": "Farbe wählen",
+  "Select screensaver color": "Bildschirmschoner-Farbe wählen"
 }

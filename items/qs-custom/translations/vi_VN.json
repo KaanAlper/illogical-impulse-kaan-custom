@@ -67,5 +67,9 @@
   "Add / Select Custom Media": "Thêm / Chọn tệp tùy chỉnh",
   "No file selected (image, GIF, video, or .scr)": "Chưa chọn tệp (ảnh, GIF, video hoặc .scr)",
   "Image Animation": "Hiệu ứng ảnh",
-  "Select screensaver media or .scr": "Chọn tệp bảo vệ màn hình hoặc .scr"
+  "Select screensaver media or .scr": "Chọn tệp bảo vệ màn hình hoặc .scr",
+  "Separate per monitor": "Riêng cho từng màn hình",
+  "Color": "Màu sắc",
+  "Pick Color": "Chọn màu",
+  "Select screensaver color": "Chọn màu trình bảo vệ màn hình"
 }

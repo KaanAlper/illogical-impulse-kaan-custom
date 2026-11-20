@@ -67,5 +67,9 @@
   "Add / Select Custom Media": "Tambah / Pilih Media Kustom",
   "No file selected (image, GIF, video, or .scr)": "Tidak ada file dipilih (gambar, GIF, video, atau .scr)",
   "Image Animation": "Animasi Gambar",
-  "Select screensaver media or .scr": "Pilih media pengaman layar atau .scr"
+  "Select screensaver media or .scr": "Pilih media pengaman layar atau .scr",
+  "Separate per monitor": "Terpisah per monitor",
+  "Color": "Warna",
+  "Pick Color": "Pilih Warna",
+  "Select screensaver color": "Pilih warna pengaman layar"
 }

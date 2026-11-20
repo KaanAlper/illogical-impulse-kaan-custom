@@ -67,5 +67,9 @@
   "Add / Select Custom Media": "添加 / 选择自定义媒体",
   "No file selected (image, GIF, video, or .scr)": "未选择文件（图片、GIF、视频或 .scr）",
   "Image Animation": "图像动画",
-  "Select screensaver media or .scr": "选择屏幕保护媒体或 .scr"
+  "Select screensaver media or .scr": "选择屏幕保护媒体或 .scr",
+  "Separate per monitor": "按显示器分别设置",
+  "Color": "纯色",
+  "Pick Color": "选择颜色",
+  "Select screensaver color": "选择屏幕保护程序颜色"
 }

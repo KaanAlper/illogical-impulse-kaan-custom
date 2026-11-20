@@ -67,5 +67,9 @@
   "Add / Select Custom Media": "カスタムメディアを追加 / 選択",
   "No file selected (image, GIF, video, or .scr)": "ファイル未選択（画像、GIF、動画、または .scr）",
   "Image Animation": "画像アニメーション",
-  "Select screensaver media or .scr": "スクリーンセーバーのメディアまたは .scr を選択"
+  "Select screensaver media or .scr": "スクリーンセーバーのメディアまたは .scr を選択",
+  "Separate per monitor": "モニターごとに個別設定",
+  "Color": "単色",
+  "Pick Color": "色を選択",
+  "Select screensaver color": "スクリーンセーバーの色を選択"
 }

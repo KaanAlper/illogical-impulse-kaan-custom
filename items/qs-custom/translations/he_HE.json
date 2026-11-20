@@ -67,5 +67,9 @@
   "Add / Select Custom Media": "הוסף / בחר מדיה מותאמת",
   "No file selected (image, GIF, video, or .scr)": "לא נבחר קובץ (תמונה, GIF, וידאו או .scr)",
   "Image Animation": "אנימציית תמונה",
-  "Select screensaver media or .scr": "בחר מדיה לשומר מסך או .scr"
+  "Select screensaver media or .scr": "בחר מדיה לשומר מסך או .scr",
+  "Separate per monitor": "נפרד לכל מסך",
+  "Color": "צבע",
+  "Pick Color": "בחר צבע",
+  "Select screensaver color": "בחר צבע לשומר מסך"
 }

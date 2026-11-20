@@ -67,5 +67,9 @@
   "Add / Select Custom Media": "Добавить / выбрать свой файл",
   "No file selected (image, GIF, video, or .scr)": "Файл не выбран (изображение, GIF, видео или .scr)",
   "Image Animation": "Анимация изображения",
-  "Select screensaver media or .scr": "Выберите медиа заставки или .scr"
+  "Select screensaver media or .scr": "Выберите медиа заставки или .scr",
+  "Separate per monitor": "Отдельно для каждого монитора",
+  "Color": "Цвет",
+  "Pick Color": "Выбрать цвет",
+  "Select screensaver color": "Выберите цвет заставки"
 }

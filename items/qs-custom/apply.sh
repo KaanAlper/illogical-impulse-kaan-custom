@@ -45,10 +45,20 @@ mkdir -p "$II/modules/ii/screensaver" "$II/modules/settings"
 cp "$CUSTOM_DIR/ScreensaverOverlay.qml" "$II/modules/ii/screensaver/ScreensaverOverlay.qml"
 cp "$CUSTOM_DIR/xana-logo.png" "$II/modules/ii/screensaver/xana-logo.png"
 cp "$CUSTOM_DIR/ScreensaverConfig.qml" "$II/modules/settings/ScreensaverConfig.qml"
+mkdir -p "$HOME/.local/share/icons/hicolor/128x128/apps"
 if [ -f /usr/share/icons/hicolor/128x128/apps/zen-browser.png ]; then
-    mkdir -p "$HOME/.local/share/icons/hicolor/128x128/apps"
     ln -sf /usr/share/icons/hicolor/128x128/apps/zen-browser.png "$HOME/.local/share/icons/hicolor/128x128/apps/zen-browser.png"
     ln -sf /usr/share/icons/hicolor/128x128/apps/zen-browser.png "$HOME/.local/share/icons/hicolor/128x128/apps/zen.png"
+fi
+if [ -f /usr/share/icons/hicolor/128x128/apps/ai.storyteller.artcraft-launcher.png ]; then
+    ln -sf /usr/share/icons/hicolor/128x128/apps/ai.storyteller.artcraft-launcher.png "$HOME/.local/share/icons/hicolor/128x128/apps/ai.storyteller.artcraft-launcher.png"
+    ln -sf /usr/share/icons/hicolor/128x128/apps/ai.storyteller.artcraft-launcher.png "$HOME/.local/share/icons/hicolor/128x128/apps/artcraft-launcher.png"
+fi
+if [ -f /usr/share/icons/hicolor/index.theme ]; then
+    ln -sf /usr/share/icons/hicolor/index.theme "$HOME/.local/share/icons/hicolor/index.theme"
+fi
+if command -v gtk-update-icon-cache >/dev/null 2>&1; then
+    gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" >/dev/null 2>&1 || true
 fi
 cp "$CUSTOM_DIR/everything-update.sh" "$II/scripts/everything-update.sh"
 chmod +x "$II/scripts/everything-update.sh"

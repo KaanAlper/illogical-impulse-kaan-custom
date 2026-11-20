@@ -12,15 +12,52 @@ ContentPage {
     id: root
     forceWidth: true
 
-    readonly property string customPath: Config.options?.screensaver?.customPath ?? ""
+    property string selectedMonitor: Quickshell.screens.length > 0 ? Quickshell.screens[0].name : ""
+    readonly property bool perMonitor: Config.options?.screensaver?.perMonitor ?? false
+    readonly property var monitorsMap: Config.options?.screensaver?.monitors ?? ({})
+
+    function eff(key, fallback) {
+        if (root.perMonitor && root.selectedMonitor !== "") {
+            const m = root.monitorsMap[root.selectedMonitor];
+            if (m && m[key] !== undefined) return m[key];
+        }
+        const v = Config.options?.screensaver?.[key];
+        return v !== undefined ? v : fallback;
+    }
+
+    function setEff(key, val) {
+        if (root.perMonitor && root.selectedMonitor !== "") {
+            const all = Object.assign({}, Config.options.screensaver.monitors ?? {});
+            const cur = Object.assign({}, all[root.selectedMonitor] ?? {});
+            cur[key] = val;
+            all[root.selectedMonitor] = cur;
+            Config.options.screensaver.monitors = all;
+        } else {
+            Config.options.screensaver[key] = val;
+        }
+    }
+
+    readonly property string effMode: eff("mode", "dvd")
+    readonly property string effColor: eff("color", "#000000")
+    readonly property string effCustomPath: eff("customPath", "")
+    readonly property string effImageAnimation: eff("imageAnimation", "breathe")
+    readonly property real effSpeed: eff("speed", 1.0)
+
     readonly property var customItems: Config.options?.screensaver?.customItems ?? []
     readonly property string customExt: {
-        const p = customPath.toLowerCase();
+        const p = effCustomPath.toLowerCase();
         const dot = p.lastIndexOf(".");
         return dot >= 0 ? p.substring(dot + 1) : "";
     }
     readonly property bool isVideoOrGifOrScr: ["mp4", "webm", "mkv", "mov", "avi", "m4v", "gif", "webp", "apng", "scr"].includes(customExt)
-    readonly property bool showImageAnimations: (Config.options?.screensaver?.mode ?? "dvd") === "custom" && customPath !== "" && !isVideoOrGifOrScr
+    readonly property bool showImageAnimations: effMode === "custom" && effCustomPath !== "" && !isVideoOrGifOrScr
+
+    readonly property var colorSwatches: [
+        "#000000", "#0f172a", "#1a1b26", "#1e293b",
+        "#1e3a8a", "#312e81", "#581c87", "#831843",
+        "#7f1d1d", "#9a3412", "#14532d", "#134e4a",
+        "#0369a1", "#d97706", "#475569", "#ffffff"
+    ]
 
     property int renamingIndex: -1
 
@@ -33,8 +70,8 @@ ContentPage {
             list.push({ name: base, path: path });
             Config.options.screensaver.customItems = list;
         }
-        Config.options.screensaver.customPath = path;
-        Config.options.screensaver.mode = "custom";
+        root.setEff("customPath", path);
+        root.setEff("mode", "custom");
     }
 
     function renameCustomItem(idx, newName) {
@@ -51,12 +88,12 @@ ContentPage {
         const list = (Config.options.screensaver.customItems ?? []).slice();
         const removed = list.splice(idx, 1)[0];
         Config.options.screensaver.customItems = list;
-        if (removed && Config.options.screensaver.customPath === removed.path) {
+        if (removed && root.effCustomPath === removed.path) {
             if (list.length > 0) {
-                Config.options.screensaver.customPath = list[0].path;
+                root.setEff("customPath", list[0].path);
             } else {
-                Config.options.screensaver.customPath = "";
-                Config.options.screensaver.mode = "dvd";
+                root.setEff("customPath", "");
+                root.setEff("mode", "dvd");
             }
         }
         if (root.renamingIndex === idx) root.renamingIndex = -1;
@@ -103,6 +140,13 @@ ContentPage {
         }
     }
 
+    ColorDialog {
+        id: colorPicker
+        title: Translation.tr("Select screensaver color")
+        selectedColor: root.effColor
+        onAccepted: root.setEff("color", selectedColor.toString())
+    }
+
     ContentSection {
         icon: "tv"
         title: Translation.tr("Screensaver")
@@ -134,9 +178,69 @@ ContentPage {
             }
         }
 
+        ConfigSwitch {
+            buttonIcon: "monitor"
+            text: Translation.tr("Separate per monitor")
+            checked: Config.options.screensaver.perMonitor ?? false
+            onCheckedChanged: {
+                if ((Config.options.screensaver.perMonitor ?? false) !== checked) {
+                    Config.options.screensaver.perMonitor = checked;
+                    if (checked && root.selectedMonitor === "" && Quickshell.screens.length > 0) {
+                        root.selectedMonitor = Quickshell.screens[0].name;
+                    }
+                }
+            }
+        }
+
+        Flow {
+            visible: root.perMonitor
+            Layout.fillWidth: true
+            spacing: 8
+
+            Repeater {
+                model: Quickshell.screens
+                delegate: RippleButton {
+                    id: monBtn
+                    required property var modelData
+                    required property int index
+                    readonly property bool selected: root.selectedMonitor === modelData.name
+                    implicitWidth: monRow.implicitWidth + 24
+                    implicitHeight: 40
+                    buttonRadius: Appearance.rounding.normal
+                    colBackground: selected ? Appearance.colors.colPrimaryContainer : Appearance.colors.colSurfaceContainerHigh
+                    onClicked: root.selectedMonitor = modelData.name
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: parent.buttonRadius
+                        color: "transparent"
+                        border.width: monBtn.selected ? 2 : 1
+                        border.color: monBtn.selected ? Appearance.colors.colPrimary : Appearance.colors.colOutlineVariant
+                    }
+
+                    contentItem: RowLayout {
+                        id: monRow
+                        anchors.centerIn: parent
+                        spacing: 8
+                        MaterialSymbol {
+                            text: "desktop_windows"
+                            iconSize: 18
+                            color: monBtn.selected ? Appearance.colors.colPrimary : Appearance.m3colors.m3onSurface
+                        }
+                        StyledText {
+                            text: "%1 · %2 (%3×%4)".arg(monBtn.index + 1).arg(monBtn.modelData.name).arg(monBtn.modelData.width).arg(monBtn.modelData.height)
+                            color: monBtn.selected ? Appearance.colors.colOnPrimaryContainer : Appearance.m3colors.m3onSurface
+                            font.pixelSize: Appearance.font.pixelSize.small
+                            font.weight: monBtn.selected ? Font.DemiBold : Font.Normal
+                        }
+                    }
+                }
+            }
+        }
+
         ConfigSlider {
-            text: Translation.tr("Speed: %1x").arg((Config.options.screensaver.speed ?? 1.0).toFixed(1))
-            value: Config.options.screensaver.speed ?? 1.0
+            text: Translation.tr("Speed: %1x").arg(root.effSpeed.toFixed(1))
+            value: root.effSpeed
             usePercentTooltip: false
             buttonIcon: "speed"
             from: 0.3
@@ -144,8 +248,8 @@ ContentPage {
             stopIndicatorValues: [1.0]
             onValueChanged: {
                 const rounded = Math.round(value * 10) / 10;
-                if (Math.abs((Config.options.screensaver.speed ?? 1.0) - rounded) >= 0.05) {
-                    Config.options.screensaver.speed = rounded;
+                if (Math.abs(root.effSpeed - rounded) >= 0.05) {
+                    root.setEff("speed", rounded);
                 }
             }
         }
@@ -185,11 +289,11 @@ ContentPage {
         title: Translation.tr("Style")
 
         ConfigSelectionArray {
-            currentValue: Config.options.screensaver.mode
+            currentValue: root.effMode
             onSelected: newValue => {
-                Config.options.screensaver.mode = newValue;
-                if (newValue === "custom" && root.customPath === "" && root.customItems.length > 0) {
-                    Config.options.screensaver.customPath = root.customItems[0].path;
+                root.setEff("mode", newValue);
+                if (newValue === "custom" && root.effCustomPath === "" && root.customItems.length > 0) {
+                    root.setEff("customPath", root.customItems[0].path);
                 }
             }
             options: [
@@ -198,6 +302,7 @@ ContentPage {
                 { displayName: "Starfield", icon: "auto_awesome", value: "starfield" },
                 { displayName: "Mystify", icon: "polyline", value: "mystify" },
                 { displayName: "XANA", icon: "adjust", value: "xana" },
+                { displayName: Translation.tr("Color"), icon: "palette", value: "color" },
                 { displayName: Translation.tr("Custom"), icon: "folder_open", value: "custom" }
             ]
         }
@@ -216,7 +321,7 @@ ContentPage {
                         id: chipWrap
                         required property var modelData
                         required property int index
-                        readonly property bool active: Config.options.screensaver.mode === "custom" && Config.options.screensaver.customPath === modelData.path
+                        readonly property bool active: root.effMode === "custom" && root.effCustomPath === modelData.path
                         readonly property bool isRenaming: root.renamingIndex === index
                         implicitWidth: isRenaming ? 200 : chipBtn.implicitWidth
                         implicitHeight: 34
@@ -230,8 +335,8 @@ ContentPage {
                             buttonRadius: Appearance.rounding.full
                             colBackground: chipWrap.active ? Appearance.colors.colPrimaryContainer : Appearance.colors.colSurfaceContainerHigh
                             onClicked: {
-                                Config.options.screensaver.customPath = chipWrap.modelData.path;
-                                Config.options.screensaver.mode = "custom";
+                                root.setEff("customPath", chipWrap.modelData.path);
+                                root.setEff("mode", "custom");
                             }
                             MouseArea {
                                 anchors.fill: parent
@@ -282,7 +387,78 @@ ContentPage {
     }
 
     ContentSection {
-        visible: Config.options.screensaver.mode === "custom"
+        visible: root.effMode === "color"
+        icon: "palette"
+        title: Translation.tr("Color")
+
+        Flow {
+            Layout.fillWidth: true
+            spacing: 8
+
+            Repeater {
+                model: root.colorSwatches
+                delegate: RippleButton {
+                    id: swatchBtn
+                    required property string modelData
+                    readonly property bool selected: root.effColor.toLowerCase() === modelData.toLowerCase()
+                    implicitWidth: 36
+                    implicitHeight: 36
+                    buttonRadius: Appearance.rounding.full
+                    colBackground: modelData
+                    onClicked: root.setEff("color", modelData)
+
+                    Rectangle {
+                        anchors.fill: parent
+                        radius: parent.buttonRadius
+                        color: "transparent"
+                        border.width: swatchBtn.selected ? 3 : 1
+                        border.color: swatchBtn.selected ? Appearance.colors.colPrimary : Appearance.colors.colOutlineVariant
+                    }
+                }
+            }
+        }
+
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: 10
+
+            Rectangle {
+                implicitWidth: 28
+                implicitHeight: 28
+                radius: Appearance.rounding.full
+                color: root.effColor
+                border.width: 1
+                border.color: Appearance.colors.colOutlineVariant
+            }
+
+            StyledText {
+                Layout.fillWidth: true
+                text: root.effColor.toUpperCase()
+                color: Appearance.m3colors.m3onSurface
+                font.pixelSize: Appearance.font.pixelSize.small
+                font.family: Appearance.font.family.monospace
+            }
+
+            RippleButton {
+                implicitWidth: pickColorTxt.implicitWidth + 24
+                implicitHeight: 34
+                buttonRadius: Appearance.rounding.full
+                colBackground: Appearance.colors.colSecondaryContainer
+                onClicked: colorPicker.open()
+                contentItem: StyledText {
+                    id: pickColorTxt
+                    anchors.centerIn: parent
+                    text: Translation.tr("Pick Color")
+                    color: Appearance.colors.colOnSecondaryContainer
+                    font.pixelSize: Appearance.font.pixelSize.small
+                    font.weight: Font.Medium
+                }
+            }
+        }
+    }
+
+    ContentSection {
+        visible: root.effMode === "custom"
         icon: "perm_media"
         title: Translation.tr("Add / Select Custom Media")
 
@@ -292,8 +468,8 @@ ContentPage {
 
             StyledText {
                 Layout.fillWidth: true
-                text: root.customPath !== "" ? root.customPath : Translation.tr("No file selected (image, GIF, video, or .scr)")
-                color: root.customPath !== "" ? Appearance.m3colors.m3onSurface : Appearance.colors.colSubtext
+                text: root.effCustomPath !== "" ? root.effCustomPath : Translation.tr("No file selected (image, GIF, video, or .scr)")
+                color: root.effCustomPath !== "" ? Appearance.m3colors.m3onSurface : Appearance.colors.colSubtext
                 font.pixelSize: Appearance.font.pixelSize.small
                 elide: Text.ElideMiddle
             }
@@ -320,9 +496,9 @@ ContentPage {
             title: Translation.tr("Image Animation")
 
             ConfigSelectionArray {
-                currentValue: Config.options.screensaver.imageAnimation
+                currentValue: root.effImageAnimation
                 onSelected: newValue => {
-                    Config.options.screensaver.imageAnimation = newValue;
+                    root.setEff("imageAnimation", newValue);
                 }
                 options: [
                     { displayName: "Breathe", icon: "air", value: "breathe" },

@@ -81,8 +81,26 @@ Scope {
         delegate: PanelWindow {
             id: win
             required property var modelData
+            readonly property var monCfg: (Config.options?.screensaver?.perMonitor ?? false)
+                ? ((Config.options?.screensaver?.monitors ?? {})[modelData?.name ?? ""] ?? ({}))
+                : ({})
+            readonly property string effMode: monCfg.mode ?? root.mode
+            readonly property string effColor: monCfg.color ?? (Config.options?.screensaver?.color ?? "#000000")
+            readonly property string effCustomPath: monCfg.customPath ?? root.customPath
+            readonly property string effImageAnimation: monCfg.imageAnimation ?? root.imageAnimation
+            readonly property real effSpeed: Math.max(0.2, monCfg.speed ?? root.speed)
+            readonly property string effExt: {
+                const s = effCustomPath.toLowerCase();
+                const d = s.lastIndexOf(".");
+                return d >= 0 ? s.substring(d + 1) : "";
+            }
+            readonly property bool effIsVideo: ["mp4", "webm", "mkv", "mov", "avi", "m4v"].includes(effExt)
+            readonly property bool effIsGif: ["gif", "webp", "apng"].includes(effExt)
+            readonly property bool effIsScr: effExt === "scr"
+            readonly property bool effIsStaticImage: effMode === "custom" && effCustomPath !== "" && !effIsVideo && !effIsGif && !effIsScr
+
             screen: modelData
-            color: "#000000"
+            color: win.effMode === "color" ? win.effColor : "#000000"
             exclusionMode: ExclusionMode.Ignore
             WlrLayershell.namespace: "quickshell:screensaver"
             WlrLayershell.layer: WlrLayer.Overlay
@@ -107,17 +125,17 @@ Scope {
                 // 1) DVD Bounce preset (or Custom static image with DVD bounce)
                 Item {
                     anchors.fill: parent
-                    visible: root.mode === "dvd" || (root.isStaticImage && root.imageAnimation === "dvd")
+                    visible: win.effMode === "dvd" || (win.effIsStaticImage && win.effImageAnimation === "dvd")
 
                     Item {
                         id: dvdBox
-                        width: root.isStaticImage ? Math.min(360, win.width * 0.28) : 220
-                        height: root.isStaticImage ? Math.min(260, win.height * 0.28) : 110
+                        width: win.effIsStaticImage ? Math.min(360, win.width * 0.28) : 220
+                        height: win.effIsStaticImage ? Math.min(260, win.height * 0.28) : 110
                         x: (win.width - width) * 0.35
                         y: (win.height - height) * 0.35
 
-                        property real vx: 2.6 * root.speed
-                        property real vy: 2.1 * root.speed
+                        property real vx: 2.6 * win.effSpeed
+                        property real vy: 2.1 * win.effSpeed
                         property int colorIdx: 0
                         readonly property var palette: ["#ff3b6b", "#00e5ff", "#ffd600", "#76ff03", "#d500f9", "#ff6d00"]
 
@@ -142,7 +160,7 @@ Scope {
                         // Filled colored rectangle box with black Canvas DVD disc logo inside
                         Rectangle {
                             anchors.fill: parent
-                            visible: root.mode === "dvd"
+                            visible: win.effMode === "dvd"
                             radius: 14
                             color: dvdBox.palette[dvdBox.colorIdx]
                             border.width: 4
@@ -196,7 +214,7 @@ Scope {
                 Canvas {
                     id: fxCanvas
                     anchors.fill: parent
-                    visible: root.mode === "matrix" || root.mode === "starfield" || root.mode === "mystify"
+                    visible: win.effMode === "matrix" || win.effMode === "starfield" || win.effMode === "mystify"
 
                     property var drops: []
                     property var stars: []
@@ -247,7 +265,7 @@ Scope {
                         const ctx = getContext("2d");
                         if (!ctx || width <= 0 || height <= 0) return;
 
-                        if (root.mode === "matrix") {
+                        if (win.effMode === "matrix") {
                             ctx.fillStyle = "rgba(0, 0, 0, 0.08)";
                             ctx.fillRect(0, 0, width, height);
                             ctx.fillStyle = "#00ff41";
@@ -257,15 +275,15 @@ Scope {
                                 const ch = chars.charAt(Math.floor(Math.random() * chars.length));
                                 ctx.fillText(ch, i * 18, drops[i] * 18);
                                 if (drops[i] * 18 > height && Math.random() > 0.975) drops[i] = 0;
-                                drops[i] += 0.65 * root.speed;
+                                drops[i] += 0.65 * win.effSpeed;
                             }
-                        } else if (root.mode === "starfield") {
+                        } else if (win.effMode === "starfield") {
                             ctx.fillStyle = "rgba(0, 0, 0, 0.35)";
                             ctx.fillRect(0, 0, width, height);
                             const cx = width / 2, cy = height / 2;
                             for (let i = 0; i < stars.length; i++) {
                                 const s = stars[i];
-                                s.z -= 7 * root.speed;
+                                s.z -= 7 * win.effSpeed;
                                 if (s.z <= 1) {
                                     s.x = (Math.random() - 0.5) * width;
                                     s.y = (Math.random() - 0.5) * height;
@@ -279,12 +297,12 @@ Scope {
                                 ctx.arc(sx, sy, r, 0, Math.PI * 2);
                                 ctx.fill();
                             }
-                        } else if (root.mode === "mystify") {
+                        } else if (win.effMode === "mystify") {
                             ctx.fillStyle = "rgba(0, 0, 0, 0.07)";
                             ctx.fillRect(0, 0, width, height);
                             for (let i = 0; i < polyPts.length; i++) {
-                                polyPts[i].x += polyVel[i].x * root.speed;
-                                polyPts[i].y += polyVel[i].y * root.speed;
+                                polyPts[i].x += polyVel[i].x * win.effSpeed;
+                                polyPts[i].y += polyVel[i].y * win.effSpeed;
                                 if (polyPts[i].x <= 0 || polyPts[i].x >= width) polyVel[i].x *= -1;
                                 if (polyPts[i].y <= 0 || polyPts[i].y >= height) polyVel[i].y *= -1;
                             }
@@ -302,7 +320,7 @@ Scope {
                 // 3) XANA Logo preset
                 Image {
                     id: xanaImg
-                    visible: root.mode === "xana"
+                    visible: win.effMode === "xana"
                     anchors.centerIn: parent
                     source: Qt.resolvedUrl("xana-logo.png")
                     height: win.height * 0.36
@@ -311,19 +329,19 @@ Scope {
                     SequentialAnimation on opacity {
                         running: xanaImg.visible && root.active
                         loops: Animation.Infinite
-                        NumberAnimation { from: 0.45; to: 1.0; duration: Math.round(1600 / root.speed); easing.type: Easing.InOutSine }
-                        NumberAnimation { from: 1.0; to: 0.45; duration: Math.round(1600 / root.speed); easing.type: Easing.InOutSine }
+                        NumberAnimation { from: 0.45; to: 1.0; duration: Math.round(1600 / win.effSpeed); easing.type: Easing.InOutSine }
+                        NumberAnimation { from: 1.0; to: 0.45; duration: Math.round(1600 / win.effSpeed); easing.type: Easing.InOutSine }
                     }
                 }
 
                 // 4) Custom Video
                 Item {
                     anchors.fill: parent
-                    visible: root.mode === "custom" && root.isVideo && root.customPath !== ""
+                    visible: win.effMode === "custom" && win.effIsVideo && win.effCustomPath !== ""
                     MediaPlayer {
                         id: vidPlayer
-                        source: (root.active && root.mode === "custom" && root.isVideo && root.customPath !== "")
-                            ? ("file://" + root.customPath) : ""
+                        source: (root.active && win.effMode === "custom" && win.effIsVideo && win.effCustomPath !== "")
+                            ? ("file://" + win.effCustomPath) : ""
                         loops: MediaPlayer.Infinite
                         audioOutput: AudioOutput { muted: true }
                         videoOutput: vidOut
@@ -339,59 +357,59 @@ Scope {
                 // 5) Custom GIF / Animated WebP
                 AnimatedImage {
                     anchors.fill: parent
-                    visible: root.mode === "custom" && root.isGif && root.customPath !== ""
-                    source: visible ? ("file://" + root.customPath) : ""
+                    visible: win.effMode === "custom" && win.effIsGif && win.effCustomPath !== ""
+                    source: visible ? ("file://" + win.effCustomPath) : ""
                     playing: visible && root.active
                     fillMode: Image.PreserveAspectFit
-                    speed: root.speed
+                    speed: win.effSpeed
                 }
 
                 // 6) Custom Static Image with selectable animation (breathe / knightrider / spin / dvd / float / none)
                 Item {
                     id: imgStage
                     anchors.fill: parent
-                    visible: root.isStaticImage
+                    visible: win.effIsStaticImage
 
                     property real animPhase: 0
                     Timer {
-                        running: imgStage.visible && root.active && (root.imageAnimation === "knightrider" || root.imageAnimation === "float")
+                        running: imgStage.visible && root.active && (win.effImageAnimation === "knightrider" || win.effImageAnimation === "float")
                         interval: 16
                         repeat: true
-                        onTriggered: imgStage.animPhase += 0.03 * root.speed
+                        onTriggered: imgStage.animPhase += 0.03 * win.effSpeed
                     }
 
                     Image {
                         id: customImg
-                        source: root.isStaticImage ? ("file://" + root.customPath) : ""
-                        width: root.imageAnimation === "dvd" ? dvdBox.width : Math.min(win.width * 0.65, implicitWidth > 0 ? implicitWidth : win.width * 0.5)
-                        height: root.imageAnimation === "dvd" ? dvdBox.height : Math.min(win.height * 0.65, implicitHeight > 0 ? implicitHeight : win.height * 0.5)
+                        source: win.effIsStaticImage ? ("file://" + win.effCustomPath) : ""
+                        width: win.effImageAnimation === "dvd" ? dvdBox.width : Math.min(win.width * 0.65, implicitWidth > 0 ? implicitWidth : win.width * 0.5)
+                        height: win.effImageAnimation === "dvd" ? dvdBox.height : Math.min(win.height * 0.65, implicitHeight > 0 ? implicitHeight : win.height * 0.5)
                         fillMode: Image.PreserveAspectFit
                         smooth: true
-                        x: root.imageAnimation === "dvd" ? dvdBox.x
-                           : root.imageAnimation === "knightrider" ? ((win.width - width) / 2 + Math.sin(imgStage.animPhase) * (win.width - width) * 0.45)
-                           : root.imageAnimation === "float" ? ((win.width - width) / 2 + Math.sin(imgStage.animPhase) * 90)
+                        x: win.effImageAnimation === "dvd" ? dvdBox.x
+                           : win.effImageAnimation === "knightrider" ? ((win.width - width) / 2 + Math.sin(imgStage.animPhase) * (win.width - width) * 0.45)
+                           : win.effImageAnimation === "float" ? ((win.width - width) / 2 + Math.sin(imgStage.animPhase) * 90)
                            : (win.width - width) / 2
-                        y: root.imageAnimation === "dvd" ? dvdBox.y
-                           : root.imageAnimation === "float" ? ((win.height - height) / 2 + Math.sin(imgStage.animPhase * 2) * 55)
+                        y: win.effImageAnimation === "dvd" ? dvdBox.y
+                           : win.effImageAnimation === "float" ? ((win.height - height) / 2 + Math.sin(imgStage.animPhase * 2) * 55)
                            : (win.height - height) / 2
 
                         SequentialAnimation on opacity {
-                            running: imgStage.visible && root.active && root.imageAnimation === "breathe"
+                            running: imgStage.visible && root.active && win.effImageAnimation === "breathe"
                             loops: Animation.Infinite
-                            NumberAnimation { from: 0.35; to: 1.0; duration: Math.round(1500 / root.speed); easing.type: Easing.InOutSine }
-                            NumberAnimation { from: 1.0; to: 0.35; duration: Math.round(1500 / root.speed); easing.type: Easing.InOutSine }
+                            NumberAnimation { from: 0.35; to: 1.0; duration: Math.round(1500 / win.effSpeed); easing.type: Easing.InOutSine }
+                            NumberAnimation { from: 1.0; to: 0.35; duration: Math.round(1500 / win.effSpeed); easing.type: Easing.InOutSine }
                         }
                         RotationAnimation on rotation {
-                            running: imgStage.visible && root.active && root.imageAnimation === "spin"
+                            running: imgStage.visible && root.active && win.effImageAnimation === "spin"
                             loops: Animation.Infinite
                             from: 0; to: 360
-                            duration: Math.round(4000 / root.speed)
+                            duration: Math.round(4000 / win.effSpeed)
                         }
                     }
 
                     // Knight Rider red scanner bar along bottom edge when Knight Rider animation is chosen
                     Rectangle {
-                        visible: root.imageAnimation === "knightrider"
+                        visible: win.effImageAnimation === "knightrider"
                         y: win.height - 8
                         width: 140
                         height: 4
