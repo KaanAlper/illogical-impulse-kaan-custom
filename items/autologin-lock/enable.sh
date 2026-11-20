@@ -61,5 +61,11 @@ II_CFG="$USER_HOME/.config/illogical-impulse/config.json"
 if [ -f "$II_CFG" ]; then
     sudo -u "$USER_NAME" python3 -c 'import json,sys; p=sys.argv[1]; d=json.load(open(p)); d.setdefault("lock",{})["launchOnStartup"]=True; json.dump(d,open(p,"w"),indent=4)' "$II_CFG" || true
 fi
+
+# Hide tty kernel/udev boot text and blinking cursor on GRUB systems
+if [ -f /etc/default/grub ] && ! grep -q "vt.global_cursor_default=0" /etc/default/grub; then
+    sed -i 's|splash loglevel=3|quiet splash loglevel=3 rd.udev.log_level=3 vt.global_cursor_default=0|' /etc/default/grub
+    grub-mkconfig -o /boot/grub/grub.cfg || true
+fi
 echo "✓ Diger giris ekranlari (SDDM/DM) iptal edildi, greetd ($USER_NAME -> start-hyprland) etkinlestirildi."
 echo "  Yeniden baslatinca tty1/SDDM gorunmeden dogrudan Hyprland + ii Super+L kilit ekraninda acilacaktir."
