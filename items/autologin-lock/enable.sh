@@ -39,16 +39,9 @@ command = "start-hyprland"
 user = "$USER_NAME"
 EOF
 
-# Keep Plymouth splash on screen until Hyprland draws its first frame (no tty1 flash)
-mkdir -p /etc/systemd/system/greetd.service.d
-cat > /etc/systemd/system/greetd.service.d/plymouth.conf <<'EOF'
-[Unit]
-Conflicts=plymouth-quit.service
-After=systemd-user-sessions.service plymouth-start.service
-
-[Service]
-ExecStartPre=-/usr/bin/plymouth quit --retain-splash
-EOF
+# Remove any old plymouth drop-in that could deadlock with After=plymouth-quit-wait.service
+rm -f /etc/systemd/system/greetd.service.d/plymouth.conf
+rmdir --ignore-fail-on-non-empty /etc/systemd/system/greetd.service.d 2>/dev/null || true
 
 systemctl daemon-reload
 systemctl enable greetd.service
