@@ -30,6 +30,10 @@ cat > /etc/greetd/config.toml <<EOF
 [terminal]
 vt = 1
 
+[initial_session]
+command = "start-hyprland"
+user = "$USER_NAME"
+
 [default_session]
 command = "start-hyprland"
 user = "$USER_NAME"
