@@ -71,5 +71,7 @@
   "Separate per monitor": "Separate per monitor",
   "Color": "Color",
   "Pick Color": "Pick Color",
-  "Select screensaver color": "Select screensaver color"
+  "Select screensaver color": "Select screensaver color",
+  "Default monitor on startup": "Default monitor on startup",
+  "Auto (Largest)": "Auto (Largest)"
 }

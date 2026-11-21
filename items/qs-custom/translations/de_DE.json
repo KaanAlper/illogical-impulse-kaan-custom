@@ -71,5 +71,7 @@
   "Separate per monitor": "Pro Monitor getrennt",
   "Color": "Farbe",
   "Pick Color": "Farbe wählen",
-  "Select screensaver color": "Bildschirmschoner-Farbe wählen"
+  "Select screensaver color": "Bildschirmschoner-Farbe wählen",
+  "Default monitor on startup": "Standardmonitor beim Start",
+  "Auto (Largest)": "Automatisch (Größter)"
 }

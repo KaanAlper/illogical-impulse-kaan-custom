@@ -71,5 +71,7 @@
   "Separate per monitor": "Terpisah per monitor",
   "Color": "Warna",
   "Pick Color": "Pilih Warna",
-  "Select screensaver color": "Pilih warna pengaman layar"
+  "Select screensaver color": "Pilih warna pengaman layar",
+  "Default monitor on startup": "Monitor default saat mulai",
+  "Auto (Largest)": "Otomatis (Terbesar)"
 }

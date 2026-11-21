@@ -71,5 +71,7 @@
   "Separate per monitor": "モニターごとに個別設定",
   "Color": "単色",
   "Pick Color": "色を選択",
-  "Select screensaver color": "スクリーンセーバーの色を選択"
+  "Select screensaver color": "スクリーンセーバーの色を選択",
+  "Default monitor on startup": "起動時のデフォルトモニター",
+  "Auto (Largest)": "自動（最大）"
 }

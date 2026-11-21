@@ -71,5 +71,7 @@
   "Separate per monitor": "Séparé par moniteur",
   "Color": "Couleur",
   "Pick Color": "Choisir une couleur",
-  "Select screensaver color": "Sélectionner la couleur de l'économiseur d'écran"
+  "Select screensaver color": "Sélectionner la couleur de l'économiseur d'écran",
+  "Default monitor on startup": "Moniteur par défaut au démarrage",
+  "Auto (Largest)": "Auto (Plus grand)"
 }

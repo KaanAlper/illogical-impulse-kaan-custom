@@ -71,5 +71,7 @@
   "Separate per monitor": "Her Monitöre Ayrı",
   "Color": "Renk",
   "Pick Color": "Renk Seç",
-  "Select screensaver color": "Ekran koruyucu rengini seç"
+  "Select screensaver color": "Ekran koruyucu rengini seç",
+  "Default monitor on startup": "Açılışta varsayılan monitör",
+  "Auto (Largest)": "Otomatik (En büyük)"
 }

@@ -190,6 +190,25 @@
       ],
       "terminal": true,
       "install": "paru -S --needed --noconfirm antigravity"
+    },
+    {
+      "id": "grub-theme",
+      "title": "GRUB boot teması (Marathon-NewCascadia)",
+      "desc": "GRUB açılış menüsüne 1920x1080 Marathon-NewCascadia temasını kurar ve /etc/default/grub ayarlarını (5 sn menü, splash) uygular. Yönetici parolası ister.",
+      "kind": "check",
+      "check": [
+        {
+          "exists": "/boot/grub/themes/Marathon-NewCascadia/theme.txt"
+        },
+        {
+          "file_has": [
+            "/etc/default/grub",
+            "Marathon-NewCascadia"
+          ]
+        }
+      ],
+      "terminal": true,
+      "install": "bash {repo}/items/grub-theme/install.sh"
     }
   ]
 }

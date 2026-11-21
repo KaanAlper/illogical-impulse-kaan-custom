@@ -1137,13 +1137,14 @@ def main() -> int:
             ii / "modules/common/Config.qml",
             [
                 (
-                    "property list<int> monitorSplits:",
+                    "property string defaultMonitor:",
                     "                property JsonObject workspaces: JsonObject {\n"
                     "                    property bool monochromeIcons: true",
                     "                property JsonObject workspaces: JsonObject {\n"
                     "                    property bool splitByMonitor: true\n"
                     "                    property int leftMonitorCount: 5\n"
                     "                    property list<int> monitorSplits: [5]\n"
+                    "                    property string defaultMonitor: \"\"\n"
                     "                    property bool monochromeIcons: true",
                 ),
             ],
@@ -1282,6 +1283,21 @@ def main() -> int:
                     "                        barConfigPage.updateSplit(index, v);\n"
                     "                    }\n"
                     "                }\n"
+                    "            }\n"
+                    "        }\n\n"
+                    "        ContentSubsection {\n"
+                    "            visible: barConfigPage.hasMultipleMonitors\n"
+                    "            title: Translation.tr(\"Default monitor on startup\")\n"
+                    "            ConfigSelectionArray {\n"
+                    "                currentValue: Config.options.bar.workspaces.defaultMonitor ?? \"\"\n"
+                    "                onSelected: newValue => Config.options.bar.workspaces.defaultMonitor = newValue\n"
+                    "                options: [({ displayName: Translation.tr(\"Auto (Largest)\"), icon: \"auto_awesome\", value: \"\" })].concat(\n"
+                    "                    Quickshell.screens.map((s, idx) => ({\n"
+                    "                        displayName: \"%1 · %2\".arg(idx + 1).arg(s.name),\n"
+                    "                        icon: \"desktop_windows\",\n"
+                    "                        value: s.name\n"
+                    "                    }))\n"
+                    "                )\n"
                     "            }\n"
                     "        }\n\n"
                     "        ConfigSpinBox {\n"

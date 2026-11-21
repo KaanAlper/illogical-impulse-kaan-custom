@@ -71,5 +71,7 @@
   "Separate per monitor": "按显示器分别设置",
   "Color": "纯色",
   "Pick Color": "选择颜色",
-  "Select screensaver color": "选择屏幕保护程序颜色"
+  "Select screensaver color": "选择屏幕保护程序颜色",
+  "Default monitor on startup": "启动时默认显示器",
+  "Auto (Largest)": "自动（最大）"
 }

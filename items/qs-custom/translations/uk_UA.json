@@ -71,5 +71,7 @@
   "Separate per monitor": "Окремо для кожного монітора",
   "Color": "Колір",
   "Pick Color": "Вибрати колір",
-  "Select screensaver color": "Виберіть колір заставки"
+  "Select screensaver color": "Виберіть колір заставки",
+  "Default monitor on startup": "Монітор за замовчуванням при запуску",
+  "Auto (Largest)": "Авто (Найбільший)"
 }

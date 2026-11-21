@@ -71,5 +71,7 @@
   "Separate per monitor": "Riêng cho từng màn hình",
   "Color": "Màu sắc",
   "Pick Color": "Chọn màu",
-  "Select screensaver color": "Chọn màu trình bảo vệ màn hình"
+  "Select screensaver color": "Chọn màu trình bảo vệ màn hình",
+  "Default monitor on startup": "Màn hình mặc định khi khởi động",
+  "Auto (Largest)": "Tự động (Lớn nhất)"
 }

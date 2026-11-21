@@ -71,5 +71,7 @@
   "Separate per monitor": "Separado por monitor",
   "Color": "Color",
   "Pick Color": "Elegir color",
-  "Select screensaver color": "Seleccionar color del protector de pantalla"
+  "Select screensaver color": "Seleccionar color del protector de pantalla",
+  "Default monitor on startup": "Monitor predeterminado al iniciar",
+  "Auto (Largest)": "Automático (Más grande)"
 }

@@ -68,5 +68,6 @@ illogical-impulse-kaan-custom
 ├── autologin-lock                  # (Optional, default off, sudo) Disables display managers and sets greetd
 │                                   # tty1 autologin directly into Hyprland + ii lock screen
 ├── default-file-manager            # Sets Dolphin as the default handler for folders (inode/directory)
-└── agy-cli                         # (Terminal) Installs Antigravity CLI via paru if ~/.local/bin/agy is missing
+├── agy-cli                         # (Terminal) Installs Antigravity CLI via paru if ~/.local/bin/agy is missing
+└── grub-theme                      # (Terminal, sudo) Installs Marathon-NewCascadia GRUB theme & /etc/default/grub settings
 ```

@@ -71,5 +71,7 @@
   "Separate per monitor": "נפרד לכל מסך",
   "Color": "צבע",
   "Pick Color": "בחר צבע",
-  "Select screensaver color": "בחר צבע לשומר מסך"
+  "Select screensaver color": "בחר צבע לשומר מסך",
+  "Default monitor on startup": "מסך ברירת מחדל בהפעלה",
+  "Auto (Largest)": "אוטומטי (הגדול ביותר)"
 }
