@@ -52,6 +52,7 @@ def list_apps() -> list[dict]:
     items: list[dict] = []
 
     # 1. Hyprland custom execs.lua entries
+    hypr_asena_enabled = None
     if HYPR_EXECS.exists():
         for idx, line in enumerate(HYPR_EXECS.read_text(encoding="utf-8", errors="replace").splitlines()):
             m = EXEC_RE.match(line)
@@ -60,6 +61,9 @@ def list_apps() -> list[dict]:
             disabled = bool(m.group(2))
             cmd = m.group(4)
             if "hl.dsp.focus" in cmd:
+                continue
+            if "asena-dpi-tray" in cmd.lower():
+                hypr_asena_enabled = not disabled
                 continue
             name, icon = _friendly_hypr_name(cmd)
             items.append({
@@ -93,6 +97,8 @@ def list_apps() -> list[dict]:
         hidden = d.get("Hidden", "").lower() == "true"
         gnome_en = d.get("X-GNOME-Autostart-enabled", "true").lower() != "false"
         enabled = (not hidden) and gnome_en
+        if fname == "asena-dpi-tray.desktop" and hypr_asena_enabled is not None:
+            enabled = enabled and hypr_asena_enabled
         items.append({
             "id": f"xdg:{fname}",
             "name": name,
@@ -100,7 +106,18 @@ def list_apps() -> list[dict]:
             "icon": icon,
             "source": "Autostart",
             "enabled": enabled,
-            "removable": is_user and not (SYS_AUTOSTART / fname).exists(),
+            "removable": is_user and not (SYS_AUTOSTART / fname).exists() and fname != "asena-dpi-tray.desktop",
+        })
+
+    if hypr_asena_enabled is not None and "asena-dpi-tray.desktop" not in seen_files:
+        items.append({
+            "id": "asena:tray",
+            "name": "AsenaDPI",
+            "cmd": "/usr/local/bin/asena-dpi-tray",
+            "icon": "preferences-desktop-display",
+            "source": "Hypr",
+            "enabled": hypr_asena_enabled,
+            "removable": False,
         })
 
     items.sort(key=lambda x: (0 if x["enabled"] else 1, 0 if "asena" in x["name"].lower() else 1, x["name"].lower()))
@@ -126,6 +143,10 @@ def toggle_app(item_id: str, enable: bool) -> int:
 
     if item_id.startswith("xdg:"):
         fname = item_id.split(":", 1)[1]
+        if fname == "asena-dpi-tray.desktop" and HYPR_EXECS.exists():
+            for idx, ln in enumerate(HYPR_EXECS.read_text(encoding="utf-8", errors="replace").splitlines()):
+                if "asena-dpi-tray" in ln.lower() and EXEC_RE.match(ln):
+                    toggle_app(f"hypr:{idx}", enable)
         USER_AUTOSTART.mkdir(parents=True, exist_ok=True)
         dst = USER_AUTOSTART / fname
         src = dst if dst.exists() else (SYS_AUTOSTART / fname)
