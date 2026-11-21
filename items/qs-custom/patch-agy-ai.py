@@ -270,7 +270,7 @@ def main() -> int:
                     '    }\n\n'
                     '    function openAgyLogin() {\n'
                     '        const agyBin = FileUtils.trimFileProtocol(`${Directories.home}/.local/bin/agy`);\n'
-                    '        agyLoginProc.command = ["bash", "-c", `${Config.options.apps.terminal} -e bash -c \'"${0}" -i /login; echo; read -p "Press Enter to close..."\' "${agyBin}"`];\n'
+                    '        agyLoginProc.command = ["bash", "-c", `${Config.options.apps.terminal} -e bash -c \'"$1" -i /login; echo; read -p "Press Enter to close..."\' _ "$1"`, "_", agyBin];\n'
                     '        agyLoginProc.running = false;\n'
                     '        agyLoginProc.running = true;\n'
                     '    }\n\n'
