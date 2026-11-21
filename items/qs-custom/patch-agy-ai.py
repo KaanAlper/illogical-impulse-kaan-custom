@@ -276,7 +276,7 @@ def main() -> int:
                     '    }\n\n'
                     '    Process {\n'
                     '        id: agyAuthProc\n'
-                    '        command: ["bash", "-c", "[ -s \\"$HOME/.gemini/antigravity-cli/antigravity-oauth-token\\" ] && echo 1 || echo 0"]\n'
+                    '        command: ["bash", "-c", "if [ -s \\"$HOME/.gemini/antigravity-cli/antigravity-oauth-token\\" ]; then echo 1; else d=$(mktemp -d); printf \'#!/bin/sh\\\\nexit 0\\\\n\' > \\"$d/xdg-open\\"; chmod +x \\"$d/xdg-open\\"; PATH=\\"$d:$PATH\\" BROWSER=true timeout 4 \\"$HOME/.local/bin/agy\\" models >/dev/null 2>&1 && echo 1 || echo 0; rm -rf \\"$d\\"; fi"]\n'
                     '        stdout: StdioCollector {\n'
                     '            onStreamFinished: root.agyLoggedIn = (text.trim() === "1")\n'
                     '        }\n'
