@@ -1756,7 +1756,7 @@ def main() -> int:
                     "                closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutsideParent\n\n"
                     "                background: Rectangle {\n"
                     "                    radius: Appearance.rounding.normal\n"
-                    "                    color: Appearance.colors.colLayer1\n"
+                    "                    color: Qt.rgba(Appearance.m3colors.m3surfaceContainerLow.r, Appearance.m3colors.m3surfaceContainerLow.g, Appearance.m3colors.m3surfaceContainerLow.b, 1.0)\n"
                     "                    border.width: 1\n"
                     "                    border.color: Appearance.colors.colOutlineVariant\n"
                     "                }\n\n"
