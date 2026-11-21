@@ -78,5 +78,6 @@
   "App name": "Tên ứng dụng",
   "Command or path": "Lệnh hoặc đường dẫn",
   "Add": "Thêm",
-  "No startup apps found": "Không tìm thấy ứng dụng khởi động"
+  "No startup apps found": "Không tìm thấy ứng dụng khởi động",
+  "Select installed app...": "Chọn ứng dụng đã cài..."
 }

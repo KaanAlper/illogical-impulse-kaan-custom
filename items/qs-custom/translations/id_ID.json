@@ -78,5 +78,6 @@
   "App name": "Nama aplikasi",
   "Command or path": "Perintah atau jalur",
   "Add": "Tambah",
-  "No startup apps found": "Tidak ada aplikasi mulai otomatis"
+  "No startup apps found": "Tidak ada aplikasi mulai otomatis",
+  "Select installed app...": "Pilih aplikasi terpasang..."
 }

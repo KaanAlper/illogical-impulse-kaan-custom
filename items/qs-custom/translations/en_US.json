@@ -78,5 +78,6 @@
   "App name": "App name",
   "Command or path": "Command or path",
   "Add": "Add",
-  "No startup apps found": "No startup apps found"
+  "No startup apps found": "No startup apps found",
+  "Select installed app...": "Select installed app..."
 }

@@ -78,5 +78,6 @@
   "App name": "Назва програми",
   "Command or path": "Команда або шлях",
   "Add": "Додати",
-  "No startup apps found": "Програм автозапуску не знайдено"
+  "No startup apps found": "Програм автозапуску не знайдено",
+  "Select installed app...": "Вибрати встановлену програму..."
 }

@@ -78,5 +78,6 @@
   "App name": "שם האפליקציה",
   "Command or path": "פקודה או נתיב",
   "Add": "הוסף",
-  "No startup apps found": "לא נמצאו אפליקציות אתחול"
+  "No startup apps found": "לא נמצאו אפליקציות אתחול",
+  "Select installed app...": "בחר אפליקציה מותקנת..."
 }

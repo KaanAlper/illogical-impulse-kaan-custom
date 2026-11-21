@@ -78,5 +78,6 @@
   "App name": "应用名称",
   "Command or path": "命令或路径",
   "Add": "添加",
-  "No startup apps found": "未找到开机自启应用"
+  "No startup apps found": "未找到开机自启应用",
+  "Select installed app...": "选择已安装的应用..."
 }

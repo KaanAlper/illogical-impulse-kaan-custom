@@ -78,5 +78,6 @@
   "App name": "App-Name",
   "Command or path": "Befehl oder Pfad",
   "Add": "Hinzufügen",
-  "No startup apps found": "Keine Autostart-Apps gefunden"
+  "No startup apps found": "Keine Autostart-Apps gefunden",
+  "Select installed app...": "Installierte App auswählen..."
 }

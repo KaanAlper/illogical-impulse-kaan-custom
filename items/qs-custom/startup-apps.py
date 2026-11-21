@@ -176,7 +176,31 @@ def toggle_app(item_id: str, enable: bool) -> int:
     return 1
 
 
-def add_app(name: str, cmd: str) -> int:
+def list_installed_apps() -> list[dict]:
+    dirs = [pathlib.Path("/usr/share/applications"), pathlib.Path.home() / ".local/share/applications"]
+    by_name: dict[str, dict] = {}
+    for d in dirs:
+        if not d.is_dir():
+            continue
+        for p in sorted(d.glob("*.desktop")):
+            parsed = _parse_desktop(p)
+            if not parsed or parsed.get("NoDisplay", "").lower() == "true":
+                continue
+            name = parsed.get("Name") or p.stem
+            raw_exec = parsed.get("Exec") or ""
+            clean_exec = re.sub(r"\s+%[fFuUdDnNickvm]", "", raw_exec).strip()
+            if not clean_exec:
+                continue
+            by_name[p.name] = {
+                "displayName": name,
+                "value": p.name,
+                "exec": clean_exec,
+                "icon": parsed.get("Icon") or "application-x-executable",
+            }
+    return sorted(by_name.values(), key=lambda x: x["displayName"].lower())
+
+
+def add_app(name: str, cmd: str, icon_override: str = "") -> int:
     name = name.strip()
     cmd = cmd.strip()
     if not name or not cmd:
@@ -188,7 +212,7 @@ def add_app(name: str, cmd: str) -> int:
     while dst.exists():
         n += 1
         dst = USER_AUTOSTART / f"custom-{slug}-{n}.desktop"
-    icon = os.path.basename(cmd.split()[0])
+    icon = icon_override.strip() or os.path.basename(cmd.split()[0])
     dst.write_text(
         "[Desktop Entry]\n"
         "Type=Application\n"
@@ -216,10 +240,13 @@ def main() -> int:
         print(json.dumps(list_apps(), ensure_ascii=False))
         return 0
     action = sys.argv[1]
+    if action == "apps":
+        print(json.dumps(list_installed_apps(), ensure_ascii=False))
+        return 0
     if action == "toggle" and len(sys.argv) >= 4:
         return toggle_app(sys.argv[2], sys.argv[3] in ("1", "true", "True"))
     if action == "add" and len(sys.argv) >= 4:
-        return add_app(sys.argv[2], sys.argv[3])
+        return add_app(sys.argv[2], sys.argv[3], sys.argv[4] if len(sys.argv) >= 5 else "")
     if action == "remove" and len(sys.argv) >= 3:
         return remove_app(sys.argv[2])
     return 2

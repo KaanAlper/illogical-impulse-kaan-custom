@@ -78,5 +78,6 @@
   "App name": "アプリ名",
   "Command or path": "コマンドまたはパス",
   "Add": "追加",
-  "No startup apps found": "スタートアップアプリが見つかりません"
+  "No startup apps found": "スタートアップアプリが見つかりません",
+  "Select installed app...": "インストール済みアプリを選択..."
 }

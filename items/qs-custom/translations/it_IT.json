@@ -78,5 +78,6 @@
   "App name": "Nome app",
   "Command or path": "Comando o percorso",
   "Add": "Aggiungi",
-  "No startup apps found": "Nessuna app all'avvio trovata"
+  "No startup apps found": "Nessuna app all'avvio trovata",
+  "Select installed app...": "Seleziona app installata..."
 }
