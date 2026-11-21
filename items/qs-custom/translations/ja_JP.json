@@ -79,5 +79,7 @@
   "Command or path": "コマンドまたはパス",
   "Add": "追加",
   "No startup apps found": "スタートアップアプリが見つかりません",
-  "Select installed app...": "インストール済みアプリを選択..."
+  "Select installed app...": "インストール済みアプリを選択...",
+  "Date added": "追加日",
+  "Active status": "有効状態"
 }

@@ -79,5 +79,7 @@
   "Command or path": "פקודה או נתיב",
   "Add": "הוסף",
   "No startup apps found": "לא נמצאו אפליקציות אתחול",
-  "Select installed app...": "בחר אפליקציה מותקנת..."
+  "Select installed app...": "בחר אפליקציה מותקנת...",
+  "Date added": "תאריך הוספה",
+  "Active status": "מצב פעילות"
 }

@@ -79,5 +79,7 @@
   "Command or path": "Comando o ruta",
   "Add": "Agregar",
   "No startup apps found": "No se encontraron aplicaciones de inicio",
-  "Select installed app...": "Seleccionar app instalada..."
+  "Select installed app...": "Seleccionar app instalada...",
+  "Date added": "Fecha de adición",
+  "Active status": "Estado activo"
 }

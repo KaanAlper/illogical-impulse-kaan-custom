@@ -79,5 +79,7 @@
   "Command or path": "Lệnh hoặc đường dẫn",
   "Add": "Thêm",
   "No startup apps found": "Không tìm thấy ứng dụng khởi động",
-  "Select installed app...": "Chọn ứng dụng đã cài..."
+  "Select installed app...": "Chọn ứng dụng đã cài...",
+  "Date added": "Ngày thêm",
+  "Active status": "Trạng thái bật/tắt"
 }

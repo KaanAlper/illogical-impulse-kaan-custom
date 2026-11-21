@@ -79,5 +79,7 @@
   "Command or path": "Befehl oder Pfad",
   "Add": "Hinzufügen",
   "No startup apps found": "Keine Autostart-Apps gefunden",
-  "Select installed app...": "Installierte App auswählen..."
+  "Select installed app...": "Installierte App auswählen...",
+  "Date added": "Hinzugefügt am",
+  "Active status": "Aktivierungsstatus"
 }

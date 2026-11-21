@@ -53,6 +53,7 @@ def list_apps() -> list[dict]:
 
     # 1. Hyprland custom execs.lua entries
     hypr_asena_enabled = None
+    hypr_mtime = HYPR_EXECS.stat().st_mtime if HYPR_EXECS.exists() else 0
     if HYPR_EXECS.exists():
         for idx, line in enumerate(HYPR_EXECS.read_text(encoding="utf-8", errors="replace").splitlines()):
             m = EXEC_RE.match(line)
@@ -74,6 +75,7 @@ def list_apps() -> list[dict]:
                 "source": "Hypr",
                 "enabled": not disabled,
                 "removable": False,
+                "mtime": hypr_mtime,
             })
 
     # 2. XDG autostart entries (user overrides system)
@@ -99,6 +101,10 @@ def list_apps() -> list[dict]:
         enabled = (not hidden) and gnome_en
         if fname == "asena-dpi-tray.desktop" and hypr_asena_enabled is not None:
             enabled = enabled and hypr_asena_enabled
+        try:
+            mtime = p.stat().st_mtime
+        except OSError:
+            mtime = 0
         items.append({
             "id": f"xdg:{fname}",
             "name": name,
@@ -107,6 +113,7 @@ def list_apps() -> list[dict]:
             "source": "Autostart",
             "enabled": enabled,
             "removable": is_user and not (SYS_AUTOSTART / fname).exists(),
+            "mtime": mtime,
         })
 
     if hypr_asena_enabled is not None and "asena-dpi-tray.desktop" not in seen_files:
@@ -118,6 +125,7 @@ def list_apps() -> list[dict]:
             "source": "Hypr",
             "enabled": hypr_asena_enabled,
             "removable": False,
+            "mtime": hypr_mtime,
         })
 
     items.sort(key=lambda x: (0 if x["enabled"] else 1, 0 if "asena" in x["name"].lower() else 1, x["name"].lower()))
