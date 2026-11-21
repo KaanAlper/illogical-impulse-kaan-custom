@@ -73,5 +73,10 @@
   "Pick Color": "Escolher cor",
   "Select screensaver color": "Selecionar cor do protetor de tela",
   "Default monitor on startup": "Monitor padrão ao iniciar",
-  "Auto (Largest)": "Automático (Maior)"
+  "Auto (Largest)": "Automático (Maior)",
+  "Startup Apps": "Aplicativos de inicialização",
+  "App name": "Nome do app",
+  "Command or path": "Comando ou caminho",
+  "Add": "Adicionar",
+  "No startup apps found": "Nenhum aplicativo de inicialização encontrado"
 }

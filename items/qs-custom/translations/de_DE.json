@@ -73,5 +73,10 @@
   "Pick Color": "Farbe wählen",
   "Select screensaver color": "Bildschirmschoner-Farbe wählen",
   "Default monitor on startup": "Standardmonitor beim Start",
-  "Auto (Largest)": "Automatisch (Größter)"
+  "Auto (Largest)": "Automatisch (Größter)",
+  "Startup Apps": "Autostart-Apps",
+  "App name": "App-Name",
+  "Command or path": "Befehl oder Pfad",
+  "Add": "Hinzufügen",
+  "No startup apps found": "Keine Autostart-Apps gefunden"
 }

@@ -73,5 +73,10 @@
   "Pick Color": "Elegir color",
   "Select screensaver color": "Seleccionar color del protector de pantalla",
   "Default monitor on startup": "Monitor predeterminado al iniciar",
-  "Auto (Largest)": "Automático (Más grande)"
+  "Auto (Largest)": "Automático (Más grande)",
+  "Startup Apps": "Aplicaciones de inicio",
+  "App name": "Nombre de la app",
+  "Command or path": "Comando o ruta",
+  "Add": "Agregar",
+  "No startup apps found": "No se encontraron aplicaciones de inicio"
 }

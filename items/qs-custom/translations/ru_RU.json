@@ -73,5 +73,10 @@
   "Pick Color": "Выбрать цвет",
   "Select screensaver color": "Выберите цвет заставки",
   "Default monitor on startup": "Монитор по умолчанию при запуске",
-  "Auto (Largest)": "Авто (Наибольший)"
+  "Auto (Largest)": "Авто (Наибольший)",
+  "Startup Apps": "Приложения в автозагрузке",
+  "App name": "Название приложения",
+  "Command or path": "Команда или путь",
+  "Add": "Добавить",
+  "No startup apps found": "Приложения автозагрузки не найдены"
 }

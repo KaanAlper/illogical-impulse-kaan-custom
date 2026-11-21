@@ -73,5 +73,10 @@
   "Pick Color": "选择颜色",
   "Select screensaver color": "选择屏幕保护程序颜色",
   "Default monitor on startup": "启动时默认显示器",
-  "Auto (Largest)": "自动（最大）"
+  "Auto (Largest)": "自动（最大）",
+  "Startup Apps": "开机自启应用",
+  "App name": "应用名称",
+  "Command or path": "命令或路径",
+  "Add": "添加",
+  "No startup apps found": "未找到开机自启应用"
 }

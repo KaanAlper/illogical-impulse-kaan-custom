@@ -66,6 +66,10 @@ if has_feat "lock-power"; then
     cp "$CUSTOM_DIR/apply-plymouth-logo.sh" "$II/scripts/apply-plymouth-logo.sh"
     chmod +x "$II/scripts/apply-plymouth-logo.sh"
 fi
+if has_feat "startup-apps"; then
+    cp "$CUSTOM_DIR/startup-apps.py" "$II/scripts/startup-apps.py"
+    chmod +x "$II/scripts/startup-apps.py"
+fi
 if has_feat "screensaver"; then
     mkdir -p "$II/modules/ii/screensaver" "$II/modules/settings"
     cp "$CUSTOM_DIR/ScreensaverOverlay.qml" "$II/modules/ii/screensaver/ScreensaverOverlay.qml"

@@ -73,5 +73,10 @@
   "Pick Color": "Pick Color",
   "Select screensaver color": "Select screensaver color",
   "Default monitor on startup": "Default monitor on startup",
-  "Auto (Largest)": "Auto (Largest)"
+  "Auto (Largest)": "Auto (Largest)",
+  "Startup Apps": "Startup Apps",
+  "App name": "App name",
+  "Command or path": "Command or path",
+  "Add": "Add",
+  "No startup apps found": "No startup apps found"
 }

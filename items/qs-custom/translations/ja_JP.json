@@ -73,5 +73,10 @@
   "Pick Color": "色を選択",
   "Select screensaver color": "スクリーンセーバーの色を選択",
   "Default monitor on startup": "起動時のデフォルトモニター",
-  "Auto (Largest)": "自動（最大）"
+  "Auto (Largest)": "自動（最大）",
+  "Startup Apps": "スタートアップアプリ",
+  "App name": "アプリ名",
+  "Command or path": "コマンドまたはパス",
+  "Add": "追加",
+  "No startup apps found": "スタートアップアプリが見つかりません"
 }

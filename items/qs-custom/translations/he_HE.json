@@ -73,5 +73,10 @@
   "Pick Color": "בחר צבע",
   "Select screensaver color": "בחר צבע לשומר מסך",
   "Default monitor on startup": "מסך ברירת מחדל בהפעלה",
-  "Auto (Largest)": "אוטומטי (הגדול ביותר)"
+  "Auto (Largest)": "אוטומטי (הגדול ביותר)",
+  "Startup Apps": "אפליקציות אתחול",
+  "App name": "שם האפליקציה",
+  "Command or path": "פקודה או נתיב",
+  "Add": "הוסף",
+  "No startup apps found": "לא נמצאו אפליקציות אתחול"
 }

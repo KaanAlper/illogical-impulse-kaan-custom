@@ -73,5 +73,10 @@
   "Pick Color": "Renk Seç",
   "Select screensaver color": "Ekran koruyucu rengini seç",
   "Default monitor on startup": "Açılışta varsayılan monitör",
-  "Auto (Largest)": "Otomatik (En büyük)"
+  "Auto (Largest)": "Otomatik (En büyük)",
+  "Startup Apps": "Başlangıç Uygulamaları",
+  "App name": "Uygulama adı",
+  "Command or path": "Komut veya dosya yolu",
+  "Add": "Ekle",
+  "No startup apps found": "Başlangıç uygulaması bulunamadı"
 }

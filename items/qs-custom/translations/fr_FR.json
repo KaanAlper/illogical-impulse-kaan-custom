@@ -73,5 +73,10 @@
   "Pick Color": "Choisir une couleur",
   "Select screensaver color": "Sélectionner la couleur de l'économiseur d'écran",
   "Default monitor on startup": "Moniteur par défaut au démarrage",
-  "Auto (Largest)": "Auto (Plus grand)"
+  "Auto (Largest)": "Auto (Plus grand)",
+  "Startup Apps": "Applications au démarrage",
+  "App name": "Nom de l'application",
+  "Command or path": "Commande ou chemin",
+  "Add": "Ajouter",
+  "No startup apps found": "Aucune application au démarrage trouvée"
 }

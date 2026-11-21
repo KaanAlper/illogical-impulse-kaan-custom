@@ -73,5 +73,10 @@
   "Pick Color": "Pilih Warna",
   "Select screensaver color": "Pilih warna pengaman layar",
   "Default monitor on startup": "Monitor default saat mulai",
-  "Auto (Largest)": "Otomatis (Terbesar)"
+  "Auto (Largest)": "Otomatis (Terbesar)",
+  "Startup Apps": "Aplikasi Mulai Otomatis",
+  "App name": "Nama aplikasi",
+  "Command or path": "Perintah atau jalur",
+  "Add": "Tambah",
+  "No startup apps found": "Tidak ada aplikasi mulai otomatis"
 }

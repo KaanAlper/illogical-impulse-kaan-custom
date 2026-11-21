@@ -73,5 +73,10 @@
   "Pick Color": "Chọn màu",
   "Select screensaver color": "Chọn màu trình bảo vệ màn hình",
   "Default monitor on startup": "Màn hình mặc định khi khởi động",
-  "Auto (Largest)": "Tự động (Lớn nhất)"
+  "Auto (Largest)": "Tự động (Lớn nhất)",
+  "Startup Apps": "Ứng dụng khởi động",
+  "App name": "Tên ứng dụng",
+  "Command or path": "Lệnh hoặc đường dẫn",
+  "Add": "Thêm",
+  "No startup apps found": "Không tìm thấy ứng dụng khởi động"
 }

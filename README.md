@@ -41,6 +41,7 @@ illogical-impulse-kaan-custom
 │   │                               # per-monitor settings, deferred lock (keeps running until input), + 14-lang translations
 │   ├── lock-power                  # Settings -> General -> Lock (idle lock, DPMS, Suspend toggles/timeouts,
 │   │                               # conditional Plymouth xana logo picker), hypridle sync, + 14-lang translations
+│   ├── startup-apps                # Settings -> General -> Startup Apps (responsive scrollable grid for autostart & Hyprland execs)
 │   ├── ai-sidebar                  # Left sidebar tabs: Claude | Agy | Codex | Anime, model/effort & config pickers,
 │   │                               # floating anime image viewer, startup auth safety, + 14-lang translations
 │   ├── everything-search           # Everything (#) file search via plocate + systemd timer, sort/filter toolbar,

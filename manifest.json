@@ -66,6 +66,7 @@
         },
         { "id": "screensaver", "title": "Ekran koruyucu", "desc": "DVD, Matrix, Starfield, Mystify, XANA, Renk şablonu, özel medya, her monitöre ayrı ayar ve çevirileri", "default": true },
         { "id": "lock-power", "title": "Kilit & güç ayarları", "desc": "Genel -> Kilit bölümü (Ekran kilidi, DPMS, Derin uyku, Plymouth XANA logo seçici) ve çevirileri", "default": true },
+        { "id": "startup-apps", "title": "Başlangıç uygulamaları", "desc": "Genel -> Dil altında duyarlı/kaydırılabilir başlangıç uygulamaları tablosu (AsenaDPI, autostart, execs)", "default": true },
         { "id": "ai-sidebar", "title": "Sol panel AI (Agy, Claude, Codex & Anime)", "desc": "AI sohbet sekmeleri, model seçiciler, anime görüntüleyici ve ilgili çeviriler", "default": true },
         { "id": "everything-search", "title": "Everything dosya arama", "desc": "Super+B (Everything #) ve Super+P (Tüm uygulamalar !) kısayolları, dosya/klasör arama, indeksleme ve araç çubuğu", "default": true },
         { "id": "workspace-split", "title": "Çoklu monitör çalışma alanı", "desc": "Monitöre göre bölme, odaklanmayan monitör vurgusu ve Ctrl+Super+Sol/Sağ (+Shift) monitörler arası geçiş kısayolları", "default": true },
