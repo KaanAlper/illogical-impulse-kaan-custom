@@ -8,4 +8,7 @@ hl.on("hyprland.start", function ()
 
     -- AsenaDPI tray (Hyprland doesn't run ~/.config/autostart/*.desktop without dex)
     hl.exec_cmd("bash -c '[ -x /usr/local/bin/asena-dpi-tray ] && /usr/local/bin/asena-dpi-tray'")
+
+    -- Focus primary (largest) monitor on startup instead of always landing on workspace 1
+    hl.exec_cmd("bash -c 'sleep 0.4; mon=$(hyprctl monitors -j | python3 -c \"import json,sys; ms=json.load(sys.stdin); print(max(ms, key=lambda m: m[\\\"width\\\"]*m[\\\"height\\\"])[\\\"name\\\"])\" 2>/dev/null); [ -n \"$mon\" ] && hyprctl dispatch \"hl.dsp.focus({monitor = \\\"$mon\\\"})\"'")
 end)
