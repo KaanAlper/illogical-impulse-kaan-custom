@@ -106,7 +106,7 @@ def list_apps() -> list[dict]:
             "icon": icon,
             "source": "Autostart",
             "enabled": enabled,
-            "removable": is_user and not (SYS_AUTOSTART / fname).exists() and fname != "asena-dpi-tray.desktop",
+            "removable": is_user and not (SYS_AUTOSTART / fname).exists(),
         })
 
     if hypr_asena_enabled is not None and "asena-dpi-tray.desktop" not in seen_files:
@@ -228,6 +228,11 @@ def add_app(name: str, cmd: str, icon_override: str = "") -> int:
 def remove_app(item_id: str) -> int:
     if item_id.startswith("xdg:"):
         fname = item_id.split(":", 1)[1]
+        if fname == "asena-dpi-tray.desktop" and HYPR_EXECS.exists():
+            lines = HYPR_EXECS.read_text(encoding="utf-8", errors="replace").splitlines(keepends=True)
+            kept = [ln for ln in lines if "asena-dpi-tray" not in ln.lower()]
+            if len(kept) != len(lines):
+                HYPR_EXECS.write_text("".join(kept), encoding="utf-8")
         dst = USER_AUTOSTART / fname
         if dst.exists() and not (SYS_AUTOSTART / fname).exists():
             dst.unlink()
