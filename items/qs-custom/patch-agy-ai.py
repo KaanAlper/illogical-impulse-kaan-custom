@@ -1308,15 +1308,18 @@ def main() -> int:
         )
 
     if has_feat("icon-cache"):
-        # 12. AppSearch.qml: map zen window class -> zen-browser icon
+        # 12. AppSearch.qml: map zen/dolphin/artcraft window classes -> desktop icon names
         ok &= patch_file(
             ii / "services/AppSearch.qml",
             [
                 (
-                    '"zen": "zen-browser"',
-                    '        "footclient": "foot",',
+                    '"dolphin": "org.kde.dolphin"',
+                    '        "footclient": "foot",\n        "zen": "zen-browser",',
                     '        "footclient": "foot",\n'
-                    '        "zen": "zen-browser",',
+                    '        "zen": "zen-browser",\n'
+                    '        "dolphin": "org.kde.dolphin",\n'
+                    '        "artcraft-launcher": "ai.storyteller.artcraft-launcher",\n'
+                    '        "artcraft": "ai.storyteller.artcraft-launcher",',
                 ),
             ],
         )
