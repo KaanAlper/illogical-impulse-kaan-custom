@@ -17,6 +17,7 @@ TERM_DIR = STATE_GEN / "terminal"
 GLOBAL_KITTY_THEME = TERM_DIR / "kitty-theme.conf"
 II_COLORS_DIR = HOME / ".config/quickshell/ii/scripts/colors"
 TEMPLATE_PATH = II_COLORS_DIR / "terminal/kitty-theme.conf"
+SCHEME_BASE_PATH = II_COLORS_DIR / "terminal/scheme-base.json"
 GEN_SCRIPT = II_COLORS_DIR / "generate_colors_material.py"
 
 
@@ -72,6 +73,9 @@ def generate_kitty_theme(monitor: str, image_path: str) -> bool:
         image_path,
         "--mode",
         mode,
+        "--termscheme",
+        str(SCHEME_BASE_PATH),
+        "--blend_bg_fg",
     ]
     if scheme and scheme != "null":
         args += ["--scheme", str(scheme)]
@@ -131,24 +135,77 @@ def resolve_theme_for_monitor(monitor: str, per_monitor: bool) -> Path | None:
     return None
 
 
-def apply_to_pid(pid: int, theme_file: Path) -> None:
+def resolve_socket_for_pid(pid: int) -> str | None:
     sock = Path(f"/tmp/kitty-{pid}")
-    if not sock.exists():
+    if sock.exists():
+        return f"unix:{sock}"
+    uid = os.getuid()
+    return f"unix:@kitty-ipc-{uid}"
+
+
+def apply_to_client(pid: int, title: str, theme_file: Path) -> None:
+    to_arg = resolve_socket_for_pid(pid)
+    if not to_arg:
         return
-    subprocess.run(
-        ["kitty", "@", "--to", f"unix:{sock}", "set-colors", "--all", "--configured", str(theme_file)],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
+    try:
+        ls_out = subprocess.check_output(
+            ["kitty", "@", "--to", to_arg, "ls"],
+            stderr=subprocess.DEVNULL,
+            text=True,
+            timeout=1.5,
+        )
+        os_wins = json.loads(ls_out)
+    except Exception:
+        os_wins = []
+
+    if len(os_wins) <= 1:
+        subprocess.run(
+            ["kitty", "@", "--to", to_arg, "set-colors", "--all", "--configured", str(theme_file)],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        return
+
+    # Single-instance kitty hosting multiple OS windows: match the OS window by title or focus
+    target_os = None
+    for ow in os_wins:
+        for tab in ow.get("tabs", []):
+            for w in tab.get("windows", []):
+                if title and w.get("title") == title:
+                    target_os = ow
+                    break
+            if target_os:
+                break
+        if target_os:
+            break
+    if not target_os:
+        for ow in os_wins:
+            if ow.get("is_focused"):
+                target_os = ow
+                break
+    if not target_os:
+        return
+
+    for tab in target_os.get("tabs", []):
+        for w in tab.get("windows", []):
+            wid = w.get("id")
+            if wid is not None:
+                subprocess.run(
+                    ["kitty", "@", "--to", to_arg, "set-colors", "--match", f"id:{wid}", "--configured", str(theme_file)],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
 
 
-def apply_all(last_seen: dict[int, tuple[str, str]] | None = None, force: bool = False) -> None:
+def apply_all(last_seen: dict[str, tuple[str, str]] | None = None, force: bool = False) -> None:
     cfg = read_config()
     per_mon = bool(cfg.get("background", {}).get("perMonitor", False))
     mon_map = get_monitor_map()
     for client in get_kitty_clients():
+        addr = client.get("address") or str(client.get("pid"))
         pid = client.get("pid")
         mon_id = client.get("monitor")
+        title = client.get("title", "")
         if not pid or mon_id is None:
             continue
         mon_name = mon_map.get(mon_id, "")
@@ -156,11 +213,11 @@ def apply_all(last_seen: dict[int, tuple[str, str]] | None = None, force: bool =
         if not theme:
             continue
         state = (mon_name, str(theme))
-        if not force and last_seen is not None and last_seen.get(pid) == state:
+        if not force and last_seen is not None and last_seen.get(addr) == state:
             continue
-        apply_to_pid(pid, theme)
+        apply_to_client(pid, title, theme)
         if last_seen is not None:
-            last_seen[pid] = state
+            last_seen[addr] = state
 
 
 def sync_all() -> None:

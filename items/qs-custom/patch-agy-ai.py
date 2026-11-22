@@ -2435,6 +2435,25 @@ def main() -> int:
         ii / "scripts/colors/switchwall.sh",
         [
             (
+                "per-monitor upscale bounds",
+                "check_and_prompt_upscale() {\n"
+                "    local img=\"$1\"\n"
+                "    min_width_desired=\"$(hyprctl monitors -j | jq '([.[].width] | max)' | xargs)\" # max monitor width\n"
+                "    min_height_desired=\"$(hyprctl monitors -j | jq '([.[].height] | max)' | xargs)\" # max monitor height",
+                "check_and_prompt_upscale() {\n"
+                "    local img=\"$1\"\n"
+                "    local pm sm\n"
+                "    pm=$(jq -r '.background.perMonitor // false' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
+                "    sm=$(jq -r '.background.selectedMonitor // \"\"' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
+                "    if [[ \"$pm\" == \"true\" && -n \"$sm\" ]]; then\n"
+                "        min_width_desired=\"$(hyprctl monitors -j | jq -r --arg m \"$sm\" '(.[] | select(.name == $m) | .width) // ([.[].width] | max)' | xargs)\"\n"
+                "        min_height_desired=\"$(hyprctl monitors -j | jq -r --arg m \"$sm\" '(.[] | select(.name == $m) | .height) // ([.[].height] | max)' | xargs)\"\n"
+                "    else\n"
+                "        min_width_desired=\"$(hyprctl monitors -j | jq '([.[].width] | max)' | xargs)\" # max monitor width\n"
+                "        min_height_desired=\"$(hyprctl monitors -j | jq '([.[].height] | max)' | xargs)\" # max monitor height\n"
+                "    fi",
+            ),
+            (
                 "primary_mon=",
                 "set_wallpaper_path() {\n"
                 "    local path=\"$1\"\n"
