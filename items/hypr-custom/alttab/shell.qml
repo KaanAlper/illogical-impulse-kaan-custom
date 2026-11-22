@@ -77,13 +77,9 @@ ShellRoot {
     function build(json) {
         let list = [];
         try { list = JSON.parse(json); } catch (e) { console.warn("alttab: could not parse hyprctl output"); }
-        // Fixed order: by workspace, then by position inside it (left to right, then top to bottom), so the cards
-        // don't reshuffle with every switch. Special workspaces (negative ids) go last.
-        const wsKey = id => id < 0 ? 100000 - id : id;
+        // MRU order by focusHistoryID (focused = 0, previous = 1, ...)
         list = list.filter(w => w.mapped && !w.hidden && w.workspace && w.workspace.id !== -1 && w.title !== undefined)
-                   .sort((a, b) => wsKey(a.workspace.id) - wsKey(b.workspace.id) || a.at[0] - b.at[0] || a.at[1] - b.at[1]);
-        const current = list.findIndex(w => w.focusHistoryID === 0);
-        const previous = list.findIndex(w => w.focusHistoryID === 1); // the window used before the focused one
+                   .sort((a, b) => a.focusHistoryID - b.focusHistoryID);
         const active = Hyprland.focusedMonitor?.activeWorkspace?.id;
         root.cards = list.map(w => ({
             address: w.address,
@@ -96,13 +92,10 @@ ShellRoot {
             icon: root.iconFor(w.class)
         }));
         if (root.cards.length === 0) { root.close(); return; }
-        // Alt+Tab starts on the previously used window (a quick tap flips between the last two); more Tabs walk the
-        // fixed order from there. Shift+Tab starts on the card before the focused window.
+        // MRU order: Alt+Tab selects card 1 (previous window); Shift+Tab selects the last card
         const n = root.cards.length;
-        const from = current >= 0 ? current : 0;
         if (n <= 1) root.sel = 0;
-        else if (!root.reverseOpen && previous >= 0) root.sel = previous;
-        else root.sel = ((from + (root.reverseOpen ? -1 : 1)) % n + n) % n;
+        else root.sel = root.reverseOpen ? n - 1 : 1;
         if (root.pendingStep !== "") { const s = root.pendingStep; root.pendingStep = ""; root.step(s === "next" ? 1 : -1); }
         if (root.pendingCommit) root.commit();
     }
