@@ -2203,7 +2203,13 @@ def main() -> int:
                 "        id: wallThemeSyncTimer\n"
                 "        interval: 180\n"
                 "        repeat: false\n"
-                "        onTriggered: Quickshell.execDetached([\"bash\", \"-c\", `${Directories.wallpaperSwitchScriptPath} --noswitch`])\n"
+                "        onTriggered: {\n"
+                "            if (Config.options.background.perMonitor) {\n"
+                "                Quickshell.execDetached([\"python3\", Quickshell.shellPath(\"scripts/colors/per-monitor-kitty-theme.py\"), \"sync-all\"]);\n"
+                "            } else {\n"
+                "                Quickshell.execDetached([\"bash\", \"-c\", `${Directories.wallpaperSwitchScriptPath} --noswitch && python3 \"${FileUtils.trimFileProtocol(Quickshell.shellPath('scripts/colors/per-monitor-kitty-theme.py'))}\" apply`]);\n"
+                "            }\n"
+                "        }\n"
                 "    }\n\n"
                 "    property string selectedWallpaperMonitor: {\n"
                 "        const saved = Config.options.background.selectedMonitor ?? \"\";\n"
@@ -2226,7 +2232,13 @@ def main() -> int:
                 "        id: wallThemeSyncTimer\n"
                 "        interval: 180\n"
                 "        repeat: false\n"
-                "        onTriggered: Quickshell.execDetached([\"bash\", \"-c\", `${Directories.wallpaperSwitchScriptPath} --noswitch`])\n"
+                "        onTriggered: {\n"
+                "            if (Config.options.background.perMonitor) {\n"
+                "                Quickshell.execDetached([\"python3\", Quickshell.shellPath(\"scripts/colors/per-monitor-kitty-theme.py\"), \"sync-all\"]);\n"
+                "            } else {\n"
+                "                Quickshell.execDetached([\"bash\", \"-c\", `${Directories.wallpaperSwitchScriptPath} --noswitch && python3 \"${FileUtils.trimFileProtocol(Quickshell.shellPath('scripts/colors/per-monitor-kitty-theme.py'))}\" apply`]);\n"
+                "            }\n"
+                "        }\n"
                 "    }\n\n"
                 "    property string selectedWallpaperMonitor: {",
             ),
@@ -2326,10 +2338,7 @@ def main() -> int:
                 "                    }",
                 "                    onClicked: {\n"
                 "                        quickPage.selectedWallpaperMonitor = modelData.name;\n"
-                "                        if (Config.options.background.selectedMonitor !== modelData.name) {\n"
-                "                            Config.options.background.selectedMonitor = modelData.name;\n"
-                "                            wallThemeSyncTimer.restart();\n"
-                "                        }\n"
+                "                        Config.options.background.selectedMonitor = modelData.name;\n"
                 "                    }",
             ),
         ],
@@ -2342,16 +2351,16 @@ def main() -> int:
                 "readonly property var activeMonitorCfg:",
                 "    ColorQuantizer {\n"
                 "        id: wallColorQuant\n"
-                "        property string wallpaperPath: Config.options.background.wallpaperPath\n"
-                "        property bool wallpaperIsVideo: wallpaperPath.endsWith(\".mp4\") || wallpaperPath.endsWith(\".webm\") || wallpaperPath.endsWith(\".mkv\") || wallpaperPath.endsWith(\".avi\") || wallpaperPath.endsWith(\".mov\")\n"
-                "        source: Qt.resolvedUrl(wallpaperIsVideo ? Config.options.background.thumbnailPath : Config.options.background.wallpaperPath)",
-                "    ColorQuantizer {\n"
-                "        id: wallColorQuant\n"
                 "        readonly property var activeMonitorCfg: (Config.options.background.perMonitor && (Config.options.background.selectedMonitor ?? \"\") !== \"\") ? (Config.options.background.monitors?.[Config.options.background.selectedMonitor] ?? null) : null\n"
                 "        property string wallpaperPath: (activeMonitorCfg?.wallpaperPath && activeMonitorCfg.wallpaperPath !== \"\") ? activeMonitorCfg.wallpaperPath : Config.options.background.wallpaperPath\n"
                 "        property string thumbnailPath: (activeMonitorCfg?.thumbnailPath && activeMonitorCfg.thumbnailPath !== \"\") ? activeMonitorCfg.thumbnailPath : Config.options.background.thumbnailPath\n"
                 "        property bool wallpaperIsVideo: wallpaperPath.endsWith(\".mp4\") || wallpaperPath.endsWith(\".webm\") || wallpaperPath.endsWith(\".mkv\") || wallpaperPath.endsWith(\".avi\") || wallpaperPath.endsWith(\".mov\")\n"
                 "        source: Qt.resolvedUrl(wallpaperIsVideo ? thumbnailPath : wallpaperPath)",
+                "    ColorQuantizer {\n"
+                "        id: wallColorQuant\n"
+                "        property string wallpaperPath: Config.options.background.wallpaperPath\n"
+                "        property bool wallpaperIsVideo: wallpaperPath.endsWith(\".mp4\") || wallpaperPath.endsWith(\".webm\") || wallpaperPath.endsWith(\".mkv\") || wallpaperPath.endsWith(\".avi\") || wallpaperPath.endsWith(\".mov\")\n"
+                "        source: Qt.resolvedUrl(wallpaperIsVideo ? Config.options.background.thumbnailPath : Config.options.background.wallpaperPath)",
             ),
         ],
     )
@@ -2426,19 +2435,7 @@ def main() -> int:
         ii / "scripts/colors/switchwall.sh",
         [
             (
-                "perMonitor",
-                "set_wallpaper_path() {\n"
-                "    local path=\"$1\"\n"
-                "    if [ -f \"$SHELL_CONFIG_FILE\" ]; then\n"
-                "        jq --arg path \"$path\" '.background.wallpaperPath = $path' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && mv \"$SHELL_CONFIG_FILE.tmp\" \"$SHELL_CONFIG_FILE\"\n"
-                "    fi\n"
-                "}\n\n"
-                "set_thumbnail_path() {\n"
-                "    local path=\"$1\"\n"
-                "    if [ -f \"$SHELL_CONFIG_FILE\" ]; then\n"
-                "        jq --arg path \"$path\" '.background.thumbnailPath = $path' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && mv \"$SHELL_CONFIG_FILE.tmp\" \"$SHELL_CONFIG_FILE\"\n"
-                "    fi\n"
-                "}",
+                "primary_mon=",
                 "set_wallpaper_path() {\n"
                 "    local path=\"$1\"\n"
                 "    if [ -f \"$SHELL_CONFIG_FILE\" ]; then\n"
@@ -2465,11 +2462,76 @@ def main() -> int:
                 "        fi\n"
                 "    fi\n"
                 "}",
+                "get_primary_monitor() {\n"
+                "    hyprctl monitors -j 2>/dev/null | jq -r 'max_by(.width * .height) | .name // \"\"' 2>/dev/null || echo \"\"\n"
+                "}\n\n"
+                "set_wallpaper_path() {\n"
+                "    local path=\"$1\"\n"
+                "    if [ -f \"$SHELL_CONFIG_FILE\" ]; then\n"
+                "        local per_mon sel_mon primary_mon\n"
+                "        per_mon=$(jq -r '.background.perMonitor // false' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
+                "        sel_mon=$(jq -r '.background.selectedMonitor // \"\"' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
+                "        primary_mon=$(get_primary_monitor)\n"
+                "        if [[ \"$per_mon\" == \"true\" && -n \"$sel_mon\" ]]; then\n"
+                "            if [[ \"$sel_mon\" == \"$primary_mon\" || -z \"$primary_mon\" ]]; then\n"
+                "                jq --arg mon \"$sel_mon\" --arg path \"$path\" '.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {\"wallpaperPath\": $path}) | .background.wallpaperPath = $path' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && mv \"$SHELL_CONFIG_FILE.tmp\" \"$SHELL_CONFIG_FILE\"\n"
+                "            else\n"
+                "                jq --arg mon \"$sel_mon\" --arg path \"$path\" '.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {\"wallpaperPath\": $path}) | if (.background.wallpaperPath // \"\") == \"\" then .background.wallpaperPath = $path else . end' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && mv \"$SHELL_CONFIG_FILE.tmp\" \"$SHELL_CONFIG_FILE\"\n"
+                "            fi\n"
+                "        else\n"
+                "            jq --arg path \"$path\" '.background.wallpaperPath = $path' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && mv \"$SHELL_CONFIG_FILE.tmp\" \"$SHELL_CONFIG_FILE\"\n"
+                "        fi\n"
+                "    fi\n"
+                "}\n\n"
+                "set_thumbnail_path() {\n"
+                "    local path=\"$1\"\n"
+                "    if [ -f \"$SHELL_CONFIG_FILE\" ]; then\n"
+                "        local per_mon sel_mon primary_mon\n"
+                "        per_mon=$(jq -r '.background.perMonitor // false' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
+                "        sel_mon=$(jq -r '.background.selectedMonitor // \"\"' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
+                "        primary_mon=$(get_primary_monitor)\n"
+                "        if [[ \"$per_mon\" == \"true\" && -n \"$sel_mon\" ]]; then\n"
+                "            if [[ \"$sel_mon\" == \"$primary_mon\" || -z \"$primary_mon\" ]]; then\n"
+                "                jq --arg mon \"$sel_mon\" --arg path \"$path\" '.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {\"thumbnailPath\": $path}) | .background.thumbnailPath = $path' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && mv \"$SHELL_CONFIG_FILE.tmp\" \"$SHELL_CONFIG_FILE\"\n"
+                "            else\n"
+                "                jq --arg mon \"$sel_mon\" --arg path \"$path\" '.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {\"thumbnailPath\": $path}) | if (.background.thumbnailPath // \"\") == \"\" then .background.thumbnailPath = $path else . end' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && mv \"$SHELL_CONFIG_FILE.tmp\" \"$SHELL_CONFIG_FILE\"\n"
+                "            fi\n"
+                "        else\n"
+                "            jq --arg path \"$path\" '.background.thumbnailPath = $path' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && mv \"$SHELL_CONFIG_FILE.tmp\" \"$SHELL_CONFIG_FILE\"\n"
+                "        fi\n"
+                "    fi\n"
+                "}",
             ),
             (
-                "selectedMonitor // \"\"",
-                "                imgpath=$(jq -r '.background.wallpaperPath' \"$SHELL_CONFIG_FILE\" 2>/dev/null || echo \"\")",
+                "imgpath=$(jq -r '.background.wallpaperPath'",
                 "                imgpath=$(jq -r 'if (.background.perMonitor // false) and ((.background.selectedMonitor // \"\") != \"\") then (.background.monitors[.background.selectedMonitor].wallpaperPath // .background.wallpaperPath) else .background.wallpaperPath end' \"$SHELL_CONFIG_FILE\" 2>/dev/null || echo \"\")",
+                "                imgpath=$(jq -r '.background.wallpaperPath' \"$SHELL_CONFIG_FILE\" 2>/dev/null || echo \"\")",
+            ),
+            (
+                "per-monitor-kitty-theme.py",
+                "    matugen \"${matugen_args[@]}\"\n"
+                "    source \"$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate\"\n"
+                "    python3 \"$SCRIPT_DIR/generate_colors_material.py\" \"${generate_colors_material_args[@]}\" \\\n"
+                "        > \"$STATE_DIR\"/user/generated/material_colors.scss\n"
+                "    deactivate\n"
+                "    \"$SCRIPT_DIR\"/applycolor.sh",
+                "    if [ -f \"$SHELL_CONFIG_FILE\" ]; then\n"
+                "        local pm sm prim\n"
+                "        pm=$(jq -r '.background.perMonitor // false' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
+                "        sm=$(jq -r '.background.selectedMonitor // \"\"' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
+                "        prim=$(get_primary_monitor)\n"
+                "        if [[ \"$pm\" == \"true\" && -n \"$sm\" && \"$sm\" != \"$prim\" && \"$noswitch_flag\" != \"1\" && -n \"$imgpath\" ]]; then\n"
+                "            python3 \"$SCRIPT_DIR/per-monitor-kitty-theme.py\" gen \"$sm\" \"$imgpath\" >/dev/null 2>&1 || true\n"
+                "            return 0\n"
+                "        fi\n"
+                "    fi\n\n"
+                "    matugen \"${matugen_args[@]}\"\n"
+                "    source \"$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate\"\n"
+                "    python3 \"$SCRIPT_DIR/generate_colors_material.py\" \"${generate_colors_material_args[@]}\" \\\n"
+                "        > \"$STATE_DIR\"/user/generated/material_colors.scss\n"
+                "    deactivate\n"
+                "    \"$SCRIPT_DIR\"/applycolor.sh\n"
+                "    python3 \"$SCRIPT_DIR/per-monitor-kitty-theme.py\" sync-all >/dev/null 2>&1 || true",
             ),
         ],
     )
