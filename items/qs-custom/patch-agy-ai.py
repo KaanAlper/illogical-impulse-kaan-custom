@@ -2414,7 +2414,7 @@ def main() -> int:
         ii / "scripts/colors/switchwall.sh",
         [
             (
-                "per-monitor upscale bounds",
+                'select(.name == $m) | .width',
                 "check_and_prompt_upscale() {\n"
                 "    local img=\"$1\"\n"
                 "    min_width_desired=\"$(hyprctl monitors -j | jq '([.[].width] | max)' | xargs)\" # max monitor width\n"
