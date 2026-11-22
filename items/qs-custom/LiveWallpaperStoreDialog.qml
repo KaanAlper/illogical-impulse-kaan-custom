@@ -73,9 +73,13 @@ Popup {
 
     background: Rectangle {
         radius: Appearance.rounding.large
-        color: Appearance.colors.colLayer1
+        color: Appearance.m3colors.m3surfaceContainer
         border.width: 1
         border.color: Appearance.colors.colOutlineVariant
+    }
+
+    Overlay.modal: Rectangle {
+        color: Qt.rgba(0, 0, 0, 0.58)
     }
 
     contentItem: ColumnLayout {
@@ -308,7 +312,9 @@ Popup {
                                 RippleButton {
                                     readonly property bool isBusy: storePopup.downloadingId === modelData.id
                                     enabled: storePopup.downloadingId === ""
-                                    implicitWidth: applyTxt.implicitWidth + 20
+                                    Layout.preferredWidth: Math.max(68, applyTxt.implicitWidth + 22)
+                                    Layout.preferredHeight: 28
+                                    implicitWidth: Layout.preferredWidth
                                     implicitHeight: 28
                                     buttonRadius: Appearance.rounding.full
                                     colBackground: Appearance.colors.colPrimary
