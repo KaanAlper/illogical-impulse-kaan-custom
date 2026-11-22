@@ -126,17 +126,21 @@ Popup {
                 font.weight: Font.Medium
                 color: Appearance.m3colors.m3onSurface
             }
-            RippleButton {
-                implicitWidth: 34
-                implicitHeight: 34
-                buttonRadius: Appearance.rounding.full
-                colBackground: Appearance.colors.colLayer2
-                onClicked: storePopup.close()
-                contentItem: MaterialSymbol {
+            Rectangle {
+                width: 34
+                height: 34
+                radius: 17
+                color: Appearance.colors.colLayer2
+                MaterialSymbol {
                     anchors.centerIn: parent
                     text: "close"
                     iconSize: 18
                     color: Appearance.m3colors.m3onSurface
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: storePopup.close()
                 }
             }
         }
@@ -184,19 +188,23 @@ Popup {
                 }
             }
 
-            RippleButton {
-                implicitWidth: searchBtnTxt.implicitWidth + 24
-                implicitHeight: 38
-                buttonRadius: Appearance.rounding.full
-                colBackground: Appearance.colors.colPrimary
-                onClicked: storePopup.loadStore(1, searchField.text)
-                contentItem: StyledText {
+            Rectangle {
+                Layout.preferredWidth: searchBtnTxt.implicitWidth + 28
+                Layout.preferredHeight: 38
+                radius: 19
+                color: Appearance.colors.colPrimary
+                StyledText {
                     id: searchBtnTxt
                     anchors.centerIn: parent
                     text: Translation.tr("Search")
                     color: Appearance.m3colors.m3onPrimary
                     font.pixelSize: Appearance.font.pixelSize.small
                     font.weight: Font.Medium
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: storePopup.loadStore(1, searchField.text)
                 }
             }
         }
@@ -453,19 +461,25 @@ Popup {
             visible: !storePopup.historyMode
             Layout.fillWidth: true
             Item { Layout.fillWidth: true }
-            RippleButton {
-                enabled: storePopup.currentPage > 1 && !storePopup.loading
-                implicitWidth: prevTxt.implicitWidth + 20
-                implicitHeight: 30
-                buttonRadius: Appearance.rounding.full
-                colBackground: Appearance.colors.colLayer2
-                onClicked: storePopup.loadStore(storePopup.currentPage - 1, storePopup.searchQuery)
-                contentItem: StyledText {
+            Rectangle {
+                readonly property bool canClick: storePopup.currentPage > 1 && !storePopup.loading
+                Layout.preferredWidth: prevTxt.implicitWidth + 24
+                Layout.preferredHeight: 30
+                radius: 15
+                color: Appearance.colors.colLayer2
+                opacity: canClick ? 1.0 : 0.45
+                StyledText {
                     id: prevTxt
                     anchors.centerIn: parent
                     text: Translation.tr("Previous")
                     color: Appearance.m3colors.m3onSurface
                     font.pixelSize: Appearance.font.pixelSize.smaller
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    enabled: parent.canClick
+                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onClicked: storePopup.loadStore(storePopup.currentPage - 1, storePopup.searchQuery)
                 }
             }
             StyledText {
@@ -473,19 +487,25 @@ Popup {
                 color: Appearance.colors.colSubtext
                 font.pixelSize: Appearance.font.pixelSize.small
             }
-            RippleButton {
-                enabled: !storePopup.loading && storePopup.items.length > 0
-                implicitWidth: nextTxt.implicitWidth + 20
-                implicitHeight: 30
-                buttonRadius: Appearance.rounding.full
-                colBackground: Appearance.colors.colLayer2
-                onClicked: storePopup.loadStore(storePopup.currentPage + 1, storePopup.searchQuery)
-                contentItem: StyledText {
+            Rectangle {
+                readonly property bool canClick: !storePopup.loading && storePopup.items.length > 0
+                Layout.preferredWidth: nextTxt.implicitWidth + 24
+                Layout.preferredHeight: 30
+                radius: 15
+                color: Appearance.colors.colLayer2
+                opacity: canClick ? 1.0 : 0.45
+                StyledText {
                     id: nextTxt
                     anchors.centerIn: parent
                     text: Translation.tr("Next")
                     color: Appearance.m3colors.m3onSurface
                     font.pixelSize: Appearance.font.pixelSize.smaller
+                }
+                MouseArea {
+                    anchors.fill: parent
+                    enabled: parent.canClick
+                    cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                    onClicked: storePopup.loadStore(storePopup.currentPage + 1, storePopup.searchQuery)
                 }
             }
             Item { Layout.fillWidth: true }

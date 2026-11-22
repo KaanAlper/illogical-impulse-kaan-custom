@@ -2264,11 +2264,7 @@ def main() -> int:
             (
                 "quickLiveStoreDialog",
                 "    property string selectedWallpaperMonitor: Quickshell.screens.length > 0 ? Quickshell.screens[0].name : \"\"\n",
-                "    property string selectedWallpaperMonitor: Quickshell.screens.length > 0 ? Quickshell.screens[0].name : \"\"\n\n"
-                "    LiveWallpaperStoreDialog {\n"
-                "        id: quickLiveStoreDialog\n"
-                "        targetMonitor: Config.options.background.perMonitor ? quickPage.selectedWallpaperMonitor : \"\"\n"
-                "    }\n",
+                "    property string selectedWallpaperMonitor: Quickshell.screens.length > 0 ? Quickshell.screens[0].name : \"\"\n",
             ),
             (
                 "quickLiveStoreBtn",
@@ -2285,15 +2281,7 @@ def main() -> int:
                 "                        } else {\n"
                 "                            Quickshell.execDetached(`${Directories.wallpaperSwitchScriptPath}`);\n"
                 "                        }\n"
-                "                    }\n"
-                "                }\n"
-                "                RippleButtonWithIcon {\n"
-                "                    id: quickLiveStoreBtn\n"
-                "                    Layout.fillWidth: true\n"
-                "                    buttonRadius: Appearance.rounding.small\n"
-                "                    materialIcon: \"storefront\"\n"
-                "                    mainText: Translation.tr(\"Live Wallpaper Store\")\n"
-                "                    onClicked: quickLiveStoreDialog.open()",
+                "                    }",
             ),
             (
                 "previewIsVideo",
