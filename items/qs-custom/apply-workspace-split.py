@@ -49,7 +49,19 @@ def main() -> int:
     if len(monitors) < 2:
         return 0
 
-    monitors.sort(key=lambda m: (m.get("x", 0), m.get("id", 0)))
+    order = []
+    cfg_path = os.path.expanduser("~/.config/illogical-impulse/config.json")
+    try:
+        with open(cfg_path, encoding="utf-8") as f:
+            order = json.load(f).get("background", {}).get("monitorOrder", []) or []
+    except Exception:
+        order = []
+
+    monitors.sort(key=lambda m: (
+        order.index(m["name"]) if m["name"] in order else len(order),
+        m.get("x", 0),
+        m.get("id", 0),
+    ))
     splits = parse_splits(sys.argv[1], len(monitors))
 
     # First workspace ID for each monitor (gets default = true)
