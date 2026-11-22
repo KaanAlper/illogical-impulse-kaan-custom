@@ -307,13 +307,12 @@ ContentPage {
 
         ConfigSlider {
             buttonIcon: "speed"
-            text: Translation.tr("Playback speed")
+            text: `${Translation.tr("Playback speed")}: ${Config.options.background.live.speed.toFixed(2)}x`
             value: Config.options.background.live.speed
             from: 0.25
             to: 2.5
             stepSize: 0.05
             usePercentTooltip: false
-            valueDisplay: `${Config.options.background.live.speed.toFixed(2)}x`
             onValueChanged: {
                 const rounded = Math.round(value * 20) / 20;
                 if (Math.abs(Config.options.background.live.speed - rounded) >= 0.02) {

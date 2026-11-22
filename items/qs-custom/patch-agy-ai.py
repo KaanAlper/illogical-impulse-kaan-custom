@@ -2417,6 +2417,108 @@ def main() -> int:
                 '            component: "modules/settings/WallpaperConfig.qml"\n'
                 '        },',
             ),
+            (
+                "height: 850",
+                "    width: 1100\n    height: 750",
+                "    width: 1100\n    height: 850",
+            ),
+        ],
+    )
+
+    ok &= patch_file(
+        ii / "modules/common/widgets/NavigationRailButton.qml",
+        [
+            (
+                "itemTextBox",
+                "        StyledText {\n"
+                "            id: itemText\n"
+                "            anchors {\n"
+                "                top: itemIconBackground.bottom\n"
+                "                topMargin: 2\n"
+                "                horizontalCenter: itemIconBackground.horizontalCenter\n"
+                "            }\n"
+                "            states: State {\n"
+                "                name: \"expanded\"\n"
+                "                when: root.expanded\n"
+                "                AnchorChanges {\n"
+                "                    target: itemText\n"
+                "                    anchors {\n"
+                "                        top: undefined\n"
+                "                        horizontalCenter: undefined\n"
+                "                        left: itemIconBackground.right\n"
+                "                        verticalCenter: itemIconBackground.verticalCenter\n"
+                "                    }\n"
+                "                }\n"
+                "            }\n"
+                "            transitions: Transition {\n"
+                "                AnchorAnimation {\n"
+                "                    duration: Appearance.animation.elementMoveFast.duration\n"
+                "                    easing.type: Appearance.animation.elementMoveFast.type\n"
+                "                    easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve\n"
+                "                }\n"
+                "            }\n"
+                "            text: buttonText\n"
+                "            font.pixelSize: 14\n"
+                "            color: Appearance.colors.colOnLayer1\n"
+                "        }",
+                "        Item {\n"
+                "            id: itemTextBox\n"
+                "            clip: !root.expanded\n"
+                "            implicitWidth: root.expanded ? itemText.implicitWidth : Math.min(itemText.implicitWidth, root.baseSize - 4)\n"
+                "            implicitHeight: itemText.implicitHeight\n"
+                "            anchors {\n"
+                "                top: itemIconBackground.bottom\n"
+                "                topMargin: 2\n"
+                "                horizontalCenter: itemIconBackground.horizontalCenter\n"
+                "            }\n"
+                "            states: State {\n"
+                "                name: \"expanded\"\n"
+                "                when: root.expanded\n"
+                "                AnchorChanges {\n"
+                "                    target: itemTextBox\n"
+                "                    anchors {\n"
+                "                        top: undefined\n"
+                "                        horizontalCenter: undefined\n"
+                "                        left: itemIconBackground.right\n"
+                "                        verticalCenter: itemIconBackground.verticalCenter\n"
+                "                    }\n"
+                "                }\n"
+                "            }\n"
+                "            transitions: Transition {\n"
+                "                AnchorAnimation {\n"
+                "                    duration: Appearance.animation.elementMoveFast.duration\n"
+                "                    easing.type: Appearance.animation.elementMoveFast.type\n"
+                "                    easing.bezierCurve: Appearance.animation.elementMoveFast.bezierCurve\n"
+                "                }\n"
+                "            }\n\n"
+                "            StyledText {\n"
+                "                id: itemText\n"
+                "                readonly property real overflow: Math.max(0, implicitWidth - (root.baseSize - 4))\n"
+                "                x: 0\n"
+                "                text: buttonText\n"
+                "                font.pixelSize: 14\n"
+                "                color: Appearance.colors.colOnLayer1\n\n"
+                "                SequentialAnimation on x {\n"
+                "                    running: !root.expanded && itemText.overflow > 2 && root.visible\n"
+                "                    loops: Animation.Infinite\n"
+                "                    PauseAnimation { duration: 900 }\n"
+                "                    NumberAnimation {\n"
+                "                        from: 0\n"
+                "                        to: -itemText.overflow\n"
+                "                        duration: Math.max(800, Math.round(itemText.overflow * 35))\n"
+                "                        easing.type: Easing.InOutSine\n"
+                "                    }\n"
+                "                    PauseAnimation { duration: 900 }\n"
+                "                    NumberAnimation {\n"
+                "                        from: -itemText.overflow\n"
+                "                        to: 0\n"
+                "                        duration: Math.max(800, Math.round(itemText.overflow * 35))\n"
+                "                        easing.type: Easing.InOutSine\n"
+                "                    }\n"
+                "                }\n"
+                "            }\n"
+                "        }",
+            ),
         ],
     )
 
@@ -2433,6 +2535,22 @@ def main() -> int:
                 "        }\n\n"
                 "        Repeater {\n"
                 "            model: (barConfigPage.hasMultipleMonitors && Config.options.bar.workspaces.splitByMonitor)",
+            ),
+        ],
+    )
+
+    ok &= patch_file(
+        ii / "services/Wallpapers.qml",
+        [
+            (
+                '"mp4", "webm"',
+                '    readonly property list<string> extensions: [ // TODO: add videos\n'
+                '        "jpg", "jpeg", "png", "webp", "avif", "bmp", "svg"\n'
+                '    ]',
+                '    readonly property list<string> extensions: [\n'
+                '        "jpg", "jpeg", "png", "webp", "avif", "bmp", "svg",\n'
+                '        "gif", "mp4", "webm", "mkv", "avi", "mov"\n'
+                '    ]',
             ),
         ],
     )
