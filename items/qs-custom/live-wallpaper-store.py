@@ -30,11 +30,11 @@ def list_wallpapers(page: int = 1, query: str = "") -> list[dict]:
     html = fetch_html(url)
 
     # Match thumbnail URLs: /i/c/<size>/media/<id>/<slug>.<res>.jpg
-    pattern = re.compile(r'/i/c/\d+x\d+/media/(\d+)/([a-z0-9-]+)\.\d+x\d+\.jpg')
+    pattern = re.compile(r'/i/c/\d+x\d+/media/(\d+)/([a-z0-9-]+)\.(\d+x\d+)\.jpg')
     seen: set[str] = set()
     items: list[dict] = []
     for m in pattern.finditer(html):
-        wid, slug = m.group(1), m.group(2)
+        wid, slug, res = m.group(1), m.group(2), m.group(3)
         if wid in seen:
             continue
         seen.add(wid)
@@ -42,8 +42,9 @@ def list_wallpapers(page: int = 1, query: str = "") -> list[dict]:
         items.append({
             "id": wid,
             "slug": slug,
+            "res": res,
             "title": title,
-            "thumb": f"https://motionbgs.com/i/c/546x308/media/{wid}/{slug}.3840x2160.jpg",
+            "thumb": f"https://motionbgs.com/i/c/546x308/media/{wid}/{slug}.{res}.jpg",
             "previewMp4": f"https://motionbgs.com/media/{wid}/{slug}.960x540.mp4",
         })
     return items

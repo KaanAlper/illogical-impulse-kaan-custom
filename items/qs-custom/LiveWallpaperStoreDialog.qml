@@ -213,7 +213,7 @@ Popup {
             Layout.fillWidth: true
             spacing: 6
             Repeater {
-                model: ["", "__history__", "anime", "cyberpunk", "sci-fi", "fantasy", "nature", "abstract", "space", "gaming", "cars", "pixel", "minimalist", "dark"]
+                model: ["", "__history__", "anime", "cyberpunk", "sci-fi", "fantasy", "nature", "abstract", "space", "gaming", "car", "pixel", "minimalist", "dark"]
                 delegate: Rectangle {
                     required property string modelData
                     readonly property bool activeChip: modelData === "__history__"
@@ -309,10 +309,11 @@ Popup {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
                                 readonly property bool isPreviewing: storePopup.previewingId === modelData.id
+                                readonly property bool previewReady: isPreviewing && (cardVidLoader.item?.ready ?? false)
 
                                 Image {
                                     anchors.fill: parent
-                                    visible: !parent.isPreviewing
+                                    visible: !parent.previewReady
                                     source: modelData.thumb
                                     fillMode: Image.PreserveAspectCrop
                                     asynchronous: true
@@ -327,11 +328,15 @@ Popup {
                                 }
 
                                 Loader {
+                                    id: cardVidLoader
                                     anchors.fill: parent
                                     active: parent.isPreviewing && storePopup.visible
-                                    visible: active
+                                    visible: parent.previewReady
                                     sourceComponent: Item {
                                         anchors.fill: parent
+                                        readonly property bool ready: cardPrevPlayer.hasVideo
+                                            && cardPrevPlayer.mediaStatus !== MediaPlayer.LoadingMedia
+                                            && cardPrevPlayer.mediaStatus !== MediaPlayer.NoMedia
                                         MediaPlayer {
                                             id: cardPrevPlayer
                                             source: modelData.previewMp4
@@ -348,17 +353,41 @@ Popup {
                                     }
                                 }
 
+                                // Loading spinner over thumbnail while preview video buffers
+                                Rectangle {
+                                    anchors.fill: parent
+                                    visible: parent.isPreviewing && !parent.previewReady
+                                    radius: Appearance.rounding.small
+                                    color: Qt.rgba(0, 0, 0, 0.38)
+                                    CircularProgress {
+                                        anchors.centerIn: parent
+                                        implicitSize: 32
+                                        lineWidth: 3
+                                        value: 0.72
+                                        enableAnimation: false
+                                        colPrimary: Appearance.colors.colPrimary
+                                        colSecondary: Qt.rgba(1, 1, 1, 0.2)
+                                        RotationAnimator on rotation {
+                                            running: parent.visible
+                                            from: 0; to: 360
+                                            duration: 850
+                                            loops: Animation.Infinite
+                                        }
+                                    }
+                                }
+
                                 Rectangle {
                                     anchors.top: parent.top
                                     anchors.left: parent.left
                                     anchors.margins: 6
                                     radius: Appearance.rounding.full
-                                    color: Qt.rgba(0, 0, 0, 0.65)
-                                    implicitWidth: 46
+                                    color: Qt.rgba(0, 0, 0, 0.68)
+                                    implicitWidth: resBadgeTxt.implicitWidth + 14
                                     implicitHeight: 20
                                     StyledText {
+                                        id: resBadgeTxt
                                         anchors.centerIn: parent
-                                        text: modelData.localPath ? "LOCAL" : "MP4"
+                                        text: modelData.res ? modelData.res.replace("x", "×") : (modelData.localPath ? "LOCAL" : "MP4")
                                         color: "#ffffff"
                                         font.pixelSize: 10
                                         font.weight: Font.Medium
@@ -404,14 +433,18 @@ Popup {
                                 }
                                 Rectangle {
                                     readonly property bool isBusy: storePopup.downloadingId === modelData.id
-                                    Layout.preferredWidth: applyTxt.implicitWidth + 24
+                                    implicitWidth: Math.max(66, applyTxt.implicitWidth + 24)
+                                    implicitHeight: 28
+                                    Layout.minimumWidth: implicitWidth
+                                    Layout.preferredWidth: implicitWidth
                                     Layout.preferredHeight: 28
-                                    radius: Appearance.rounding.full
+                                    radius: 14
                                     color: storePopup.downloadingId === "" ? Appearance.colors.colPrimary : Appearance.colors.colLayer1
                                     opacity: (storePopup.downloadingId === "" || isBusy) ? 1.0 : 0.55
 
                                     StyledText {
                                         id: applyTxt
+                                        z: 2
                                         anchors.centerIn: parent
                                         text: isBusy ? Translation.tr("Downloading...") : Translation.tr("Apply")
                                         color: Appearance.m3colors.m3onPrimary
