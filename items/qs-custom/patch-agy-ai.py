@@ -3113,6 +3113,11 @@ def main() -> int:
                 "    pkill -f -9 mpvpaper || true",
                 "    pkill -x mpvpaper || true  # exact name: -f would also kill ffmpeg/editors whose argv merely mentions mpvpaper",
             ),
+            (
+                "# native live wallpaper: no mpvpaper restore script",
+                '                create_restore_script "$video_path"\n',
+                '                remove_restore  # native live wallpaper: no mpvpaper restore script (execs.lua would start a 2nd player)\n',
+            ),
         ],
     )
 
