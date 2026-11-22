@@ -2185,7 +2185,15 @@ def main() -> int:
                 "                property bool perMonitor: false\n"
                 "                property var monitors: ({})\n"
                 "                property string selectedMonitor: \"\"\n"
-                "                property list<string> monitorOrder: []\n",
+                "                property list<string> monitorOrder: []\n"
+                "                property JsonObject live: JsonObject {\n"
+                "                    property real speed: 1.0\n"
+                "                    property bool muted: true\n"
+                "                    property real volume: 0.3\n"
+                "                    property string fillMode: \"crop\"\n"
+                "                    property bool pauseOnFullscreen: true\n"
+                "                    property bool loop: true\n"
+                "                }\n",
             ),
         ],
     )
@@ -2249,8 +2257,8 @@ def main() -> int:
             ),
             (
                 "import QtMultimedia",
-                "import QtQuick\n",
-                "import QtQuick\nimport QtMultimedia\n",
+                "import QtQuick\nimport QtQuick.Layouts",
+                "import QtQuick\nimport QtMultimedia\nimport QtQuick.Layouts",
             ),
             (
                 "previewIsVideo",
@@ -2389,6 +2397,30 @@ def main() -> int:
     )
 
     ok &= patch_file(
+        ii / "settings.qml",
+        [
+            (
+                "WallpaperConfig.qml",
+                '        {\n'
+                '            name: Translation.tr("Background"),\n'
+                '            icon: "texture",\n'
+                '            component: "modules/settings/BackgroundConfig.qml"\n'
+                '        },',
+                '        {\n'
+                '            name: Translation.tr("Background"),\n'
+                '            icon: "texture",\n'
+                '            component: "modules/settings/BackgroundConfig.qml"\n'
+                '        },\n'
+                '        {\n'
+                '            name: Translation.tr("Wallpaper"),\n'
+                '            icon: "wallpaper",\n'
+                '            component: "modules/settings/WallpaperConfig.qml"\n'
+                '        },',
+            ),
+        ],
+    )
+
+    ok &= patch_file(
         ii / "modules/settings/BarConfig.qml",
         [
             (
@@ -2457,8 +2489,8 @@ def main() -> int:
         [
             (
                 "import QtMultimedia",
-                "import QtQuick\n",
-                "import QtQuick\nimport QtMultimedia\n",
+                "import QtQuick\nimport QtQuick.Layouts",
+                "import QtQuick\nimport QtMultimedia\nimport QtQuick.Layouts",
             ),
             (
                 "readonly property string rawWallpaperPath:",
@@ -2492,22 +2524,28 @@ def main() -> int:
                 "                    MediaPlayer {\n"
                 "                        id: bgVideoPlayer\n"
                 "                        source: \"file://\" + bgRoot.rawWallpaperPath.replace(/^file:\\/\\//, \"\")\n"
-                "                        loops: MediaPlayer.Infinite\n"
-                "                        audioOutput: AudioOutput { muted: true }\n"
+                "                        loops: Config.options.background.live.loop ? MediaPlayer.Infinite : 1\n"
+                "                        playbackRate: Config.options.background.live.speed\n"
+                "                        audioOutput: AudioOutput {\n"
+                "                            muted: Config.options.background.live.muted\n"
+                "                            volume: Config.options.background.live.volume\n"
+                "                        }\n"
                 "                        videoOutput: bgVideoOut\n"
                 "                        Component.onCompleted: if (bgRoot.visible) play()\n"
-                "                        Connections {\n"
-                "                            target: bgRoot\n"
-                "                            function onVisibleChanged() {\n"
-                "                                if (bgRoot.visible) bgVideoPlayer.play();\n"
-                "                                else bgVideoPlayer.pause();\n"
-                "                            }\n"
+                "                    }\n"
+                "                    Connections {\n"
+                "                        target: bgRoot\n"
+                "                        function onVisibleChanged() {\n"
+                "                            if (bgRoot.visible) bgVideoPlayer.play();\n"
+                "                            else if (Config.options.background.live.pauseOnFullscreen) bgVideoPlayer.pause();\n"
                 "                        }\n"
                 "                    }\n"
                 "                    VideoOutput {\n"
                 "                        id: bgVideoOut\n"
                 "                        anchors.fill: parent\n"
-                "                        fillMode: VideoOutput.PreserveAspectCrop\n"
+                "                        fillMode: Config.options.background.live.fillMode === \"fit\" ? VideoOutput.PreserveAspectFit\n"
+                "                                : Config.options.background.live.fillMode === \"stretch\" ? VideoOutput.Stretch\n"
+                "                                : VideoOutput.PreserveAspectCrop\n"
                 "                    }\n"
                 "                }\n"
                 "            }\n\n"

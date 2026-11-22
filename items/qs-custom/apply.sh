@@ -77,6 +77,7 @@ if has_feat "screensaver"; then
     cp "$CUSTOM_DIR/ScreensaverConfig.qml" "$II/modules/settings/ScreensaverConfig.qml"
 fi
 cp "$CUSTOM_DIR/MonitorOrderPills.qml" "$II/modules/common/widgets/MonitorOrderPills.qml"
+cp "$CUSTOM_DIR/WallpaperConfig.qml" "$II/modules/settings/WallpaperConfig.qml"
 rm -f "$II/modules/settings/MonitorOrderPills.qml"
 if has_feat "icon-cache"; then
     mkdir -p "$HOME/.local/share/icons/hicolor/128x128/apps"
