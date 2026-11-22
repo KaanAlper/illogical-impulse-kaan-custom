@@ -311,7 +311,6 @@ ContentPage {
             value: Config.options.background.live.speed
             from: 0.25
             to: 2.5
-            stepSize: 0.05
             usePercentTooltip: false
             onValueChanged: {
                 const rounded = Math.round(value * 20) / 20;
@@ -360,7 +359,6 @@ ContentPage {
             value: Config.options.background.live.volume
             from: 0.0
             to: 1.0
-            stepSize: 0.05
             onValueChanged: {
                 const rounded = Math.round(value * 20) / 20;
                 if (Math.abs(Config.options.background.live.volume - rounded) >= 0.02) {
