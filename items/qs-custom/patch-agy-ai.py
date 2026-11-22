@@ -2219,7 +2219,7 @@ def main() -> int:
                 "source: quickPage.previewWallpaperPath",
             ),
             (
-                "Config.options.background.perMonitor",
+                'text: Translation.tr("Separate per monitor")',
                 "        ConfigSelectionArray {\n"
                 "            currentValue: Config.options.appearance.palette.type",
                 "        ConfigSwitch {\n"
