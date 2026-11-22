@@ -95,16 +95,36 @@ def list_history() -> list[dict]:
                     seen.add(rp)
                     files.append(p)
     files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
-    thumb_dir = Path.home() / ".cache/quickshell/user/generated/mpvpaper_thumbnails"
+    thumb_dir = Path.home() / ".config/hypr/custom/scripts/mpvpaper_thumbnails"
+    thumb_dir.mkdir(parents=True, exist_ok=True)
     out: list[dict] = []
     for p in files[:40]:
         stem = p.stem
         title = re.sub(r"-\d+$", "", stem).replace("-", " ").replace("_", " ").title()
         cand_thumb = thumb_dir / f"{p.name}.jpg"
+        if not cand_thumb.exists() and p.suffix.lower() != ".gif":
+            subprocess.run(
+                ["ffmpeg", "-y", "-i", str(p), "-vframes", "1", "-vf", "scale=546:-1", str(cand_thumb)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
         thumb = ("file://" + str(cand_thumb)) if cand_thumb.exists() else ("file://" + str(p) if p.suffix.lower() == ".gif" else "")
+        res = ""
+        try:
+            r_out = subprocess.check_output(
+                ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=s=x:p=0", str(p)],
+                stderr=subprocess.DEVNULL,
+                text=True,
+                timeout=1.5,
+            ).strip()
+            if "x" in r_out:
+                res = r_out.splitlines()[0]
+        except Exception:
+            pass
         out.append({
             "id": str(p),
             "slug": stem,
+            "res": res,
             "title": title,
             "thumb": thumb,
             "previewMp4": "file://" + str(p),

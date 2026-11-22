@@ -432,6 +432,7 @@ Popup {
                                     font.pixelSize: Appearance.font.pixelSize.smaller
                                 }
                                 Rectangle {
+                                    id: applyBtn
                                     readonly property bool isBusy: storePopup.downloadingId === modelData.id
                                     implicitWidth: Math.max(66, applyTxt.implicitWidth + 24)
                                     implicitHeight: 28
@@ -440,13 +441,13 @@ Popup {
                                     Layout.preferredHeight: 28
                                     radius: 14
                                     color: storePopup.downloadingId === "" ? Appearance.colors.colPrimary : Appearance.colors.colLayer1
-                                    opacity: (storePopup.downloadingId === "" || isBusy) ? 1.0 : 0.55
+                                    opacity: (storePopup.downloadingId === "" || applyBtn.isBusy) ? 1.0 : 0.55
 
                                     StyledText {
                                         id: applyTxt
                                         z: 2
                                         anchors.centerIn: parent
-                                        text: isBusy ? Translation.tr("Downloading...") : Translation.tr("Apply")
+                                        text: applyBtn.isBusy ? Translation.tr("Downloading...") : Translation.tr("Apply")
                                         color: Appearance.m3colors.m3onPrimary
                                         font.pixelSize: 12
                                         font.weight: Font.Medium
