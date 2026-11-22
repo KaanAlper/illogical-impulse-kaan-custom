@@ -1,4 +1,5 @@
 import QtQuick
+import QtMultimedia
 import QtQuick.Controls
 import QtQuick.Layouts
 import Qt5Compat.GraphicalEffects
@@ -15,18 +16,22 @@ Popup {
     property var items: []
     property bool loading: false
     property string downloadingId: ""
+    property string previewingId: ""
     property int currentPage: 1
     property string searchQuery: ""
+    property bool historyMode: false
 
     modal: true
     focus: true
     closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
     anchors.centerIn: Overlay.overlay
-    width: Math.min(820, (Overlay.overlay?.width ?? 900) - 48)
-    height: Math.min(640, (Overlay.overlay?.height ?? 700) - 48)
+    width: Math.min(860, (Overlay.overlay?.width ?? 940) - 40)
+    height: Math.min(680, (Overlay.overlay?.height ?? 740) - 40)
     padding: 0
 
     function loadStore(page, query) {
+        storePopup.historyMode = false;
+        storePopup.previewingId = "";
         storePopup.loading = true;
         storePopup.currentPage = page;
         storePopup.searchQuery = query;
@@ -40,6 +45,22 @@ Popup {
         listProc.running = false;
         listProc.running = true;
     }
+
+    function loadHistory() {
+        storePopup.historyMode = true;
+        storePopup.previewingId = "";
+        storePopup.loading = true;
+        storePopup.searchQuery = "__history__";
+        listProc.command = [
+            "python3",
+            Quickshell.shellPath("scripts/colors/live-wallpaper-store.py"),
+            "history"
+        ];
+        listProc.running = false;
+        listProc.running = true;
+    }
+
+    onClosed: storePopup.previewingId = ""
 
     onOpened: {
         if (items.length === 0) {
@@ -184,24 +205,38 @@ Popup {
             Layout.fillWidth: true
             spacing: 6
             Repeater {
-                model: ["", "anime", "cyberpunk", "nature", "abstract", "space", "gaming"]
-                delegate: RippleButton {
+                model: ["", "__history__", "anime", "cyberpunk", "sci-fi", "fantasy", "nature", "abstract", "space", "gaming", "cars", "pixel", "minimalist", "dark"]
+                delegate: Rectangle {
                     required property string modelData
-                    readonly property bool activeChip: storePopup.searchQuery.toLowerCase() === modelData
+                    readonly property bool activeChip: modelData === "__history__"
+                        ? storePopup.historyMode
+                        : (!storePopup.historyMode && storePopup.searchQuery.toLowerCase() === modelData)
                     implicitWidth: chipTxt.implicitWidth + 20
-                    implicitHeight: 30
-                    buttonRadius: Appearance.rounding.full
-                    colBackground: activeChip ? Appearance.colors.colPrimary : Appearance.colors.colLayer2
-                    onClicked: {
-                        searchField.text = modelData;
-                        storePopup.loadStore(1, modelData);
-                    }
-                    contentItem: StyledText {
+                    implicitHeight: 28
+                    radius: Appearance.rounding.full
+                    color: activeChip ? Appearance.colors.colPrimary : Appearance.colors.colLayer2
+
+                    StyledText {
                         id: chipTxt
                         anchors.centerIn: parent
-                        text: modelData === "" ? Translation.tr("Featured") : modelData.charAt(0).toUpperCase() + modelData.slice(1)
+                        text: modelData === "" ? Translation.tr("Featured")
+                            : modelData === "__history__" ? Translation.tr("History")
+                            : modelData.charAt(0).toUpperCase() + modelData.slice(1)
                         color: activeChip ? Appearance.m3colors.m3onPrimary : Appearance.m3colors.m3onSurface
                         font.pixelSize: Appearance.font.pixelSize.smaller
+                    }
+
+                    MouseArea {
+                        anchors.fill: parent
+                        cursorShape: Qt.PointingHandCursor
+                        onClicked: {
+                            if (modelData === "__history__") {
+                                storePopup.loadHistory();
+                            } else {
+                                searchField.text = modelData;
+                                storePopup.loadStore(1, modelData);
+                            }
+                        }
                     }
                 }
             }
@@ -265,9 +300,11 @@ Popup {
                             Item {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
+                                readonly property bool isPreviewing: storePopup.previewingId === modelData.id
 
                                 Image {
                                     anchors.fill: parent
+                                    visible: !parent.isPreviewing
                                     source: modelData.thumb
                                     fillMode: Image.PreserveAspectCrop
                                     asynchronous: true
@@ -277,6 +314,28 @@ Popup {
                                             width: storeGrid.cellWidth - 28
                                             height: storeGrid.cellHeight - 62
                                             radius: Appearance.rounding.small
+                                        }
+                                    }
+                                }
+
+                                Loader {
+                                    anchors.fill: parent
+                                    active: parent.isPreviewing && storePopup.visible
+                                    visible: active
+                                    sourceComponent: Item {
+                                        anchors.fill: parent
+                                        MediaPlayer {
+                                            id: cardPrevPlayer
+                                            source: modelData.previewMp4
+                                            loops: MediaPlayer.Infinite
+                                            audioOutput: AudioOutput { muted: true }
+                                            videoOutput: cardPrevOut
+                                            Component.onCompleted: play()
+                                        }
+                                        VideoOutput {
+                                            id: cardPrevOut
+                                            anchors.fill: parent
+                                            fillMode: VideoOutput.PreserveAspectCrop
                                         }
                                     }
                                 }
@@ -291,10 +350,36 @@ Popup {
                                     implicitHeight: 20
                                     StyledText {
                                         anchors.centerIn: parent
-                                        text: "MP4"
+                                        text: modelData.localPath ? "LOCAL" : "MP4"
                                         color: "#ffffff"
                                         font.pixelSize: 10
                                         font.weight: Font.Medium
+                                    }
+                                }
+
+                                // Top-right preview play/stop button
+                                Rectangle {
+                                    anchors.top: parent.top
+                                    anchors.right: parent.right
+                                    anchors.margins: 6
+                                    width: 28
+                                    height: 28
+                                    radius: 14
+                                    color: parent.isPreviewing ? Appearance.colors.colPrimary : Qt.rgba(0, 0, 0, 0.68)
+
+                                    MaterialSymbol {
+                                        anchors.centerIn: parent
+                                        text: parent.parent.isPreviewing ? "stop" : "play_arrow"
+                                        iconSize: 18
+                                        color: parent.parent.isPreviewing ? Appearance.m3colors.m3onPrimary : "#ffffff"
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        cursorShape: Qt.PointingHandCursor
+                                        onClicked: {
+                                            storePopup.previewingId = (storePopup.previewingId === modelData.id) ? "" : modelData.id;
+                                        }
                                     }
                                 }
                             }
@@ -309,36 +394,51 @@ Popup {
                                     color: Appearance.m3colors.m3onSurface
                                     font.pixelSize: Appearance.font.pixelSize.smaller
                                 }
-                                RippleButton {
+                                Rectangle {
                                     readonly property bool isBusy: storePopup.downloadingId === modelData.id
-                                    enabled: storePopup.downloadingId === ""
-                                    Layout.preferredWidth: Math.max(68, applyTxt.implicitWidth + 22)
+                                    Layout.preferredWidth: applyTxt.implicitWidth + 24
                                     Layout.preferredHeight: 28
-                                    implicitWidth: Layout.preferredWidth
-                                    implicitHeight: 28
-                                    buttonRadius: Appearance.rounding.full
-                                    colBackground: Appearance.colors.colPrimary
-                                    onClicked: {
-                                        storePopup.downloadingId = modelData.id;
-                                        const mon = storePopup.targetMonitor;
-                                        downloadProc.command = [
-                                            "python3",
-                                            Quickshell.shellPath("scripts/colors/live-wallpaper-store.py"),
-                                            "download",
-                                            modelData.id,
-                                            modelData.slug,
-                                            mon
-                                        ];
-                                        downloadProc.running = false;
-                                        downloadProc.running = true;
-                                    }
-                                    contentItem: StyledText {
+                                    radius: Appearance.rounding.full
+                                    color: storePopup.downloadingId === "" ? Appearance.colors.colPrimary : Appearance.colors.colLayer1
+                                    opacity: (storePopup.downloadingId === "" || isBusy) ? 1.0 : 0.55
+
+                                    StyledText {
                                         id: applyTxt
                                         anchors.centerIn: parent
                                         text: isBusy ? Translation.tr("Downloading...") : Translation.tr("Apply")
                                         color: Appearance.m3colors.m3onPrimary
-                                        font.pixelSize: 11
+                                        font.pixelSize: 12
                                         font.weight: Font.Medium
+                                    }
+
+                                    MouseArea {
+                                        anchors.fill: parent
+                                        enabled: storePopup.downloadingId === ""
+                                        cursorShape: enabled ? Qt.PointingHandCursor : Qt.ArrowCursor
+                                        onClicked: {
+                                            storePopup.downloadingId = modelData.id;
+                                            const mon = storePopup.targetMonitor;
+                                            if (modelData.localPath) {
+                                                downloadProc.command = [
+                                                    "python3",
+                                                    Quickshell.shellPath("scripts/colors/live-wallpaper-store.py"),
+                                                    "apply-local",
+                                                    modelData.localPath,
+                                                    mon
+                                                ];
+                                            } else {
+                                                downloadProc.command = [
+                                                    "python3",
+                                                    Quickshell.shellPath("scripts/colors/live-wallpaper-store.py"),
+                                                    "download",
+                                                    modelData.id,
+                                                    modelData.slug,
+                                                    mon
+                                                ];
+                                            }
+                                            downloadProc.running = false;
+                                            downloadProc.running = true;
+                                        }
                                     }
                                 }
                             }
@@ -350,6 +450,7 @@ Popup {
 
         // Pagination
         RowLayout {
+            visible: !storePopup.historyMode
             Layout.fillWidth: true
             Item { Layout.fillWidth: true }
             RippleButton {

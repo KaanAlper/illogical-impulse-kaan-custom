@@ -80,6 +80,38 @@ def download_and_apply(wid: str, slug: str, monitor: str = "") -> int:
     return 0
 
 
+def list_history() -> list[dict]:
+    dirs = [LIVE_DIR, Path.home() / "Pictures/Wallpapers"]
+    seen: set[str] = set()
+    files: list[Path] = []
+    for d in dirs:
+        if not d.is_dir():
+            continue
+        for ext in ("*.mp4", "*.webm", "*.mkv", "*.avi", "*.mov", "*.gif"):
+            for p in d.glob(ext):
+                rp = str(p.resolve())
+                if rp not in seen:
+                    seen.add(rp)
+                    files.append(p)
+    files.sort(key=lambda p: p.stat().st_mtime, reverse=True)
+    thumb_dir = Path.home() / ".cache/quickshell/user/generated/mpvpaper_thumbnails"
+    out: list[dict] = []
+    for p in files[:40]:
+        stem = p.stem
+        title = re.sub(r"-\d+$", "", stem).replace("-", " ").replace("_", " ").title()
+        cand_thumb = thumb_dir / f"{p.name}.jpg"
+        thumb = ("file://" + str(cand_thumb)) if cand_thumb.exists() else ("file://" + str(p) if p.suffix.lower() == ".gif" else "")
+        out.append({
+            "id": str(p),
+            "slug": stem,
+            "title": title,
+            "thumb": thumb,
+            "previewMp4": "file://" + str(p),
+            "localPath": str(p),
+        })
+    return out
+
+
 def main() -> int:
     if len(sys.argv) < 2 or sys.argv[1] == "list":
         page = int(sys.argv[2]) if len(sys.argv) >= 3 else 1
@@ -91,6 +123,17 @@ def main() -> int:
             sys.stderr.write(f"ERR: {e}\n")
             print("[]")
             return 1
+    if sys.argv[1] == "history":
+        print(json.dumps(list_history(), ensure_ascii=False))
+        return 0
+    if sys.argv[1] == "apply-local" and len(sys.argv) >= 3:
+        path = sys.argv[2]
+        mon = sys.argv[3] if len(sys.argv) >= 4 else ""
+        cmd = ["bash", str(SWITCHWALL), "--image", path]
+        if mon:
+            cmd += ["--monitor", mon]
+        subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        return 0
     if sys.argv[1] == "download" and len(sys.argv) >= 4:
         mon = sys.argv[4] if len(sys.argv) >= 5 else ""
         return download_and_apply(sys.argv[2], sys.argv[3], mon)
