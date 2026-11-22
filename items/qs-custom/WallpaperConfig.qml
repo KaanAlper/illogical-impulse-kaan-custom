@@ -82,8 +82,8 @@ ContentPage {
 
             Item {
                 id: wpPreviewBox
-                implicitWidth: 380
-                implicitHeight: 214
+                implicitWidth: 340
+                implicitHeight: 192
 
                 NumberAnimation on opacity {
                     id: wpFadeAnim
@@ -225,7 +225,7 @@ ContentPage {
                     Layout.fillWidth: true
                     buttonRadius: Appearance.rounding.small
                     materialIcon: "storefront"
-                    mainText: Translation.tr("Live Wallpaper Store")
+                    mainText: Translation.tr("Live Store")
                     onClicked: liveStoreDialog.open()
                 }
 
