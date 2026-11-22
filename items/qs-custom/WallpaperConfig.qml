@@ -157,6 +157,14 @@ ContentPage {
                                 audioOutput: AudioOutput { muted: true }
                                 videoOutput: wpVidOut
                                 Component.onCompleted: if (!wallpaperPage.previewPaused) play()
+                                onSourceChanged: {
+                                    stop();
+                                    if (!wallpaperPage.previewPaused) play();
+                                }
+                                onMediaStatusChanged: {
+                                    if (mediaStatus === MediaPlayer.LoadedMedia && !wallpaperPage.previewPaused && playbackState !== MediaPlayer.PlayingState)
+                                        play();
+                                }
                             }
                             Connections {
                                 target: wallpaperPage
@@ -264,50 +272,6 @@ ContentPage {
                     materialIcon: wallpaperPage.previewPaused ? "play_arrow" : "pause"
                     mainText: wallpaperPage.previewPaused ? Translation.tr("Resume preview") : Translation.tr("Pause preview")
                     onClicked: wallpaperPage.previewPaused = !wallpaperPage.previewPaused
-                }
-
-                // Media metadata summary (file, duration, resolution)
-                Rectangle {
-                    Layout.fillWidth: true
-                    radius: Appearance.rounding.small
-                    color: Appearance.colors.colLayer2
-                    implicitHeight: metaCol.implicitHeight + 14
-
-                    ColumnLayout {
-                        id: metaCol
-                        anchors.fill: parent
-                        anchors.margins: 7
-                        spacing: 3
-
-                        StyledText {
-                            Layout.fillWidth: true
-                            elide: Text.ElideMiddle
-                            text: wallpaperPage.fileName !== "" ? wallpaperPage.fileName : Translation.tr("None")
-                            color: Appearance.m3colors.m3onSurface
-                            font.pixelSize: Appearance.font.pixelSize.smaller
-                            font.weight: Font.Medium
-                        }
-
-                        StyledText {
-                            Layout.fillWidth: true
-                            color: Appearance.colors.colSubtext
-                            font.pixelSize: Appearance.font.pixelSize.smaller
-                            text: {
-                                if (wallpaperPage.isVideo && videoPreviewLoader.item) {
-                                    const p = videoPreviewLoader.item.player;
-                                    const dur = wallpaperPage.formatMs(p.duration);
-                                    const pos = wallpaperPage.formatMs(p.position);
-                                    const res = p.metaData.value(MediaMetaData.Resolution);
-                                    const resTxt = (res && res.width > 0) ? ` · ${res.width}×${res.height}` : "";
-                                    return `${Translation.tr("Duration")}: ${pos} / ${dur}${resTxt}`;
-                                }
-                                if (wallpaperPage.isGif) {
-                                    return `GIF · ${gifPreview.sourceSize.width}×${gifPreview.sourceSize.height} (${gifPreview.frameCount} frames)`;
-                                }
-                                return `${Translation.tr("Resolution")}: ${staticPreview.sourceSize.width}×${staticPreview.sourceSize.height}`;
-                            }
-                        }
-                    }
                 }
             }
         }

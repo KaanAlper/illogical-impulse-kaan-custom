@@ -355,6 +355,7 @@ Popup {
 
                                 // Loading spinner over thumbnail while preview video buffers
                                 Rectangle {
+                                    id: previewLoadingOverlay
                                     anchors.fill: parent
                                     visible: parent.isPreviewing && !parent.previewReady
                                     radius: Appearance.rounding.small
@@ -368,7 +369,7 @@ Popup {
                                         colPrimary: Appearance.colors.colPrimary
                                         colSecondary: Qt.rgba(1, 1, 1, 0.2)
                                         RotationAnimator on rotation {
-                                            running: parent.visible
+                                            running: previewLoadingOverlay.visible
                                             from: 0; to: 360
                                             duration: 850
                                             loops: Animation.Infinite

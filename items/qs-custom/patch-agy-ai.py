@@ -2649,6 +2649,18 @@ def main() -> int:
                 "        property string wallpaperPath: wallpaperIsVideo ? rawThumbnailPath : rawWallpaperPath",
             ),
             (
+                "if (!bgRoot.wallpaperPath || bgRoot.wallpaperPath === \"\") return;",
+                "        function updateZoomScale() {\n"
+                "            getWallpaperSizeProc.path = bgRoot.wallpaperPath;\n"
+                "            getWallpaperSizeProc.running = true;\n"
+                "        }",
+                "        function updateZoomScale() {\n"
+                "            if (!bgRoot.wallpaperPath || bgRoot.wallpaperPath === \"\") return;\n"
+                "            getWallpaperSizeProc.path = bgRoot.wallpaperPath;\n"
+                "            getWallpaperSizeProc.running = true;\n"
+                "        }",
+            ),
+            (
                 "liveVideoLoader",
                 "            // Wallpaper\n"
                 "            StyledImage {\n"
@@ -2674,6 +2686,15 @@ def main() -> int:
                 "                        }\n"
                 "                        videoOutput: bgVideoOut\n"
                 "                        Component.onCompleted: if (bgRoot.visible) play()\n"
+                "                        onSourceChanged: {\n"
+                "                            stop();\n"
+                "                            if (bgRoot.visible) play();\n"
+                "                        }\n"
+                "                        onMediaStatusChanged: {\n"
+                "                            if (mediaStatus === MediaPlayer.LoadedMedia && bgRoot.visible && playbackState !== MediaPlayer.PlayingState)\n"
+                "                                play();\n"
+                "                        }\n"
+                "                        onErrorOccurred: (error, errorString) => console.warn(\"[Background] MediaPlayer error:\", error, errorString)\n"
                 "                    }\n"
                 "                    Connections {\n"
                 "                        target: bgRoot\n"
