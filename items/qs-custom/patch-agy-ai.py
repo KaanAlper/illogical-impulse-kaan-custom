@@ -2248,41 +2248,115 @@ def main() -> int:
                 "                    }",
             ),
             (
-                "previewFadeAnim",
+                "import QtMultimedia",
+                "import QtQuick\n",
+                "import QtQuick\nimport QtMultimedia\n",
+            ),
+            (
+                "previewIsVideo",
                 "            Item {\n"
+                "                id: previewFadeWrapper\n"
                 "                implicitWidth: 340\n"
-                "                implicitHeight: 200\n"
-                "                \n"
-                "                StyledImage {\n"
-                "                    id: wallpaperPreview\n"
-                "                    anchors.fill: parent\n"
-                "                    fillMode: Image.PreserveAspectCrop\n"
-                "                    source: quickPage.previewWallpaperPath\n"
-                "                    cache: false",
+                "                implicitHeight: 200",
                 "            Item {\n"
                 "                id: previewFadeWrapper\n"
                 "                implicitWidth: 340\n"
                 "                implicitHeight: 200\n"
-                "                NumberAnimation on opacity {\n"
-                "                    id: previewFadeAnim\n"
-                "                    from: 0.25\n"
-                "                    to: 1\n"
-                "                    duration: 180\n"
-                "                    easing.type: Easing.OutCubic\n"
-                "                    running: false\n"
-                "                }\n"
-                "                Connections {\n"
-                "                    target: quickPage\n"
-                "                    function onPreviewWallpaperPathChanged() {\n"
-                "                        previewFadeAnim.restart();\n"
-                "                    }\n"
-                "                }\n"
+                "                readonly property bool previewIsVideo: /\\.(mp4|webm|mkv|avi|mov)$/i.test(quickPage.previewWallpaperPath)\n"
+                "                readonly property bool previewIsGif: /\\.gif$/i.test(quickPage.previewWallpaperPath)",
+            ),
+            (
+                "livePreviewVideoLoader",
                 "                StyledImage {\n"
                 "                    id: wallpaperPreview\n"
                 "                    anchors.fill: parent\n"
                 "                    fillMode: Image.PreserveAspectCrop\n"
                 "                    source: quickPage.previewWallpaperPath\n"
-                "                    cache: true",
+                "                    cache: true\n"
+                "                    layer.enabled: true\n"
+                "                    layer.effect: OpacityMask {\n"
+                "                        maskSource: Rectangle {\n"
+                "                            width: 360\n"
+                "                            height: 200\n"
+                "                            radius: Appearance.rounding.normal\n"
+                "                        }\n"
+                "                    }\n"
+                "                }",
+                "                Item {\n"
+                "                    anchors.fill: parent\n"
+                "                    layer.enabled: true\n"
+                "                    layer.effect: OpacityMask {\n"
+                "                        maskSource: Rectangle {\n"
+                "                            width: 340\n"
+                "                            height: 200\n"
+                "                            radius: Appearance.rounding.normal\n"
+                "                        }\n"
+                "                    }\n"
+                "                    StyledImage {\n"
+                "                        id: wallpaperPreview\n"
+                "                        anchors.fill: parent\n"
+                "                        visible: !previewFadeWrapper.previewIsVideo && !previewFadeWrapper.previewIsGif\n"
+                "                        fillMode: Image.PreserveAspectCrop\n"
+                "                        source: visible ? quickPage.previewWallpaperPath : \"\"\n"
+                "                        cache: true\n"
+                "                    }\n"
+                "                    AnimatedImage {\n"
+                "                        anchors.fill: parent\n"
+                "                        visible: previewFadeWrapper.previewIsGif\n"
+                "                        source: visible ? (\"file://\" + quickPage.previewWallpaperPath.replace(/^file:\\/\\//, \"\")) : \"\"\n"
+                "                        fillMode: Image.PreserveAspectCrop\n"
+                "                        playing: visible && quickPage.visible\n"
+                "                        asynchronous: true\n"
+                "                    }\n"
+                "                    Loader {\n"
+                "                        id: livePreviewVideoLoader\n"
+                "                        anchors.fill: parent\n"
+                "                        active: previewFadeWrapper.previewIsVideo && quickPage.visible && quickPage.previewWallpaperPath !== \"\"\n"
+                "                        visible: active\n"
+                "                        sourceComponent: Item {\n"
+                "                            anchors.fill: parent\n"
+                "                            MediaPlayer {\n"
+                "                                id: previewVidPlayer\n"
+                "                                source: \"file://\" + quickPage.previewWallpaperPath.replace(/^file:\\/\\//, \"\")\n"
+                "                                loops: MediaPlayer.Infinite\n"
+                "                                audioOutput: AudioOutput { muted: true }\n"
+                "                                videoOutput: previewVidOut\n"
+                "                                Component.onCompleted: play()\n"
+                "                            }\n"
+                "                            VideoOutput {\n"
+                "                                id: previewVidOut\n"
+                "                                anchors.fill: parent\n"
+                "                                fillMode: VideoOutput.PreserveAspectCrop\n"
+                "                            }\n"
+                "                        }\n"
+                "                    }\n"
+                "                    Rectangle {\n"
+                "                        visible: previewFadeWrapper.previewIsVideo || previewFadeWrapper.previewIsGif\n"
+                "                        anchors.top: parent.top\n"
+                "                        anchors.left: parent.left\n"
+                "                        anchors.margins: 8\n"
+                "                        radius: Appearance.rounding.full\n"
+                "                        color: Qt.rgba(0, 0, 0, 0.65)\n"
+                "                        implicitWidth: liveBadgeRow.implicitWidth + 14\n"
+                "                        implicitHeight: 24\n"
+                "                        RowLayout {\n"
+                "                            id: liveBadgeRow\n"
+                "                            anchors.centerIn: parent\n"
+                "                            spacing: 4\n"
+                "                            MaterialSymbol {\n"
+                "                                text: \"play_circle\"\n"
+                "                                iconSize: 14\n"
+                "                                color: \"#ffffff\"\n"
+                "                            }\n"
+                "                            StyledText {\n"
+                "                                text: previewFadeWrapper.previewIsGif ? \"GIF\" : \"LIVE\"\n"
+                "                                color: \"#ffffff\"\n"
+                "                                font.pixelSize: 11\n"
+                "                                font.weight: Font.Medium\n"
+                "                            }\n"
+                "                        }\n"
+                "                    }\n"
+                "                }",
             ),
             (
                 "quickPage.previewWallpaperPath",
@@ -2382,6 +2456,11 @@ def main() -> int:
         ii / "modules/ii/background/Background.qml",
         [
             (
+                "import QtMultimedia",
+                "import QtQuick\n",
+                "import QtQuick\nimport QtMultimedia\n",
+            ),
+            (
                 "readonly property string rawWallpaperPath:",
                 "        // Wallpaper\n"
                 "        property bool wallpaperIsVideo: Config.options.background.wallpaperPath.endsWith(\".mp4\") || Config.options.background.wallpaperPath.endsWith(\".webm\") || Config.options.background.wallpaperPath.endsWith(\".mkv\") || Config.options.background.wallpaperPath.endsWith(\".avi\") || Config.options.background.wallpaperPath.endsWith(\".mov\")\n"
@@ -2391,8 +2470,61 @@ def main() -> int:
                 "        readonly property var monitorCfg: (Config.options.background.perMonitor && monitorName !== \"\") ? (Config.options.background.monitors?.[monitorName] ?? null) : null\n"
                 "        readonly property string rawWallpaperPath: (monitorCfg?.wallpaperPath && monitorCfg.wallpaperPath !== \"\") ? monitorCfg.wallpaperPath : Config.options.background.wallpaperPath\n"
                 "        readonly property string rawThumbnailPath: (monitorCfg?.thumbnailPath && monitorCfg.thumbnailPath !== \"\") ? monitorCfg.thumbnailPath : Config.options.background.thumbnailPath\n"
-                "        property bool wallpaperIsVideo: rawWallpaperPath.endsWith(\".mp4\") || rawWallpaperPath.endsWith(\".webm\") || rawWallpaperPath.endsWith(\".mkv\") || rawWallpaperPath.endsWith(\".avi\") || rawWallpaperPath.endsWith(\".mov\")\n"
+                "        readonly property bool wallpaperIsGif: rawWallpaperPath.toLowerCase().endsWith(\".gif\")\n"
+                "        property bool wallpaperIsVideo: /\\.(mp4|webm|mkv|avi|mov)$/i.test(rawWallpaperPath)\n"
                 "        property string wallpaperPath: wallpaperIsVideo ? rawThumbnailPath : rawWallpaperPath",
+            ),
+            (
+                "liveVideoLoader",
+                "            // Wallpaper\n"
+                "            StyledImage {\n"
+                "                id: wallpaper\n"
+                "                visible: opacity > 0 && !blurLoader.active\n"
+                "                opacity: (status === Image.Ready && !bgRoot.wallpaperIsVideo) ? 1 : 0",
+                "            // Native Live Wallpaper (Video & GIF)\n"
+                "            Loader {\n"
+                "                id: liveVideoLoader\n"
+                "                anchors.fill: parent\n"
+                "                active: bgRoot.wallpaperIsVideo && !bgRoot.wallpaperSafetyTriggered && bgRoot.rawWallpaperPath !== \"\"\n"
+                "                visible: active && !blurLoader.active\n"
+                "                sourceComponent: Item {\n"
+                "                    anchors.fill: parent\n"
+                "                    MediaPlayer {\n"
+                "                        id: bgVideoPlayer\n"
+                "                        source: \"file://\" + bgRoot.rawWallpaperPath.replace(/^file:\\/\\//, \"\")\n"
+                "                        loops: MediaPlayer.Infinite\n"
+                "                        audioOutput: AudioOutput { muted: true }\n"
+                "                        videoOutput: bgVideoOut\n"
+                "                        Component.onCompleted: if (bgRoot.visible) play()\n"
+                "                        Connections {\n"
+                "                            target: bgRoot\n"
+                "                            function onVisibleChanged() {\n"
+                "                                if (bgRoot.visible) bgVideoPlayer.play();\n"
+                "                                else bgVideoPlayer.pause();\n"
+                "                            }\n"
+                "                        }\n"
+                "                    }\n"
+                "                    VideoOutput {\n"
+                "                        id: bgVideoOut\n"
+                "                        anchors.fill: parent\n"
+                "                        fillMode: VideoOutput.PreserveAspectCrop\n"
+                "                    }\n"
+                "                }\n"
+                "            }\n\n"
+                "            AnimatedImage {\n"
+                "                id: liveGifWallpaper\n"
+                "                anchors.fill: parent\n"
+                "                visible: bgRoot.wallpaperIsGif && !bgRoot.wallpaperSafetyTriggered && !blurLoader.active\n"
+                "                source: visible ? (\"file://\" + bgRoot.rawWallpaperPath.replace(/^file:\\/\\//, \"\")) : \"\"\n"
+                "                fillMode: Image.PreserveAspectCrop\n"
+                "                playing: visible && bgRoot.visible\n"
+                "                asynchronous: true\n"
+                "            }\n\n"
+                "            // Wallpaper\n"
+                "            StyledImage {\n"
+                "                id: wallpaper\n"
+                "                visible: opacity > 0 && !blurLoader.active\n"
+                "                opacity: (status === Image.Ready && !bgRoot.wallpaperIsVideo && !bgRoot.wallpaperIsGif) ? 1 : 0",
             ),
         ],
     )
@@ -2552,6 +2684,49 @@ def main() -> int:
                 "imgpath=$(jq -r '.background.wallpaperPath'",
                 "                imgpath=$(jq -r 'if (.background.perMonitor // false) and ((.background.selectedMonitor // \"\") != \"\") then (.background.monitors[.background.selectedMonitor].wallpaperPath // .background.wallpaperPath) else .background.wallpaperPath end' \"$SHELL_CONFIG_FILE\" 2>/dev/null || echo \"\")",
                 "                imgpath=$(jq -r '.background.wallpaperPath' \"$SHELL_CONFIG_FILE\" 2>/dev/null || echo \"\")",
+            ),
+            (
+                "native live video wallpaper (no mpvpaper)",
+                "            missing_deps=()\n"
+                "            if ! command -v mpvpaper &> /dev/null; then\n"
+                "                missing_deps+=(\"mpvpaper\")\n"
+                "            fi\n"
+                "            if ! command -v ffmpeg &> /dev/null; then\n"
+                "                missing_deps+=(\"ffmpeg\")\n"
+                "            fi\n"
+                "            if [ ${#missing_deps[@]} -gt 0 ]; then\n"
+                "                echo \"Missing deps: ${missing_deps[*]}\"\n"
+                "                echo \"Arch: sudo pacman -S ${missing_deps[*]}\"\n"
+                "                action=$(notify-send \\\n"
+                "                    -a \"Wallpaper switcher\" \\\n"
+                "                    -c \"im.error\" \\\n"
+                "                    -A \"install_arch=Install (Arch)\" \\\n"
+                "                    \"Can't switch to video wallpaper\" \\\n"
+                "                    \"Missing dependencies: ${missing_deps[*]}\")\n"
+                "                if [[ \"$action\" == \"install_arch\" ]]; then\n"
+                "                    kitty -1 sudo pacman -S \"${missing_deps[*]}\"\n"
+                "                    if command -v mpvpaper &>/dev/null && command -v ffmpeg &>/dev/null; then\n"
+                "                        notify-send 'Wallpaper switcher' 'Alright, try again!' -a \"Wallpaper switcher\"\n"
+                "                    fi\n"
+                "                fi\n"
+                "                exit 0\n"
+                "            fi\n\n"
+                "            # Set wallpaper path\n"
+                "            set_wallpaper_path \"$imgpath\"\n\n"
+                "            # Set video wallpaper\n"
+                "            local video_path=\"$imgpath\"\n"
+                "            monitors=$(hyprctl monitors -j | jq -r '.[] | .name')\n"
+                "            for monitor in $monitors; do\n"
+                "                mpvpaper -o \"$VIDEO_OPTS\" \"$monitor\" \"$video_path\" &\n"
+                "                sleep 0.1\n"
+                "            done",
+                "            # native live video wallpaper (no mpvpaper)\n"
+                "            if ! command -v ffmpeg &> /dev/null; then\n"
+                "                notify-send -a \"Wallpaper switcher\" -c \"im.error\" \"Can't switch to video wallpaper\" \"Missing dependency: ffmpeg\"\n"
+                "                exit 0\n"
+                "            fi\n\n"
+                "            # Set wallpaper path (Quickshell Background.qml plays video natively via QtMultimedia)\n"
+                "            set_wallpaper_path \"$imgpath\"",
             ),
             (
                 "skip secondary matugen",
