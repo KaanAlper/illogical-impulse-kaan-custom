@@ -21,12 +21,14 @@
         "fetch-agy-commands.py",
         "fetch-agy-models.py",
         "fetch-cli-meta.py",
+        "live-wallpaper-store.py",
         "parallel-fetch-image.py",
         "patch-agy-ai.py",
         "patch-everything.py",
         "patch-lock-howdy.py",
         "pw-app-ancestry.py",
-        "sleep-inhibit-toggle.sh"
+        "sleep-inhibit-toggle.sh",
+        "startup-apps.py"
       ],
       "check": [
         {

@@ -50,27 +50,68 @@ def list_wallpapers(page: int = 1, query: str = "") -> list[dict]:
     return items
 
 
+def is_valid_video(path: Path) -> bool:
+    """True when ffprobe can read a video stream from the file (rejects truncated/HTML downloads)."""
+    try:
+        out = subprocess.check_output(
+            ["ffprobe", "-v", "error", "-select_streams", "v:0", "-show_entries", "stream=codec_name", "-of", "csv=p=0", str(path)],
+            stderr=subprocess.DEVNULL, text=True, timeout=10,
+        ).strip()
+        return bool(out)
+    except Exception:
+        return False
+
+
+def download_file(url: str, dest: Path) -> bool:
+    """Stream url to dest atomically (via .part + rename). Returns True on a valid video."""
+    part = dest.with_name(dest.name + ".part")
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": UA})
+        with urllib.request.urlopen(req, timeout=20) as resp, open(part, "wb") as fh:
+            head = resp.read(512)
+            if b"<html" in head.lower() or not head:
+                return False
+            fh.write(head)
+            while True:
+                chunk = resp.read(1 << 16)
+                if not chunk:
+                    break
+                fh.write(chunk)
+            expected = int(resp.headers.get("Content-Length") or 0)
+        # Reject truncated transfers (ffprobe alone accepts a cut-off mp4 with an intact header)
+        if expected and part.stat().st_size < expected:
+            return False
+        if part.stat().st_size > 10000 and is_valid_video(part):
+            os.replace(part, dest)
+            return True
+        return False
+    except Exception:
+        return False
+    finally:
+        try:
+            part.unlink()
+        except FileNotFoundError:
+            pass
+
+
 def download_and_apply(wid: str, slug: str, monitor: str = "") -> int:
     LIVE_DIR.mkdir(parents=True, exist_ok=True)
     safe_slug = re.sub(r"[^A-Za-z0-9._-]", "_", slug) or wid
     out_path = LIVE_DIR / f"{safe_slug}-{wid}.mp4"
 
-    if not out_path.exists() or out_path.stat().st_size < 10000:
+    # A previous (pre-atomic) download may have left a truncated file behind
+    if out_path.exists() and not is_valid_video(out_path):
+        out_path.unlink()
+
+    if not out_path.exists():
         for url in (
             f"https://motionbgs.com/dl/hd/{wid}",
             f"https://motionbgs.com/media/{wid}/{slug}.960x540.mp4",
         ):
-            try:
-                req = urllib.request.Request(url, headers={"User-Agent": UA})
-                with urllib.request.urlopen(req, timeout=45) as resp:
-                    data = resp.read()
-                if len(data) > 10000 and b"<html" not in data[:256].lower():
-                    out_path.write_bytes(data)
-                    break
-            except Exception:
-                continue
+            if download_file(url, out_path):
+                break
 
-    if not out_path.exists() or out_path.stat().st_size < 10000:
+    if not out_path.exists():
         return 1
 
     cmd = ["bash", str(SWITCHWALL), "--image", str(out_path)]
@@ -102,12 +143,20 @@ def list_history() -> list[dict]:
         stem = p.stem
         title = re.sub(r"-\d+$", "", stem).replace("-", " ").replace("_", " ").title()
         cand_thumb = thumb_dir / f"{p.name}.jpg"
+        if cand_thumb.exists() and cand_thumb.stat().st_size == 0:
+            cand_thumb.unlink()
         if not cand_thumb.exists() and p.suffix.lower() != ".gif":
-            subprocess.run(
-                ["ffmpeg", "-y", "-i", str(p), "-vframes", "1", "-vf", "scale=546:-1", str(cand_thumb)],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
+            try:
+                subprocess.run(
+                    ["ffmpeg", "-y", "-i", str(p), "-vframes", "1", "-vf", "scale=546:-1", str(cand_thumb)],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                    timeout=15,
+                )
+            except Exception:
+                pass
+            if cand_thumb.exists() and cand_thumb.stat().st_size == 0:
+                cand_thumb.unlink()
         thumb = ("file://" + str(cand_thumb)) if cand_thumb.exists() else ("file://" + str(p) if p.suffix.lower() == ".gif" else "")
         res = ""
         try:

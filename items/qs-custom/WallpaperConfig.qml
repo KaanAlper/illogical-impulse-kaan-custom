@@ -144,31 +144,56 @@ ContentPage {
                     Loader {
                         id: videoPreviewLoader
                         anchors.fill: parent
-                        active: wallpaperPage.isVideo && wallpaperPage.visible && wallpaperPage.activePath !== ""
+                        // Two-phase teardown: stop + detach the player first, destroy the Loader item
+                        // after a short delay so the render thread never samples a deleted video sink.
+                        readonly property bool wanted: wallpaperPage.isVideo && wallpaperPage.visible && wallpaperPage.activePath !== ""
+                        property bool gate: false
+                        active: gate
                         visible: active
+                        Component.onCompleted: gate = wanted
+                        onWantedChanged: {
+                            if (wanted) {
+                                previewGateTimer.stop();
+                                gate = true;
+                                if (item) item.resume();
+                            } else {
+                                if (item) item.shutdown();
+                                previewGateTimer.restart();
+                            }
+                        }
+                        Timer {
+                            id: previewGateTimer
+                            interval: 300
+                            onTriggered: videoPreviewLoader.gate = videoPreviewLoader.wanted
+                        }
                         sourceComponent: Item {
+                            id: previewRoot
                             anchors.fill: parent
-                            property alias player: wpVidPlayer
+                            property bool shut: false
+                            function shutdown() { shut = true; wpVidPlayer.stop(); }
+                            function resume() { shut = false; if (!wallpaperPage.previewPaused) wpVidPlayer.play(); }
                             MediaPlayer {
                                 id: wpVidPlayer
-                                source: "file://" + wallpaperPage.activePath.replace(/^file:\/\//, "")
+                                source: (previewRoot.shut || !wallpaperPage.isVideo) ? "" : "file://" + wallpaperPage.activePath.replace(/^file:\/\//, "")
                                 loops: Config.options.background.live.loop ? MediaPlayer.Infinite : 1
-                                playbackRate: Config.options.background.live.speed
+                                playbackRate: Math.max(0.1, Config.options.background.live.speed)
                                 audioOutput: AudioOutput { muted: true }
-                                videoOutput: wpVidOut
-                                Component.onCompleted: if (!wallpaperPage.previewPaused) play()
+                                videoOutput: previewRoot.shut ? null : wpVidOut
+                                Component.onCompleted: if (!wallpaperPage.previewPaused && !previewRoot.shut && source.toString() !== "") play()
                                 onSourceChanged: {
                                     stop();
-                                    if (!wallpaperPage.previewPaused) play();
+                                    if (!wallpaperPage.previewPaused && !previewRoot.shut && source.toString() !== "") play();
                                 }
                                 onMediaStatusChanged: {
-                                    if (mediaStatus === MediaPlayer.LoadedMedia && !wallpaperPage.previewPaused && playbackState !== MediaPlayer.PlayingState)
+                                    if (mediaStatus === MediaPlayer.LoadedMedia && !wallpaperPage.previewPaused && !previewRoot.shut && playbackState !== MediaPlayer.PlayingState)
                                         play();
                                 }
+                                onErrorOccurred: (error, errorString) => console.warn("[WallpaperConfig] preview MediaPlayer error:", error, errorString)
                             }
                             Connections {
                                 target: wallpaperPage
                                 function onPreviewPausedChanged() {
+                                    if (previewRoot.shut) return;
                                     if (wallpaperPage.previewPaused) wpVidPlayer.pause();
                                     else wpVidPlayer.play();
                                 }

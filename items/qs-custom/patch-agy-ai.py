@@ -18,14 +18,20 @@ def patch_file(path: pathlib.Path, edits: list[tuple[str, str, str]]) -> bool:
         return False
     src = path.read_text(encoding="utf-8")
     changed = False
-    for guard, target, replacement in edits:
+    for edit in edits:
+        guard, target, replacement = edit[:3]
+        optional = len(edit) > 3 and edit[3] == "optional"
         if guard in src:
             continue
+        if target not in src and optional:
+            continue  # alternative path for another base version; a later edit handles it
         if target not in src:
             sys.stderr.write(f"  UYARI: {path.name} icinde hedef bulunamadi ({guard}).\n")
             return False
-        src = src.replace(target, replacement, 1)
-        changed = True
+        new_src = src.replace(target, replacement, 1)
+        if new_src != src:
+            src = new_src
+            changed = True
     if changed:
         path.write_text(src, encoding="utf-8")
         print(f"  {path.name}: Antigravity (agy) yamasi uygulandi")
@@ -249,6 +255,16 @@ def main() -> int:
                     '    function getModel() {\n'
                     '        return models[currentModelId] ?? models["antigravity"] ?? models[modelList[0]];\n'
                     '    }',
+                ),
+                (
+                    "?? {})\n    property var toolDescriptions",
+                    "    property list<var> availableTools: Object.keys(root.tools[models[currentModelId]?.api_format])\n",
+                    "    property list<var> availableTools: Object.keys(root.tools[models[currentModelId]?.api_format] ?? {})\n",
+                ),
+                (
+                    'apiStrategies[models[currentModelId]?.api_format || "openai"] ?? ',
+                    '    property ApiStrategy currentApiStrategy: apiStrategies[models[currentModelId]?.api_format || "openai"]\n',
+                    '    property ApiStrategy currentApiStrategy: apiStrategies[models[currentModelId]?.api_format || "openai"] ?? apiStrategies["openai"]\n',
                 ),
             ],
         )
@@ -1379,12 +1395,23 @@ def main() -> int:
             [
                 (
                     '"dolphin": "org.kde.dolphin"',
+                    '        "footclient": "foot",\n    })',
+                    '        "footclient": "foot",\n'
+                    '        "zen": "zen-browser",\n'
+                    '        "dolphin": "org.kde.dolphin",\n'
+                    '        "artcraft-launcher": "ai.storyteller.artcraft-launcher",\n'
+                    '        "artcraft": "ai.storyteller.artcraft-launcher",\n    })',
+                    "optional",
+                ),
+                (
+                    '"dolphin": "org.kde.dolphin"',
                     '        "footclient": "foot",\n        "zen": "zen-browser",',
                     '        "footclient": "foot",\n'
                     '        "zen": "zen-browser",\n'
                     '        "dolphin": "org.kde.dolphin",\n'
                     '        "artcraft-launcher": "ai.storyteller.artcraft-launcher",\n'
                     '        "artcraft": "ai.storyteller.artcraft-launcher",',
+                    "optional",
                 ),
             ],
         )
@@ -2203,6 +2230,11 @@ def main() -> int:
         ii / "modules/settings/QuickConfig.qml",
         [
             (
+                "previewIsVideo",
+                '            Item {\n                implicitWidth: 340\n                implicitHeight: 200\n                \n                StyledImage {\n                    id: wallpaperPreview\n                    anchors.fill: parent\n                    fillMode: Image.PreserveAspectCrop\n                    source: Config.options.background.wallpaperPath\n                    cache: false\n                    layer.enabled: true\n                    layer.effect: OpacityMask {\n                        maskSource: Rectangle {\n                            width: 360\n                            height: 200\n                            radius: Appearance.rounding.normal\n                        }\n                    }\n                }\n            }\n\n',
+                '            Item {\n                id: previewFadeWrapper\n                implicitWidth: 340\n                implicitHeight: 200\n                readonly property bool previewIsVideo: /\\.(mp4|webm|mkv|avi|mov)$/i.test(quickPage.previewWallpaperPath)\n                readonly property bool previewIsGif: /\\.gif$/i.test(quickPage.previewWallpaperPath)\n                NumberAnimation on opacity {\n                    id: previewFadeAnim\n                    from: 0.25\n                    to: 1\n                    duration: 180\n                    easing.type: Easing.OutCubic\n                    running: false\n                }\n                Connections {\n                    target: quickPage\n                    function onPreviewWallpaperPathChanged() {\n                        previewFadeAnim.restart();\n                    }\n                }\n                Item {\n                    anchors.fill: parent\n                    layer.enabled: true\n                    layer.effect: OpacityMask {\n                        maskSource: Rectangle {\n                            width: 340\n                            height: 200\n                            radius: Appearance.rounding.normal\n                        }\n                    }\n                    StyledImage {\n                        id: wallpaperPreview\n                        anchors.fill: parent\n                        visible: !previewFadeWrapper.previewIsVideo && !previewFadeWrapper.previewIsGif\n                        fillMode: Image.PreserveAspectCrop\n                        source: visible ? quickPage.previewWallpaperPath : ""\n                        cache: true\n                    }\n                    AnimatedImage {\n                        anchors.fill: parent\n                        visible: previewFadeWrapper.previewIsGif\n                        source: visible ? ("file://" + quickPage.previewWallpaperPath.replace(/^file:\\/\\//, "")) : ""\n                        fillMode: Image.PreserveAspectCrop\n                        playing: visible && quickPage.visible\n                        asynchronous: true\n                    }\n                    Loader {\n                        id: livePreviewVideoLoader\n                        anchors.fill: parent\n                        // Two-phase teardown: stop + detach the player first, destroy the item\n                        // after a short delay so the render thread never samples a deleted video sink.\n                        readonly property bool wanted: previewFadeWrapper.previewIsVideo && quickPage.visible && quickPage.previewWallpaperPath !== ""\n                        property bool gate: false\n                        active: gate\n                        visible: active\n                        Component.onCompleted: gate = wanted\n                        onWantedChanged: {\n                            if (wanted) {\n                                quickPreviewGateTimer.stop();\n                                gate = true;\n                                if (item) item.resume();\n                            } else {\n                                if (item) item.shutdown();\n                                quickPreviewGateTimer.restart();\n                            }\n                        }\n                        Timer {\n                            id: quickPreviewGateTimer\n                            interval: 300\n                            onTriggered: livePreviewVideoLoader.gate = livePreviewVideoLoader.wanted\n                        }\n                        sourceComponent: Item {\n                            id: quickPreviewRoot\n                            anchors.fill: parent\n                            property bool shut: false\n                            function shutdown() { shut = true; previewVidPlayer.stop(); }\n                            function resume() { shut = false; previewVidPlayer.play(); }\n                            MediaPlayer {\n                                id: previewVidPlayer\n                                source: (quickPreviewRoot.shut || !previewFadeWrapper.previewIsVideo) ? "" : "file://" + quickPage.previewWallpaperPath.replace(/^file:\\/\\//, "")\n                                loops: MediaPlayer.Infinite\n                                audioOutput: AudioOutput { muted: true }\n                                videoOutput: quickPreviewRoot.shut ? null : previewVidOut\n                                Component.onCompleted: if (!quickPreviewRoot.shut && source.toString() !== "") play()\n                                onSourceChanged: {\n                                    stop();\n                                    if (!quickPreviewRoot.shut && source.toString() !== "") play();\n                                }\n                                onMediaStatusChanged: {\n                                    if (mediaStatus === MediaPlayer.LoadedMedia && !quickPreviewRoot.shut && playbackState !== MediaPlayer.PlayingState)\n                                        play();\n                                }\n                                onErrorOccurred: (error, errorString) => console.warn("[QuickConfig] preview MediaPlayer error:", error, errorString)\n                            }\n                            VideoOutput {\n                                id: previewVidOut\n                                anchors.fill: parent\n                                fillMode: VideoOutput.PreserveAspectCrop\n                            }\n                        }\n                    }\n                    Rectangle {\n                        visible: previewFadeWrapper.previewIsVideo || previewFadeWrapper.previewIsGif\n                        anchors.top: parent.top\n                        anchors.left: parent.left\n                        anchors.margins: 8\n                        radius: Appearance.rounding.full\n                        color: Qt.rgba(0, 0, 0, 0.65)\n                        implicitWidth: liveBadgeRow.implicitWidth + 14\n                        implicitHeight: 24\n                        RowLayout {\n                            id: liveBadgeRow\n                            anchors.centerIn: parent\n                            spacing: 4\n                            MaterialSymbol {\n                                text: "play_circle"\n                                iconSize: 14\n                                color: "#ffffff"\n                            }\n                            StyledText {\n                                text: previewFadeWrapper.previewIsGif ? "GIF" : "LIVE"\n                                color: "#ffffff"\n                                font.pixelSize: 11\n                                font.weight: Font.Medium\n                            }\n                        }\n                    }\n                }\n            }\n\n',
+            ),
+            (
                 "property string selectedWallpaperMonitor:",
                 "ContentPage {\n"
                 "    forceWidth: true",
@@ -2342,17 +2374,50 @@ def main() -> int:
                 "                    Loader {\n"
                 "                        id: livePreviewVideoLoader\n"
                 "                        anchors.fill: parent\n"
-                "                        active: previewFadeWrapper.previewIsVideo && quickPage.visible && quickPage.previewWallpaperPath !== \"\"\n"
+                "                        // Two-phase teardown: stop + detach the player first, destroy the item\n"
+                "                        // after a short delay so the render thread never samples a deleted video sink.\n"
+                "                        readonly property bool wanted: previewFadeWrapper.previewIsVideo && quickPage.visible && quickPage.previewWallpaperPath !== \"\"\n"
+                "                        property bool gate: false\n"
+                "                        active: gate\n"
                 "                        visible: active\n"
+                "                        Component.onCompleted: gate = wanted\n"
+                "                        onWantedChanged: {\n"
+                "                            if (wanted) {\n"
+                "                                quickPreviewGateTimer.stop();\n"
+                "                                gate = true;\n"
+                "                                if (item) item.resume();\n"
+                "                            } else {\n"
+                "                                if (item) item.shutdown();\n"
+                "                                quickPreviewGateTimer.restart();\n"
+                "                            }\n"
+                "                        }\n"
+                "                        Timer {\n"
+                "                            id: quickPreviewGateTimer\n"
+                "                            interval: 300\n"
+                "                            onTriggered: livePreviewVideoLoader.gate = livePreviewVideoLoader.wanted\n"
+                "                        }\n"
                 "                        sourceComponent: Item {\n"
+                "                            id: quickPreviewRoot\n"
                 "                            anchors.fill: parent\n"
+                "                            property bool shut: false\n"
+                "                            function shutdown() { shut = true; previewVidPlayer.stop(); }\n"
+                "                            function resume() { shut = false; previewVidPlayer.play(); }\n"
                 "                            MediaPlayer {\n"
                 "                                id: previewVidPlayer\n"
-                "                                source: \"file://\" + quickPage.previewWallpaperPath.replace(/^file:\\/\\//, \"\")\n"
+                "                                source: (quickPreviewRoot.shut || !previewFadeWrapper.previewIsVideo) ? \"\" : \"file://\" + quickPage.previewWallpaperPath.replace(/^file:\\/\\//, \"\")\n"
                 "                                loops: MediaPlayer.Infinite\n"
                 "                                audioOutput: AudioOutput { muted: true }\n"
-                "                                videoOutput: previewVidOut\n"
-                "                                Component.onCompleted: play()\n"
+                "                                videoOutput: quickPreviewRoot.shut ? null : previewVidOut\n"
+                "                                Component.onCompleted: if (!quickPreviewRoot.shut && source.toString() !== \"\") play()\n"
+                "                                onSourceChanged: {\n"
+                "                                    stop();\n"
+                "                                    if (!quickPreviewRoot.shut && source.toString() !== \"\") play();\n"
+                "                                }\n"
+                "                                onMediaStatusChanged: {\n"
+                "                                    if (mediaStatus === MediaPlayer.LoadedMedia && !quickPreviewRoot.shut && playbackState !== MediaPlayer.PlayingState)\n"
+                "                                        play();\n"
+                "                                }\n"
+                "                                onErrorOccurred: (error, errorString) => console.warn(\"[QuickConfig] preview MediaPlayer error:\", error, errorString)\n"
                 "                            }\n"
                 "                            VideoOutput {\n"
                 "                                id: previewVidOut\n"
@@ -2415,6 +2480,11 @@ def main() -> int:
                 "        }\n\n"
                 "        ConfigSelectionArray {\n"
                 "            currentValue: Config.options.appearance.palette.type",
+            ),
+            (
+                "quickPreviewGateTimer",
+                '                    Loader {\n                        id: livePreviewVideoLoader\n                        anchors.fill: parent\n                        active: previewFadeWrapper.previewIsVideo && quickPage.visible && quickPage.previewWallpaperPath !== ""\n                        visible: active\n                        sourceComponent: Item {\n                            anchors.fill: parent\n                            MediaPlayer {\n                                id: previewVidPlayer\n                                source: "file://" + quickPage.previewWallpaperPath.replace(/^file:\\/\\//, "")\n                                loops: MediaPlayer.Infinite\n                                audioOutput: AudioOutput { muted: true }\n                                videoOutput: previewVidOut\n                                Component.onCompleted: play()\n                            }\n                            VideoOutput {\n                                id: previewVidOut\n                                anchors.fill: parent\n                                fillMode: VideoOutput.PreserveAspectCrop\n                            }\n                        }\n                    }\n',
+                '                    Loader {\n                        id: livePreviewVideoLoader\n                        anchors.fill: parent\n                        // Two-phase teardown: stop + detach the player first, destroy the item\n                        // after a short delay so the render thread never samples a deleted video sink.\n                        readonly property bool wanted: previewFadeWrapper.previewIsVideo && quickPage.visible && quickPage.previewWallpaperPath !== ""\n                        property bool gate: false\n                        active: gate\n                        visible: active\n                        Component.onCompleted: gate = wanted\n                        onWantedChanged: {\n                            if (wanted) {\n                                quickPreviewGateTimer.stop();\n                                gate = true;\n                                if (item) item.resume();\n                            } else {\n                                if (item) item.shutdown();\n                                quickPreviewGateTimer.restart();\n                            }\n                        }\n                        Timer {\n                            id: quickPreviewGateTimer\n                            interval: 300\n                            onTriggered: livePreviewVideoLoader.gate = livePreviewVideoLoader.wanted\n                        }\n                        sourceComponent: Item {\n                            id: quickPreviewRoot\n                            anchors.fill: parent\n                            property bool shut: false\n                            function shutdown() { shut = true; previewVidPlayer.stop(); }\n                            function resume() { shut = false; previewVidPlayer.play(); }\n                            MediaPlayer {\n                                id: previewVidPlayer\n                                source: (quickPreviewRoot.shut || !previewFadeWrapper.previewIsVideo) ? "" : "file://" + quickPage.previewWallpaperPath.replace(/^file:\\/\\//, "")\n                                loops: MediaPlayer.Infinite\n                                audioOutput: AudioOutput { muted: true }\n                                videoOutput: quickPreviewRoot.shut ? null : previewVidOut\n                                Component.onCompleted: if (!quickPreviewRoot.shut && source.toString() !== "") play()\n                                onSourceChanged: {\n                                    stop();\n                                    if (!quickPreviewRoot.shut && source.toString() !== "") play();\n                                }\n                                onMediaStatusChanged: {\n                                    if (mediaStatus === MediaPlayer.LoadedMedia && !quickPreviewRoot.shut && playbackState !== MediaPlayer.PlayingState)\n                                        play();\n                                }\n                                onErrorOccurred: (error, errorString) => console.warn("[QuickConfig] preview MediaPlayer error:", error, errorString)\n                            }\n                            VideoOutput {\n                                id: previewVidOut\n                                anchors.fill: parent\n                                fillMode: VideoOutput.PreserveAspectCrop\n                            }\n                        }\n                    }\n',
             ),
         ],
     )
@@ -2668,30 +2738,55 @@ def main() -> int:
                 "                visible: opacity > 0 && !blurLoader.active\n"
                 "                opacity: (status === Image.Ready && !bgRoot.wallpaperIsVideo) ? 1 : 0",
                 "            // Native Live Wallpaper (Video & GIF)\n"
+                "            // Teardown is two-phase: the player is first stopped and detached from its\n"
+                "            // VideoOutput, and only after a short delay (liveGateTimer) the Loader destroys\n"
+                "            // it, so the render thread never samples a frame sink that is being deleted.\n"
                 "            Loader {\n"
                 "                id: liveVideoLoader\n"
                 "                anchors.fill: parent\n"
-                "                active: bgRoot.wallpaperIsVideo && !bgRoot.wallpaperSafetyTriggered && bgRoot.rawWallpaperPath !== \"\"\n"
+                "                readonly property bool wanted: bgRoot.wallpaperIsVideo && !bgRoot.wallpaperSafetyTriggered && bgRoot.rawWallpaperPath !== \"\"\n"
+                "                property bool gate: false\n"
+                "                active: gate\n"
                 "                visible: active && !blurLoader.active\n"
+                "                Component.onCompleted: gate = wanted\n"
+                "                onWantedChanged: {\n"
+                "                    if (wanted) {\n"
+                "                        liveGateTimer.stop();\n"
+                "                        gate = true;\n"
+                "                        if (item) item.resume();\n"
+                "                    } else {\n"
+                "                        if (item) item.shutdown();\n"
+                "                        liveGateTimer.restart();\n"
+                "                    }\n"
+                "                }\n"
+                "                Timer {\n"
+                "                    id: liveGateTimer\n"
+                "                    interval: 300\n"
+                "                    onTriggered: liveVideoLoader.gate = liveVideoLoader.wanted\n"
+                "                }\n"
                 "                sourceComponent: Item {\n"
+                "                    id: liveRoot\n"
                 "                    anchors.fill: parent\n"
+                "                    property bool shut: false\n"
+                "                    function shutdown() { shut = true; bgVideoPlayer.stop(); }\n"
+                "                    function resume() { shut = false; if (bgRoot.visible) bgVideoPlayer.play(); }\n"
                 "                    MediaPlayer {\n"
                 "                        id: bgVideoPlayer\n"
-                "                        source: \"file://\" + bgRoot.rawWallpaperPath.replace(/^file:\\/\\//, \"\")\n"
+                "                        source: (liveRoot.shut || !bgRoot.wallpaperIsVideo) ? \"\" : \"file://\" + bgRoot.rawWallpaperPath.replace(/^file:\\/\\//, \"\")\n"
                 "                        loops: Config.options.background.live.loop ? MediaPlayer.Infinite : 1\n"
-                "                        playbackRate: Config.options.background.live.speed\n"
+                "                        playbackRate: Math.max(0.1, Config.options.background.live.speed)\n"
                 "                        audioOutput: AudioOutput {\n"
                 "                            muted: Config.options.background.live.muted\n"
                 "                            volume: Config.options.background.live.volume\n"
                 "                        }\n"
-                "                        videoOutput: bgVideoOut\n"
-                "                        Component.onCompleted: if (bgRoot.visible) play()\n"
+                "                        videoOutput: liveRoot.shut ? null : bgVideoOut\n"
+                "                        Component.onCompleted: if (bgRoot.visible && !liveRoot.shut && source.toString() !== \"\") play()\n"
                 "                        onSourceChanged: {\n"
                 "                            stop();\n"
-                "                            if (bgRoot.visible) play();\n"
+                "                            if (bgRoot.visible && !liveRoot.shut && source.toString() !== \"\") play();\n"
                 "                        }\n"
                 "                        onMediaStatusChanged: {\n"
-                "                            if (mediaStatus === MediaPlayer.LoadedMedia && bgRoot.visible && playbackState !== MediaPlayer.PlayingState)\n"
+                "                            if (mediaStatus === MediaPlayer.LoadedMedia && bgRoot.visible && !liveRoot.shut && playbackState !== MediaPlayer.PlayingState)\n"
                 "                                play();\n"
                 "                        }\n"
                 "                        onErrorOccurred: (error, errorString) => console.warn(\"[Background] MediaPlayer error:\", error, errorString)\n"
@@ -2699,6 +2794,7 @@ def main() -> int:
                 "                    Connections {\n"
                 "                        target: bgRoot\n"
                 "                        function onVisibleChanged() {\n"
+                "                            if (liveRoot.shut) return;\n"
                 "                            if (bgRoot.visible) bgVideoPlayer.play();\n"
                 "                            else if (Config.options.background.live.pauseOnFullscreen) bgVideoPlayer.pause();\n"
                 "                        }\n"
@@ -2713,7 +2809,8 @@ def main() -> int:
                 "                                : VideoOutput.PreserveAspectCrop\n"
                 "                    }\n"
                 "                }\n"
-                "            }\n\n"
+                "            }\n"
+                "\n"
                 "            AnimatedImage {\n"
                 "                id: liveGifWallpaper\n"
                 "                anchors.fill: parent\n"
@@ -2729,12 +2826,67 @@ def main() -> int:
                 "                visible: opacity > 0 && !blurLoader.active\n"
                 "                opacity: (status === Image.Ready && !bgRoot.wallpaperIsVideo && !bgRoot.wallpaperIsGif) ? 1 : 0",
             ),
+            (
+                "liveGateTimer",
+                '            // Native Live Wallpaper (Video & GIF)\n            Loader {\n                id: liveVideoLoader\n                anchors.fill: parent\n                active: bgRoot.wallpaperIsVideo && !bgRoot.wallpaperSafetyTriggered && bgRoot.rawWallpaperPath !== ""\n                visible: active && !blurLoader.active\n                sourceComponent: Item {\n                    anchors.fill: parent\n                    MediaPlayer {\n                        id: bgVideoPlayer\n                        source: "file://" + bgRoot.rawWallpaperPath.replace(/^file:\\/\\//, "")\n                        loops: Config.options.background.live.loop ? MediaPlayer.Infinite : 1\n                        playbackRate: Config.options.background.live.speed\n                        audioOutput: AudioOutput {\n                            muted: Config.options.background.live.muted\n                            volume: Config.options.background.live.volume\n                        }\n                        videoOutput: bgVideoOut\n                        Component.onCompleted: if (bgRoot.visible) play()\n                        onSourceChanged: {\n                            stop();\n                            if (bgRoot.visible) play();\n                        }\n                        onMediaStatusChanged: {\n                            if (mediaStatus === MediaPlayer.LoadedMedia && bgRoot.visible && playbackState !== MediaPlayer.PlayingState)\n                                play();\n                        }\n                        onErrorOccurred: (error, errorString) => console.warn("[Background] MediaPlayer error:", error, errorString)\n                    }\n                    Connections {\n                        target: bgRoot\n                        function onVisibleChanged() {\n                            if (bgRoot.visible) bgVideoPlayer.play();\n                            else if (Config.options.background.live.pauseOnFullscreen) bgVideoPlayer.pause();\n                        }\n                    }\n                    VideoOutput {\n                        id: bgVideoOut\n                        width: parent.width\n                        height: parent.height\n                        x: (Config.options.background.live.position - 50) * -2\n                        fillMode: Config.options.background.live.fillMode === "fit" ? VideoOutput.PreserveAspectFit\n                                : Config.options.background.live.fillMode === "stretch" ? VideoOutput.Stretch\n                                : VideoOutput.PreserveAspectCrop\n                    }\n                }\n            }\n\n',
+                '            // Native Live Wallpaper (Video & GIF)\n            // Teardown is two-phase: the player is first stopped and detached from its\n            // VideoOutput, and only after a short delay (liveGateTimer) the Loader destroys\n            // it, so the render thread never samples a frame sink that is being deleted.\n            Loader {\n                id: liveVideoLoader\n                anchors.fill: parent\n                readonly property bool wanted: bgRoot.wallpaperIsVideo && !bgRoot.wallpaperSafetyTriggered && bgRoot.rawWallpaperPath !== ""\n                property bool gate: false\n                active: gate\n                visible: active && !blurLoader.active\n                Component.onCompleted: gate = wanted\n                onWantedChanged: {\n                    if (wanted) {\n                        liveGateTimer.stop();\n                        gate = true;\n                        if (item) item.resume();\n                    } else {\n                        if (item) item.shutdown();\n                        liveGateTimer.restart();\n                    }\n                }\n                Timer {\n                    id: liveGateTimer\n                    interval: 300\n                    onTriggered: liveVideoLoader.gate = liveVideoLoader.wanted\n                }\n                sourceComponent: Item {\n                    id: liveRoot\n                    anchors.fill: parent\n                    property bool shut: false\n                    function shutdown() { shut = true; bgVideoPlayer.stop(); }\n                    function resume() { shut = false; if (bgRoot.visible) bgVideoPlayer.play(); }\n                    MediaPlayer {\n                        id: bgVideoPlayer\n                        source: (liveRoot.shut || !bgRoot.wallpaperIsVideo) ? "" : "file://" + bgRoot.rawWallpaperPath.replace(/^file:\\/\\//, "")\n                        loops: Config.options.background.live.loop ? MediaPlayer.Infinite : 1\n                        playbackRate: Math.max(0.1, Config.options.background.live.speed)\n                        audioOutput: AudioOutput {\n                            muted: Config.options.background.live.muted\n                            volume: Config.options.background.live.volume\n                        }\n                        videoOutput: liveRoot.shut ? null : bgVideoOut\n                        Component.onCompleted: if (bgRoot.visible && !liveRoot.shut && source.toString() !== "") play()\n                        onSourceChanged: {\n                            stop();\n                            if (bgRoot.visible && !liveRoot.shut && source.toString() !== "") play();\n                        }\n                        onMediaStatusChanged: {\n                            if (mediaStatus === MediaPlayer.LoadedMedia && bgRoot.visible && !liveRoot.shut && playbackState !== MediaPlayer.PlayingState)\n                                play();\n                        }\n                        onErrorOccurred: (error, errorString) => console.warn("[Background] MediaPlayer error:", error, errorString)\n                    }\n                    Connections {\n                        target: bgRoot\n                        function onVisibleChanged() {\n                            if (liveRoot.shut) return;\n                            if (bgRoot.visible) bgVideoPlayer.play();\n                            else if (Config.options.background.live.pauseOnFullscreen) bgVideoPlayer.pause();\n                        }\n                    }\n                    VideoOutput {\n                        id: bgVideoOut\n                        width: parent.width\n                        height: parent.height\n                        x: (Config.options.background.live.position - 50) * -2\n                        fillMode: Config.options.background.live.fillMode === "fit" ? VideoOutput.PreserveAspectFit\n                                : Config.options.background.live.fillMode === "stretch" ? VideoOutput.Stretch\n                                : VideoOutput.PreserveAspectCrop\n                    }\n                }\n            }\n\n',
+            ),
         ],
     )
 
     ok &= patch_file(
         ii / "scripts/colors/switchwall.sh",
         [
+            # One-step path: pristine upstream switchwall.sh -> final state (optional; skipped on already
+            # patched / older intermediate installs, which continue with the incremental edits below).
+            (
+                'check_and_prompt_upscale() {\n    local img="$1"\n    local pm sm\n    pm=$(jq -r \'.background.perMonitor // false\' "$SHELL_CONFIG_FILE" 2>/dev/null)\n    sm=$(get_target_monitor)\n    if [[ "$pm" == "true" && -n "$sm" ]]; then\n        min_width_desired="$(hyprctl monitors -j | jq -r --arg m "$sm" \'(.[] | select(.name == $m) | .width) // ([.[].width] | max)\' | xargs)"\n        min_height_desired="$(hyprctl monitors -j | jq -r --arg m "$sm" \'(.[] | select(.name == $m) | .height) // ([.[].height] | max)\' | xargs)"\n    else\n        min_width_desired="$(hyprctl monitors -j | jq \'([.[].width] | max)\' | xargs)" # max monitor width\n        min_height_desired="$(hyprctl monitors -j | jq \'([.[].height] | max)\' | xargs)" # max monitor height\n    fi\n\n    if command -v identify &>/dev/null && [ -f "$img" ]; then\n',
+                'check_and_prompt_upscale() {\n    local img="$1"\n    min_width_desired="$(hyprctl monitors -j | jq \'([.[].width] | max)\' | xargs)" # max monitor width\n    min_height_desired="$(hyprctl monitors -j | jq \'([.[].height] | max)\' | xargs)" # max monitor height\n\n    if command -v identify &>/dev/null && [ -f "$img" ]; then\n',
+                'check_and_prompt_upscale() {\n    local img="$1"\n    local pm sm\n    pm=$(jq -r \'.background.perMonitor // false\' "$SHELL_CONFIG_FILE" 2>/dev/null)\n    sm=$(get_target_monitor)\n    if [[ "$pm" == "true" && -n "$sm" ]]; then\n        min_width_desired="$(hyprctl monitors -j | jq -r --arg m "$sm" \'(.[] | select(.name == $m) | .width) // ([.[].width] | max)\' | xargs)"\n        min_height_desired="$(hyprctl monitors -j | jq -r --arg m "$sm" \'(.[] | select(.name == $m) | .height) // ([.[].height] | max)\' | xargs)"\n    else\n        min_width_desired="$(hyprctl monitors -j | jq \'([.[].width] | max)\' | xargs)" # max monitor width\n        min_height_desired="$(hyprctl monitors -j | jq \'([.[].height] | max)\' | xargs)" # max monitor height\n    fi\n\n    if command -v identify &>/dev/null && [ -f "$img" ]; then\n',
+                "optional",
+            ),
+            (
+                '\nkill_existing_mpvpaper() {\n    pkill -x mpvpaper || true  # exact name: -f would also kill ffmpeg/editors whose argv merely mentions mpvpaper\n}\n\n',
+                '\nkill_existing_mpvpaper() {\n    pkill -f -9 mpvpaper || true\n}\n\n',
+                '\nkill_existing_mpvpaper() {\n    pkill -x mpvpaper || true  # exact name: -f would also kill ffmpeg/editors whose argv merely mentions mpvpaper\n}\n\n',
+                "optional",
+            ),
+            (
+                '}\n\nget_primary_monitor() {\n    local pref\n    pref=$(jq -r \'.bar.workspaces.defaultMonitor // ""\' "$SHELL_CONFIG_FILE" 2>/dev/null || echo "")\n    if [[ -n "$pref" ]] && hyprctl monitors -j 2>/dev/null | jq -e --arg m "$pref" \'any(.[]; .name == $m)\' >/dev/null 2>&1; then\n        echo "$pref"\n        return\n    fi\n    hyprctl monitors -j 2>/dev/null | jq -r \'max_by(.width * .height) | .name // ""\' 2>/dev/null || echo ""\n}\n\nget_target_monitor() {\n    if [[ -n "${monitor_flag:-}" ]]; then\n        echo "$monitor_flag"\n    elif [[ -n "${II_TARGET_MONITOR:-}" ]]; then\n        echo "$II_TARGET_MONITOR"\n    else\n        hyprctl monitors -j 2>/dev/null | jq -r \'(.[] | select(.focused) | .name) // ""\' 2>/dev/null || echo ""\n    fi\n}\n\nwrite_config_preserve_inode() {\n    cat "$SHELL_CONFIG_FILE.tmp" > "$SHELL_CONFIG_FILE" && rm -f "$SHELL_CONFIG_FILE.tmp"\n}\n\nset_wallpaper_path() {\n    local path="$1"\n    if [ -f "$SHELL_CONFIG_FILE" ]; then\n        local per_mon sel_mon primary_mon\n        per_mon=$(jq -r \'.background.perMonitor // false\' "$SHELL_CONFIG_FILE" 2>/dev/null)\n        sel_mon=$(get_target_monitor)\n        primary_mon=$(get_primary_monitor)\n        if [[ "$per_mon" == "true" && -n "$sel_mon" ]]; then\n            if [[ "$sel_mon" == "$primary_mon" || -z "$primary_mon" ]]; then\n                jq --arg mon "$sel_mon" --arg path "$path" \'.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {"wallpaperPath": $path}) | .background.wallpaperPath = $path\' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && write_config_preserve_inode\n            else\n                jq --arg mon "$sel_mon" --arg path "$path" \'.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {"wallpaperPath": $path}) | if (.background.wallpaperPath // "") == "" then .background.wallpaperPath = $path else . end\' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && write_config_preserve_inode\n            fi\n        else\n            jq --arg path "$path" \'.background.wallpaperPath = $path\' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && write_config_preserve_inode\n        fi\n    fi\n}\n',
+                '}\n\nset_wallpaper_path() {\n    local path="$1"\n    if [ -f "$SHELL_CONFIG_FILE" ]; then\n        jq --arg path "$path" \'.background.wallpaperPath = $path\' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && mv "$SHELL_CONFIG_FILE.tmp" "$SHELL_CONFIG_FILE"\n    fi\n}\n',
+                '}\n\nget_primary_monitor() {\n    local pref\n    pref=$(jq -r \'.bar.workspaces.defaultMonitor // ""\' "$SHELL_CONFIG_FILE" 2>/dev/null || echo "")\n    if [[ -n "$pref" ]] && hyprctl monitors -j 2>/dev/null | jq -e --arg m "$pref" \'any(.[]; .name == $m)\' >/dev/null 2>&1; then\n        echo "$pref"\n        return\n    fi\n    hyprctl monitors -j 2>/dev/null | jq -r \'max_by(.width * .height) | .name // ""\' 2>/dev/null || echo ""\n}\n\nget_target_monitor() {\n    if [[ -n "${monitor_flag:-}" ]]; then\n        echo "$monitor_flag"\n    elif [[ -n "${II_TARGET_MONITOR:-}" ]]; then\n        echo "$II_TARGET_MONITOR"\n    else\n        hyprctl monitors -j 2>/dev/null | jq -r \'(.[] | select(.focused) | .name) // ""\' 2>/dev/null || echo ""\n    fi\n}\n\nwrite_config_preserve_inode() {\n    cat "$SHELL_CONFIG_FILE.tmp" > "$SHELL_CONFIG_FILE" && rm -f "$SHELL_CONFIG_FILE.tmp"\n}\n\nset_wallpaper_path() {\n    local path="$1"\n    if [ -f "$SHELL_CONFIG_FILE" ]; then\n        local per_mon sel_mon primary_mon\n        per_mon=$(jq -r \'.background.perMonitor // false\' "$SHELL_CONFIG_FILE" 2>/dev/null)\n        sel_mon=$(get_target_monitor)\n        primary_mon=$(get_primary_monitor)\n        if [[ "$per_mon" == "true" && -n "$sel_mon" ]]; then\n            if [[ "$sel_mon" == "$primary_mon" || -z "$primary_mon" ]]; then\n                jq --arg mon "$sel_mon" --arg path "$path" \'.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {"wallpaperPath": $path}) | .background.wallpaperPath = $path\' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && write_config_preserve_inode\n            else\n                jq --arg mon "$sel_mon" --arg path "$path" \'.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {"wallpaperPath": $path}) | if (.background.wallpaperPath // "") == "" then .background.wallpaperPath = $path else . end\' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && write_config_preserve_inode\n            fi\n        else\n            jq --arg path "$path" \'.background.wallpaperPath = $path\' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && write_config_preserve_inode\n        fi\n    fi\n}\n',
+                "optional",
+            ),
+            (
+                '    local path="$1"\n    if [ -f "$SHELL_CONFIG_FILE" ]; then\n        local per_mon sel_mon primary_mon\n        per_mon=$(jq -r \'.background.perMonitor // false\' "$SHELL_CONFIG_FILE" 2>/dev/null)\n        sel_mon=$(get_target_monitor)\n        primary_mon=$(get_primary_monitor)\n        if [[ "$per_mon" == "true" && -n "$sel_mon" ]]; then\n            if [[ "$sel_mon" == "$primary_mon" || -z "$primary_mon" ]]; then\n                jq --arg mon "$sel_mon" --arg path "$path" \'.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {"thumbnailPath": $path}) | .background.thumbnailPath = $path\' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && write_config_preserve_inode\n            else\n                jq --arg mon "$sel_mon" --arg path "$path" \'.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {"thumbnailPath": $path}) | if (.background.thumbnailPath // "") == "" then .background.thumbnailPath = $path else . end\' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && write_config_preserve_inode\n            fi\n        else\n            jq --arg path "$path" \'.background.thumbnailPath = $path\' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && write_config_preserve_inode\n        fi\n    fi\n}\n',
+                '    local path="$1"\n    if [ -f "$SHELL_CONFIG_FILE" ]; then\n        jq --arg path "$path" \'.background.thumbnailPath = $path\' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && mv "$SHELL_CONFIG_FILE.tmp" "$SHELL_CONFIG_FILE"\n    fi\n}\n',
+                '    local path="$1"\n    if [ -f "$SHELL_CONFIG_FILE" ]; then\n        local per_mon sel_mon primary_mon\n        per_mon=$(jq -r \'.background.perMonitor // false\' "$SHELL_CONFIG_FILE" 2>/dev/null)\n        sel_mon=$(get_target_monitor)\n        primary_mon=$(get_primary_monitor)\n        if [[ "$per_mon" == "true" && -n "$sel_mon" ]]; then\n            if [[ "$sel_mon" == "$primary_mon" || -z "$primary_mon" ]]; then\n                jq --arg mon "$sel_mon" --arg path "$path" \'.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {"thumbnailPath": $path}) | .background.thumbnailPath = $path\' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && write_config_preserve_inode\n            else\n                jq --arg mon "$sel_mon" --arg path "$path" \'.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {"thumbnailPath": $path}) | if (.background.thumbnailPath // "") == "" then .background.thumbnailPath = $path else . end\' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && write_config_preserve_inode\n            fi\n        else\n            jq --arg path "$path" \'.background.thumbnailPath = $path\' "$SHELL_CONFIG_FILE" > "$SHELL_CONFIG_FILE.tmp" && write_config_preserve_inode\n        fi\n    fi\n}\n',
+                "optional",
+            ),
+            (
+                '            mkdir -p "$THUMBNAIL_DIR"\n\n            # native live video wallpaper (no mpvpaper)\n            if ! command -v ffmpeg &> /dev/null; then\n                notify-send -a "Wallpaper switcher" -c "im.error" "Can\'t switch to video wallpaper" "Missing dependency: ffmpeg"\n                exit 0\n            fi\n\n            # Set wallpaper path (Quickshell Background.qml plays video natively via QtMultimedia)\n            set_wallpaper_path "$imgpath"\n\n            # Extract first frame for color generation\n',
+                '            mkdir -p "$THUMBNAIL_DIR"\n\n            missing_deps=()\n            if ! command -v mpvpaper &> /dev/null; then\n                missing_deps+=("mpvpaper")\n            fi\n            if ! command -v ffmpeg &> /dev/null; then\n                missing_deps+=("ffmpeg")\n            fi\n            if [ ${#missing_deps[@]} -gt 0 ]; then\n                echo "Missing deps: ${missing_deps[*]}"\n                echo "Arch: sudo pacman -S ${missing_deps[*]}"\n                action=$(notify-send \\\n                    -a "Wallpaper switcher" \\\n                    -c "im.error" \\\n                    -A "install_arch=Install (Arch)" \\\n                    "Can\'t switch to video wallpaper" \\\n                    "Missing dependencies: ${missing_deps[*]}")\n                if [[ "$action" == "install_arch" ]]; then\n                    kitty -1 sudo pacman -S "${missing_deps[*]}"\n                    if command -v mpvpaper &>/dev/null && command -v ffmpeg &>/dev/null; then\n                        notify-send \'Wallpaper switcher\' \'Alright, try again!\' -a "Wallpaper switcher"\n                    fi\n                fi\n                exit 0\n            fi\n\n            # Set wallpaper path\n            set_wallpaper_path "$imgpath"\n\n            # Set video wallpaper\n            local video_path="$imgpath"\n            monitors=$(hyprctl monitors -j | jq -r \'.[] | .name\')\n            for monitor in $monitors; do\n                mpvpaper -o "$VIDEO_OPTS" "$monitor" "$video_path" &\n                sleep 0.1\n            done\n\n            # Extract first frame for color generation\n',
+                '            mkdir -p "$THUMBNAIL_DIR"\n\n            # native live video wallpaper (no mpvpaper)\n            if ! command -v ffmpeg &> /dev/null; then\n                notify-send -a "Wallpaper switcher" -c "im.error" "Can\'t switch to video wallpaper" "Missing dependency: ffmpeg"\n                exit 0\n            fi\n\n            # Set wallpaper path (Quickshell Background.qml plays video natively via QtMultimedia)\n            set_wallpaper_path "$imgpath"\n\n            # Extract first frame for color generation\n',
+                "optional",
+            ),
+            (
+                '    fi\n\n    if [ -f "$SHELL_CONFIG_FILE" ]; then\n        local pm sm prim\n        pm=$(jq -r \'.background.perMonitor // false\' "$SHELL_CONFIG_FILE" 2>/dev/null)\n        sm=$(get_target_monitor)\n        prim=$(get_primary_monitor)\n        # skip secondary matugen so only primary monitor changes global theme\n        if [[ "$pm" == "true" && -n "$sm" && "$sm" != "$prim" && "$noswitch_flag" != "1" ]]; then\n            return 0\n        fi\n    fi\n\n    matugen "${matugen_args[@]}"\n    source "$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate"\n',
+                '    fi\n\n    matugen "${matugen_args[@]}"\n    source "$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate"\n',
+                '    fi\n\n    if [ -f "$SHELL_CONFIG_FILE" ]; then\n        local pm sm prim\n        pm=$(jq -r \'.background.perMonitor // false\' "$SHELL_CONFIG_FILE" 2>/dev/null)\n        sm=$(get_target_monitor)\n        prim=$(get_primary_monitor)\n        # skip secondary matugen so only primary monitor changes global theme\n        if [[ "$pm" == "true" && -n "$sm" && "$sm" != "$prim" && "$noswitch_flag" != "1" ]]; then\n            return 0\n        fi\n    fi\n\n    matugen "${matugen_args[@]}"\n    source "$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate"\n',
+                "optional",
+            ),
+            (
+                '    color=""\n    noswitch_flag=""\n    monitor_flag=""\n\n    get_type_from_config() {\n',
+                '    color=""\n    noswitch_flag=""\n\n    get_type_from_config() {\n',
+                '    color=""\n    noswitch_flag=""\n    monitor_flag=""\n\n    get_type_from_config() {\n',
+                "optional",
+            ),
+            (
+                '            --image)\n                imgpath="$2"\n                shift 2\n                ;;\n            --monitor)\n                monitor_flag="$2"\n                shift 2\n                ;;\n',
+                '            --image)\n                imgpath="$2"\n                shift 2\n                ;;\n',
+                '            --image)\n                imgpath="$2"\n                shift 2\n                ;;\n            --monitor)\n                monitor_flag="$2"\n                shift 2\n                ;;\n',
+                "optional",
+            ),
             (
                 'select(.name == $m) | .width',
                 "check_and_prompt_upscale() {\n"
@@ -2955,6 +3107,11 @@ def main() -> int:
                 "        > \"$STATE_DIR\"/user/generated/material_colors.scss\n"
                 "    deactivate\n"
                 "    \"$SCRIPT_DIR\"/applycolor.sh",
+            ),
+            (
+                "pkill -x mpvpaper || true",
+                "    pkill -f -9 mpvpaper || true",
+                "    pkill -x mpvpaper || true  # exact name: -f would also kill ffmpeg/editors whose argv merely mentions mpvpaper",
             ),
         ],
     )

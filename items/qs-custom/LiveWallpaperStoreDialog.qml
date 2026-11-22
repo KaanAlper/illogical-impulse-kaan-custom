@@ -74,7 +74,9 @@ Popup {
             onStreamFinished: {
                 storePopup.loading = false;
                 try {
-                    storePopup.items = JSON.parse(text.trim() || "[]");
+                    const parsed = JSON.parse(text.trim() || "[]");
+                    storePopup.previewingId = "";
+                    storePopup.items = Array.isArray(parsed) ? parsed : [];
                 } catch (e) {
                     storePopup.items = [];
                 }
@@ -327,23 +329,58 @@ Popup {
                                     }
                                 }
 
+                                Component.onDestruction: cardVidLoader?.item?.shutdown()
+
                                 Loader {
                                     id: cardVidLoader
                                     anchors.fill: parent
-                                    active: parent.isPreviewing && storePopup.visible
+                                    // Two-phase teardown (see Background.qml): stop + detach the player,
+                                    // then destroy the item after a short delay.
+                                    readonly property bool wanted: parent.isPreviewing && storePopup.visible
+                                    property bool gate: false
+                                    active: gate
                                     visible: parent.previewReady
+                                    onWantedChanged: {
+                                        if (wanted) {
+                                            cardGateTimer.stop();
+                                            gate = true;
+                                            if (item) item.resume();
+                                        } else {
+                                            if (item) item.shutdown();
+                                            cardGateTimer.restart();
+                                        }
+                                    }
+                                    Timer {
+                                        id: cardGateTimer
+                                        interval: 300
+                                        onTriggered: cardVidLoader.gate = cardVidLoader.wanted
+                                    }
                                     sourceComponent: Item {
+                                        id: cardRoot
                                         anchors.fill: parent
-                                        readonly property bool ready: cardPrevPlayer.hasVideo
+                                        property bool shut: false
+                                        function shutdown() { shut = true; cardPrevPlayer.stop(); }
+                                        function resume() { shut = false; cardPrevPlayer.play(); }
+                                        readonly property bool ready: !shut && cardPrevPlayer.hasVideo
                                             && cardPrevPlayer.mediaStatus !== MediaPlayer.LoadingMedia
                                             && cardPrevPlayer.mediaStatus !== MediaPlayer.NoMedia
                                         MediaPlayer {
                                             id: cardPrevPlayer
-                                            source: modelData.previewMp4
+                                            source: cardRoot.shut ? "" : modelData.previewMp4
                                             loops: MediaPlayer.Infinite
                                             audioOutput: AudioOutput { muted: true }
-                                            videoOutput: cardPrevOut
-                                            Component.onCompleted: play()
+                                            videoOutput: cardRoot.shut ? null : cardPrevOut
+                                            Component.onCompleted: if (!cardRoot.shut) play()
+                                            // Network stall / bad stream: drop the preview instead of spinning forever
+                                            onErrorOccurred: (error, errorString) => {
+                                                console.warn("[LiveStore] preview error:", errorString);
+                                                if (storePopup.previewingId === modelData.id) storePopup.previewingId = "";
+                                            }
+                                        }
+                                        Timer {
+                                            running: !cardRoot.shut && !cardRoot.ready
+                                            interval: 15000
+                                            onTriggered: if (storePopup.previewingId === modelData.id) storePopup.previewingId = ""
                                         }
                                         VideoOutput {
                                             id: cardPrevOut
@@ -369,7 +406,7 @@ Popup {
                                         colPrimary: Appearance.colors.colPrimary
                                         colSecondary: Qt.rgba(1, 1, 1, 0.2)
                                         RotationAnimator on rotation {
-                                            running: previewLoadingOverlay.visible
+                                            running: previewLoadingOverlay?.visible ?? false
                                             from: 0; to: 360
                                             duration: 850
                                             loops: Animation.Infinite
