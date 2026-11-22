@@ -121,16 +121,6 @@ if has_feat "ai-sidebar"; then
     cp "$CUSTOM_DIR/AnimeImageViewer.qml" "$II/modules/ii/sidebarLeft/anime/AnimeImageViewer.qml"
 fi
 
-# Per-monitor kitty color theme helper + kitty remote control socket
-if [ -f "$CUSTOM_DIR/per-monitor-kitty-theme.py" ]; then
-    cp "$CUSTOM_DIR/per-monitor-kitty-theme.py" "$II/scripts/colors/per-monitor-kitty-theme.py"
-    chmod +x "$II/scripts/colors/per-monitor-kitty-theme.py"
-fi
-if [ -f "$HOME/.config/kitty/kitty.conf" ]; then
-    grep -q '^allow_remote_control ' "$HOME/.config/kitty/kitty.conf" || printf '\nallow_remote_control yes\n' >> "$HOME/.config/kitty/kitty.conf"
-    grep -q '^listen_on ' "$HOME/.config/kitty/kitty.conf" || printf 'listen_on unix:/tmp/kitty-{kitty_pid}\n' >> "$HOME/.config/kitty/kitty.conf"
-fi
-
 # 2) Idempotently insert each widget into BarContent.qml (right section, before SysTray).
 #    Order ends up: ... SleepInhibitToggle, AudioMonoToggle, AudioOutputSwitcher, AppVolumeMixer, SysTray ...
 python3 - "$BAR/BarContent.qml" <<'PY'

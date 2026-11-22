@@ -2199,18 +2199,6 @@ def main() -> int:
                 "ContentPage {\n"
                 "    id: quickPage\n"
                 "    forceWidth: true\n\n"
-                "    Timer {\n"
-                "        id: wallThemeSyncTimer\n"
-                "        interval: 180\n"
-                "        repeat: false\n"
-                "        onTriggered: {\n"
-                "            if (Config.options.background.perMonitor) {\n"
-                "                Quickshell.execDetached([\"python3\", Quickshell.shellPath(\"scripts/colors/per-monitor-kitty-theme.py\"), \"sync-all\"]);\n"
-                "            } else {\n"
-                "                Quickshell.execDetached([\"bash\", \"-c\", `${Directories.wallpaperSwitchScriptPath} --noswitch && python3 \"${FileUtils.trimFileProtocol(Quickshell.shellPath('scripts/colors/per-monitor-kitty-theme.py'))}\" apply`]);\n"
-                "            }\n"
-                "        }\n"
-                "    }\n\n"
                 "    property string selectedWallpaperMonitor: Quickshell.screens.length > 0 ? Quickshell.screens[0].name : \"\"\n\n"
                 "    readonly property string previewWallpaperPath: {\n"
                 "        if (Config.options.background.perMonitor && quickPage.selectedWallpaperMonitor !== \"\") {\n"
@@ -2291,10 +2279,6 @@ def main() -> int:
                 "            onCheckedChanged: {\n"
                 "                if (Config.options.background.perMonitor !== checked) {\n"
                 "                    Config.options.background.perMonitor = checked;\n"
-                "                    if (checked && (Config.options.background.selectedMonitor ?? \"\") === \"\" && quickPage.selectedWallpaperMonitor !== \"\") {\n"
-                "                        Config.options.background.selectedMonitor = quickPage.selectedWallpaperMonitor;\n"
-                "                    }\n"
-                "                    wallThemeSyncTimer.restart();\n"
                 "                }\n"
                 "            }\n"
                 "        }\n\n"
@@ -2551,7 +2535,7 @@ def main() -> int:
                 "                imgpath=$(jq -r '.background.wallpaperPath' \"$SHELL_CONFIG_FILE\" 2>/dev/null || echo \"\")",
             ),
             (
-                "per-monitor-kitty-theme.py",
+                "skip secondary matugen",
                 "    matugen \"${matugen_args[@]}\"\n"
                 "    source \"$(eval echo $ILLOGICAL_IMPULSE_VIRTUAL_ENV)/bin/activate\"\n"
                 "    python3 \"$SCRIPT_DIR/generate_colors_material.py\" \"${generate_colors_material_args[@]}\" \\\n"
@@ -2561,10 +2545,10 @@ def main() -> int:
                 "    if [ -f \"$SHELL_CONFIG_FILE\" ]; then\n"
                 "        local pm sm prim\n"
                 "        pm=$(jq -r '.background.perMonitor // false' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
-                "        sm=$(jq -r '.background.selectedMonitor // \"\"' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
+                "        sm=$(get_target_monitor)\n"
                 "        prim=$(get_primary_monitor)\n"
-                "        if [[ \"$pm\" == \"true\" && -n \"$sm\" && \"$sm\" != \"$prim\" && \"$noswitch_flag\" != \"1\" && -n \"$imgpath\" ]]; then\n"
-                "            python3 \"$SCRIPT_DIR/per-monitor-kitty-theme.py\" gen \"$sm\" \"$imgpath\" >/dev/null 2>&1 || true\n"
+                "        # skip secondary matugen so only primary monitor changes global theme\n"
+                "        if [[ \"$pm\" == \"true\" && -n \"$sm\" && \"$sm\" != \"$prim\" && \"$noswitch_flag\" != \"1\" ]]; then\n"
                 "            return 0\n"
                 "        fi\n"
                 "    fi\n\n"
@@ -2573,8 +2557,7 @@ def main() -> int:
                 "    python3 \"$SCRIPT_DIR/generate_colors_material.py\" \"${generate_colors_material_args[@]}\" \\\n"
                 "        > \"$STATE_DIR\"/user/generated/material_colors.scss\n"
                 "    deactivate\n"
-                "    \"$SCRIPT_DIR\"/applycolor.sh\n"
-                "    python3 \"$SCRIPT_DIR/per-monitor-kitty-theme.py\" sync-all >/dev/null 2>&1 || true",
+                "    \"$SCRIPT_DIR\"/applycolor.sh",
             ),
         ],
     )
