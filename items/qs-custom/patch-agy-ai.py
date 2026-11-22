@@ -2191,6 +2191,7 @@ def main() -> int:
                 "                    property bool muted: true\n"
                 "                    property real volume: 0.3\n"
                 "                    property string fillMode: \"crop\"\n"
+                "                    property int position: 50\n"
                 "                    property bool pauseOnFullscreen: true\n"
                 "                    property bool loop: true\n"
                 "                }\n",
@@ -2661,7 +2662,9 @@ def main() -> int:
                 "                    }\n"
                 "                    VideoOutput {\n"
                 "                        id: bgVideoOut\n"
-                "                        anchors.fill: parent\n"
+                "                        width: parent.width\n"
+                "                        height: parent.height\n"
+                "                        x: (Config.options.background.live.position - 50) * -2\n"
                 "                        fillMode: Config.options.background.live.fillMode === \"fit\" ? VideoOutput.PreserveAspectFit\n"
                 "                                : Config.options.background.live.fillMode === \"stretch\" ? VideoOutput.Stretch\n"
                 "                                : VideoOutput.PreserveAspectCrop\n"

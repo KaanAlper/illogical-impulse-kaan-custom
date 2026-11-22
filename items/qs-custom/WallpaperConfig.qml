@@ -307,7 +307,7 @@ ContentPage {
 
         ConfigSlider {
             buttonIcon: "speed"
-            text: `${Translation.tr("Playback speed")}: ${Config.options.background.live.speed.toFixed(2)}x`
+            text: `${Translation.tr("Speed")}: ${Config.options.background.live.speed.toFixed(2)}x`
             value: Config.options.background.live.speed
             from: 0.25
             to: 2.5
@@ -316,6 +316,21 @@ ContentPage {
                 const rounded = Math.round(value * 20) / 20;
                 if (Math.abs(Config.options.background.live.speed - rounded) >= 0.02) {
                     Config.options.background.live.speed = rounded;
+                }
+            }
+        }
+
+        ConfigSlider {
+            buttonIcon: "swap_horiz"
+            text: `${Translation.tr("Position")}: ${Config.options.background.live.position}`
+            value: Config.options.background.live.position
+            from: 0
+            to: 100
+            usePercentTooltip: false
+            onValueChanged: {
+                const rounded = Math.round(value);
+                if (Config.options.background.live.position !== rounded) {
+                    Config.options.background.live.position = rounded;
                 }
             }
         }
