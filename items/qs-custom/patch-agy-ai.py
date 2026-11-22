@@ -2345,27 +2345,6 @@ def main() -> int:
     )
 
     ok &= patch_file(
-        ii / "modules/common/Appearance.qml",
-        [
-            (
-                "readonly property var activeMonitorCfg:",
-                "    ColorQuantizer {\n"
-                "        id: wallColorQuant\n"
-                "        readonly property var activeMonitorCfg: (Config.options.background.perMonitor && (Config.options.background.selectedMonitor ?? \"\") !== \"\") ? (Config.options.background.monitors?.[Config.options.background.selectedMonitor] ?? null) : null\n"
-                "        property string wallpaperPath: (activeMonitorCfg?.wallpaperPath && activeMonitorCfg.wallpaperPath !== \"\") ? activeMonitorCfg.wallpaperPath : Config.options.background.wallpaperPath\n"
-                "        property string thumbnailPath: (activeMonitorCfg?.thumbnailPath && activeMonitorCfg.thumbnailPath !== \"\") ? activeMonitorCfg.thumbnailPath : Config.options.background.thumbnailPath\n"
-                "        property bool wallpaperIsVideo: wallpaperPath.endsWith(\".mp4\") || wallpaperPath.endsWith(\".webm\") || wallpaperPath.endsWith(\".mkv\") || wallpaperPath.endsWith(\".avi\") || wallpaperPath.endsWith(\".mov\")\n"
-                "        source: Qt.resolvedUrl(wallpaperIsVideo ? thumbnailPath : wallpaperPath)",
-                "    ColorQuantizer {\n"
-                "        id: wallColorQuant\n"
-                "        property string wallpaperPath: Config.options.background.wallpaperPath\n"
-                "        property bool wallpaperIsVideo: wallpaperPath.endsWith(\".mp4\") || wallpaperPath.endsWith(\".webm\") || wallpaperPath.endsWith(\".mkv\") || wallpaperPath.endsWith(\".avi\") || wallpaperPath.endsWith(\".mov\")\n"
-                "        source: Qt.resolvedUrl(wallpaperIsVideo ? Config.options.background.thumbnailPath : Config.options.background.wallpaperPath)",
-            ),
-        ],
-    )
-
-    ok &= patch_file(
         ii / "modules/ii/background/widgets/AbstractBackgroundWidget.qml",
         [
             (

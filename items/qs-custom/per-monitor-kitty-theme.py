@@ -139,8 +139,7 @@ def resolve_socket_for_pid(pid: int) -> str | None:
     sock = Path(f"/tmp/kitty-{pid}")
     if sock.exists():
         return f"unix:{sock}"
-    uid = os.getuid()
-    return f"unix:@kitty-ipc-{uid}"
+    return None
 
 
 def apply_to_client(pid: int, title: str, theme_file: Path) -> None:
