@@ -76,7 +76,8 @@ if has_feat "screensaver"; then
     cp "$CUSTOM_DIR/xana-logo.png" "$II/modules/ii/screensaver/xana-logo.png"
     cp "$CUSTOM_DIR/ScreensaverConfig.qml" "$II/modules/settings/ScreensaverConfig.qml"
 fi
-cp "$CUSTOM_DIR/MonitorOrderPills.qml" "$II/modules/settings/MonitorOrderPills.qml"
+cp "$CUSTOM_DIR/MonitorOrderPills.qml" "$II/modules/common/widgets/MonitorOrderPills.qml"
+rm -f "$II/modules/settings/MonitorOrderPills.qml"
 if has_feat "icon-cache"; then
     mkdir -p "$HOME/.local/share/icons/hicolor/128x128/apps"
     if [ -f /usr/share/icons/hicolor/128x128/apps/zen-browser.png ]; then
