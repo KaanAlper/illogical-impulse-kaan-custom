@@ -40,6 +40,11 @@ ContentPage {
         return `${m < 10 ? "0" : ""}${m}:${s < 10 ? "0" : ""}${s}`;
     }
 
+    LiveWallpaperStoreDialog {
+        id: liveStoreDialog
+        targetMonitor: Config.options.background.perMonitor ? wallpaperPage.selectedMonitor : ""
+    }
+
     Process {
         id: randomWallProc
         property string status: ""
@@ -214,6 +219,14 @@ ContentPage {
                             Quickshell.execDetached(`${Directories.wallpaperSwitchScriptPath}`);
                         }
                     }
+                }
+
+                RippleButtonWithIcon {
+                    Layout.fillWidth: true
+                    buttonRadius: Appearance.rounding.small
+                    materialIcon: "storefront"
+                    mainText: Translation.tr("Live Wallpaper Store")
+                    onClicked: liveStoreDialog.open()
                 }
 
                 RippleButtonWithIcon {

@@ -2262,6 +2262,40 @@ def main() -> int:
                 "import QtQuick\nimport QtMultimedia\nimport QtQuick.Layouts",
             ),
             (
+                "quickLiveStoreDialog",
+                "    property string selectedWallpaperMonitor: Quickshell.screens.length > 0 ? Quickshell.screens[0].name : \"\"\n",
+                "    property string selectedWallpaperMonitor: Quickshell.screens.length > 0 ? Quickshell.screens[0].name : \"\"\n\n"
+                "    LiveWallpaperStoreDialog {\n"
+                "        id: quickLiveStoreDialog\n"
+                "        targetMonitor: Config.options.background.perMonitor ? quickPage.selectedWallpaperMonitor : \"\"\n"
+                "    }\n",
+            ),
+            (
+                "quickLiveStoreBtn",
+                "                    onClicked: {\n"
+                "                        if (Config.options.background.perMonitor && quickPage.selectedWallpaperMonitor !== \"\") {\n"
+                "                            Quickshell.execDetached([\"bash\", \"-c\", `${Directories.wallpaperSwitchScriptPath} --monitor \"${quickPage.selectedWallpaperMonitor}\"`]);\n"
+                "                        } else {\n"
+                "                            Quickshell.execDetached(`${Directories.wallpaperSwitchScriptPath}`);\n"
+                "                        }\n"
+                "                    }",
+                "                    onClicked: {\n"
+                "                        if (Config.options.background.perMonitor && quickPage.selectedWallpaperMonitor !== \"\") {\n"
+                "                            Quickshell.execDetached([\"bash\", \"-c\", `${Directories.wallpaperSwitchScriptPath} --monitor \"${quickPage.selectedWallpaperMonitor}\"`]);\n"
+                "                        } else {\n"
+                "                            Quickshell.execDetached(`${Directories.wallpaperSwitchScriptPath}`);\n"
+                "                        }\n"
+                "                    }\n"
+                "                }\n"
+                "                RippleButtonWithIcon {\n"
+                "                    id: quickLiveStoreBtn\n"
+                "                    Layout.fillWidth: true\n"
+                "                    buttonRadius: Appearance.rounding.small\n"
+                "                    materialIcon: \"storefront\"\n"
+                "                    mainText: Translation.tr(\"Live Wallpaper Store\")\n"
+                "                    onClicked: quickLiveStoreDialog.open()",
+            ),
+            (
                 "previewIsVideo",
                 "            Item {\n"
                 "                id: previewFadeWrapper\n"
