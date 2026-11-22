@@ -2172,6 +2172,183 @@ def main() -> int:
             ],
         )
 
+    # Per-monitor wallpaper support (QuickConfig + Config + Background + switchwall.sh)
+    ok &= patch_file(
+        ii / "modules/common/Config.qml",
+        [
+            (
+                "property string selectedMonitor:",
+                "                property string wallpaperPath: \"\"\n"
+                "                property string thumbnailPath: \"\"\n",
+                "                property string wallpaperPath: \"\"\n"
+                "                property string thumbnailPath: \"\"\n"
+                "                property bool perMonitor: false\n"
+                "                property var monitors: ({})\n"
+                "                property string selectedMonitor: \"\"\n",
+            ),
+        ],
+    )
+
+    ok &= patch_file(
+        ii / "modules/settings/QuickConfig.qml",
+        [
+            (
+                "property string selectedWallpaperMonitor:",
+                "ContentPage {\n"
+                "    forceWidth: true",
+                "ContentPage {\n"
+                "    id: quickPage\n"
+                "    forceWidth: true\n\n"
+                "    property string selectedWallpaperMonitor: {\n"
+                "        const saved = Config.options.background.selectedMonitor ?? \"\";\n"
+                "        if (saved !== \"\") return saved;\n"
+                "        return Quickshell.screens.length > 0 ? Quickshell.screens[0].name : \"\";\n"
+                "    }\n\n"
+                "    readonly property string previewWallpaperPath: {\n"
+                "        if (Config.options.background.perMonitor && quickPage.selectedWallpaperMonitor !== \"\") {\n"
+                "            const entry = Config.options.background.monitors?.[quickPage.selectedWallpaperMonitor];\n"
+                "            if (entry && entry.wallpaperPath && entry.wallpaperPath !== \"\")\n"
+                "                return entry.wallpaperPath;\n"
+                "        }\n"
+                "        return Config.options.background.wallpaperPath;\n"
+                "    }",
+            ),
+            (
+                "quickPage.previewWallpaperPath",
+                "source: Config.options.background.wallpaperPath",
+                "source: quickPage.previewWallpaperPath",
+            ),
+            (
+                "Config.options.background.perMonitor",
+                "        ConfigSelectionArray {\n"
+                "            currentValue: Config.options.appearance.palette.type",
+                "        ConfigSwitch {\n"
+                "            buttonIcon: \"desktop_windows\"\n"
+                "            text: Translation.tr(\"Separate per monitor\")\n"
+                "            checked: Config.options.background.perMonitor\n"
+                "            onCheckedChanged: {\n"
+                "                if (Config.options.background.perMonitor !== checked) {\n"
+                "                    Config.options.background.perMonitor = checked;\n"
+                "                }\n"
+                "                if (checked && (Config.options.background.selectedMonitor ?? \"\") === \"\" && quickPage.selectedWallpaperMonitor !== \"\") {\n"
+                "                    Config.options.background.selectedMonitor = quickPage.selectedWallpaperMonitor;\n"
+                "                }\n"
+                "            }\n"
+                "        }\n\n"
+                "        Flow {\n"
+                "            visible: Config.options.background.perMonitor\n"
+                "            Layout.fillWidth: true\n"
+                "            spacing: 6\n"
+                "            Repeater {\n"
+                "                model: Quickshell.screens\n"
+                "                delegate: RippleButton {\n"
+                "                    required property var modelData\n"
+                "                    required property int index\n"
+                "                    readonly property bool isSel: quickPage.selectedWallpaperMonitor === modelData.name\n"
+                "                    implicitWidth: monBtnRow.implicitWidth + 24\n"
+                "                    implicitHeight: 34\n"
+                "                    buttonRadius: Appearance.rounding.full\n"
+                "                    colBackground: isSel ? Appearance.colors.colPrimary : Appearance.colors.colLayer2\n"
+                "                    onClicked: {\n"
+                "                        quickPage.selectedWallpaperMonitor = modelData.name;\n"
+                "                        Config.options.background.selectedMonitor = modelData.name;\n"
+                "                    }\n"
+                "                    contentItem: RowLayout {\n"
+                "                        id: monBtnRow\n"
+                "                        anchors.centerIn: parent\n"
+                "                        spacing: 6\n"
+                "                        MaterialSymbol {\n"
+                "                            text: \"monitor\"\n"
+                "                            iconSize: 16\n"
+                "                            color: isSel ? Appearance.m3colors.m3onPrimary : Appearance.m3colors.m3onSurface\n"
+                "                        }\n"
+                "                        StyledText {\n"
+                "                            text: `${index + 1} · ${modelData.name} (${modelData.width}×${modelData.height})`\n"
+                "                            color: isSel ? Appearance.m3colors.m3onPrimary : Appearance.m3colors.m3onSurface\n"
+                "                            font.pixelSize: Appearance.font.pixelSize.small\n"
+                "                            font.weight: isSel ? Font.Medium : Font.Normal\n"
+                "                        }\n"
+                "                    }\n"
+                "                }\n"
+                "            }\n"
+                "        }\n\n"
+                "        ConfigSelectionArray {\n"
+                "            currentValue: Config.options.appearance.palette.type",
+            ),
+        ],
+    )
+
+    ok &= patch_file(
+        ii / "modules/ii/background/Background.qml",
+        [
+            (
+                "readonly property string rawWallpaperPath:",
+                "        // Wallpaper\n"
+                "        property bool wallpaperIsVideo: Config.options.background.wallpaperPath.endsWith(\".mp4\") || Config.options.background.wallpaperPath.endsWith(\".webm\") || Config.options.background.wallpaperPath.endsWith(\".mkv\") || Config.options.background.wallpaperPath.endsWith(\".avi\") || Config.options.background.wallpaperPath.endsWith(\".mov\")\n"
+                "        property string wallpaperPath: wallpaperIsVideo ? Config.options.background.thumbnailPath : Config.options.background.wallpaperPath",
+                "        // Wallpaper\n"
+                "        readonly property string monitorName: modelData?.name ?? \"\"\n"
+                "        readonly property var monitorCfg: (Config.options.background.perMonitor && monitorName !== \"\") ? (Config.options.background.monitors?.[monitorName] ?? null) : null\n"
+                "        readonly property string rawWallpaperPath: (monitorCfg?.wallpaperPath && monitorCfg.wallpaperPath !== \"\") ? monitorCfg.wallpaperPath : Config.options.background.wallpaperPath\n"
+                "        readonly property string rawThumbnailPath: (monitorCfg?.thumbnailPath && monitorCfg.thumbnailPath !== \"\") ? monitorCfg.thumbnailPath : Config.options.background.thumbnailPath\n"
+                "        property bool wallpaperIsVideo: rawWallpaperPath.endsWith(\".mp4\") || rawWallpaperPath.endsWith(\".webm\") || rawWallpaperPath.endsWith(\".mkv\") || rawWallpaperPath.endsWith(\".avi\") || rawWallpaperPath.endsWith(\".mov\")\n"
+                "        property string wallpaperPath: wallpaperIsVideo ? rawThumbnailPath : rawWallpaperPath",
+            ),
+        ],
+    )
+
+    ok &= patch_file(
+        ii / "scripts/colors/switchwall.sh",
+        [
+            (
+                "perMonitor",
+                "set_wallpaper_path() {\n"
+                "    local path=\"$1\"\n"
+                "    if [ -f \"$SHELL_CONFIG_FILE\" ]; then\n"
+                "        jq --arg path \"$path\" '.background.wallpaperPath = $path' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && mv \"$SHELL_CONFIG_FILE.tmp\" \"$SHELL_CONFIG_FILE\"\n"
+                "    fi\n"
+                "}\n\n"
+                "set_thumbnail_path() {\n"
+                "    local path=\"$1\"\n"
+                "    if [ -f \"$SHELL_CONFIG_FILE\" ]; then\n"
+                "        jq --arg path \"$path\" '.background.thumbnailPath = $path' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && mv \"$SHELL_CONFIG_FILE.tmp\" \"$SHELL_CONFIG_FILE\"\n"
+                "    fi\n"
+                "}",
+                "set_wallpaper_path() {\n"
+                "    local path=\"$1\"\n"
+                "    if [ -f \"$SHELL_CONFIG_FILE\" ]; then\n"
+                "        local per_mon sel_mon\n"
+                "        per_mon=$(jq -r '.background.perMonitor // false' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
+                "        sel_mon=$(jq -r '.background.selectedMonitor // \"\"' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
+                "        if [[ \"$per_mon\" == \"true\" && -n \"$sel_mon\" ]]; then\n"
+                "            jq --arg mon \"$sel_mon\" --arg path \"$path\" '.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {\"wallpaperPath\": $path}) | if (.background.wallpaperPath // \"\") == \"\" then .background.wallpaperPath = $path else . end' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && mv \"$SHELL_CONFIG_FILE.tmp\" \"$SHELL_CONFIG_FILE\"\n"
+                "        else\n"
+                "            jq --arg path \"$path\" '.background.wallpaperPath = $path' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && mv \"$SHELL_CONFIG_FILE.tmp\" \"$SHELL_CONFIG_FILE\"\n"
+                "        fi\n"
+                "    fi\n"
+                "}\n\n"
+                "set_thumbnail_path() {\n"
+                "    local path=\"$1\"\n"
+                "    if [ -f \"$SHELL_CONFIG_FILE\" ]; then\n"
+                "        local per_mon sel_mon\n"
+                "        per_mon=$(jq -r '.background.perMonitor // false' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
+                "        sel_mon=$(jq -r '.background.selectedMonitor // \"\"' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
+                "        if [[ \"$per_mon\" == \"true\" && -n \"$sel_mon\" ]]; then\n"
+                "            jq --arg mon \"$sel_mon\" --arg path \"$path\" '.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {\"thumbnailPath\": $path}) | if (.background.thumbnailPath // \"\") == \"\" then .background.thumbnailPath = $path else . end' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && mv \"$SHELL_CONFIG_FILE.tmp\" \"$SHELL_CONFIG_FILE\"\n"
+                "        else\n"
+                "            jq --arg path \"$path\" '.background.thumbnailPath = $path' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && mv \"$SHELL_CONFIG_FILE.tmp\" \"$SHELL_CONFIG_FILE\"\n"
+                "        fi\n"
+                "    fi\n"
+                "}",
+            ),
+            (
+                "selectedMonitor // \"\"",
+                "                imgpath=$(jq -r '.background.wallpaperPath' \"$SHELL_CONFIG_FILE\" 2>/dev/null || echo \"\")",
+                "                imgpath=$(jq -r 'if (.background.perMonitor // false) and ((.background.selectedMonitor // \"\") != \"\") then (.background.monitors[.background.selectedMonitor].wallpaperPath // .background.wallpaperPath) else .background.wallpaperPath end' \"$SHELL_CONFIG_FILE\" 2>/dev/null || echo \"\")",
+            ),
+        ],
+    )
+
     return 0 if ok else 1
 
 
