@@ -2199,6 +2199,12 @@ def main() -> int:
                 "ContentPage {\n"
                 "    id: quickPage\n"
                 "    forceWidth: true\n\n"
+                "    Timer {\n"
+                "        id: wallThemeSyncTimer\n"
+                "        interval: 180\n"
+                "        repeat: false\n"
+                "        onTriggered: Quickshell.execDetached([\"bash\", \"-c\", `${Directories.wallpaperSwitchScriptPath} --noswitch`])\n"
+                "    }\n\n"
                 "    property string selectedWallpaperMonitor: {\n"
                 "        const saved = Config.options.background.selectedMonitor ?? \"\";\n"
                 "        if (saved !== \"\") return saved;\n"
@@ -2212,6 +2218,17 @@ def main() -> int:
                 "        }\n"
                 "        return Config.options.background.wallpaperPath;\n"
                 "    }",
+            ),
+            (
+                "wallThemeSyncTimer",
+                "    property string selectedWallpaperMonitor: {",
+                "    Timer {\n"
+                "        id: wallThemeSyncTimer\n"
+                "        interval: 180\n"
+                "        repeat: false\n"
+                "        onTriggered: Quickshell.execDetached([\"bash\", \"-c\", `${Directories.wallpaperSwitchScriptPath} --noswitch`])\n"
+                "    }\n\n"
+                "    property string selectedWallpaperMonitor: {",
             ),
             (
                 "quickPage.previewWallpaperPath",
@@ -2229,9 +2246,10 @@ def main() -> int:
                 "            onCheckedChanged: {\n"
                 "                if (Config.options.background.perMonitor !== checked) {\n"
                 "                    Config.options.background.perMonitor = checked;\n"
-                "                }\n"
-                "                if (checked && (Config.options.background.selectedMonitor ?? \"\") === \"\" && quickPage.selectedWallpaperMonitor !== \"\") {\n"
-                "                    Config.options.background.selectedMonitor = quickPage.selectedWallpaperMonitor;\n"
+                "                    if (checked && (Config.options.background.selectedMonitor ?? \"\") === \"\" && quickPage.selectedWallpaperMonitor !== \"\") {\n"
+                "                        Config.options.background.selectedMonitor = quickPage.selectedWallpaperMonitor;\n"
+                "                    }\n"
+                "                    wallThemeSyncTimer.restart();\n"
                 "                }\n"
                 "            }\n"
                 "        }\n\n"
@@ -2251,7 +2269,10 @@ def main() -> int:
                 "                    colBackground: isSel ? Appearance.colors.colPrimary : Appearance.colors.colLayer2\n"
                 "                    onClicked: {\n"
                 "                        quickPage.selectedWallpaperMonitor = modelData.name;\n"
-                "                        Config.options.background.selectedMonitor = modelData.name;\n"
+                "                        if (Config.options.background.selectedMonitor !== modelData.name) {\n"
+                "                            Config.options.background.selectedMonitor = modelData.name;\n"
+                "                            wallThemeSyncTimer.restart();\n"
+                "                        }\n"
                 "                    }\n"
                 "                    contentItem: RowLayout {\n"
                 "                        id: monBtnRow\n"
@@ -2274,6 +2295,110 @@ def main() -> int:
                 "        }\n\n"
                 "        ConfigSelectionArray {\n"
                 "            currentValue: Config.options.appearance.palette.type",
+            ),
+            (
+                "wallThemeSyncTimer.restart();\n                }\n            }\n        }\n\n        Flow {",
+                "                if (Config.options.background.perMonitor !== checked) {\n"
+                "                    Config.options.background.perMonitor = checked;\n"
+                "                }\n"
+                "                if (checked && (Config.options.background.selectedMonitor ?? \"\") === \"\" && quickPage.selectedWallpaperMonitor !== \"\") {\n"
+                "                    Config.options.background.selectedMonitor = quickPage.selectedWallpaperMonitor;\n"
+                "                }\n"
+                "            }\n"
+                "        }\n\n"
+                "        Flow {",
+                "                if (Config.options.background.perMonitor !== checked) {\n"
+                "                    Config.options.background.perMonitor = checked;\n"
+                "                    if (checked && (Config.options.background.selectedMonitor ?? \"\") === \"\" && quickPage.selectedWallpaperMonitor !== \"\") {\n"
+                "                        Config.options.background.selectedMonitor = quickPage.selectedWallpaperMonitor;\n"
+                "                    }\n"
+                "                    wallThemeSyncTimer.restart();\n"
+                "                }\n"
+                "            }\n"
+                "        }\n\n"
+                "        Flow {",
+            ),
+            (
+                "if (Config.options.background.selectedMonitor !== modelData.name)",
+                "                    onClicked: {\n"
+                "                        quickPage.selectedWallpaperMonitor = modelData.name;\n"
+                "                        Config.options.background.selectedMonitor = modelData.name;\n"
+                "                    }",
+                "                    onClicked: {\n"
+                "                        quickPage.selectedWallpaperMonitor = modelData.name;\n"
+                "                        if (Config.options.background.selectedMonitor !== modelData.name) {\n"
+                "                            Config.options.background.selectedMonitor = modelData.name;\n"
+                "                            wallThemeSyncTimer.restart();\n"
+                "                        }\n"
+                "                    }",
+            ),
+        ],
+    )
+
+    ok &= patch_file(
+        ii / "modules/common/Appearance.qml",
+        [
+            (
+                "readonly property var activeMonitorCfg:",
+                "    ColorQuantizer {\n"
+                "        id: wallColorQuant\n"
+                "        property string wallpaperPath: Config.options.background.wallpaperPath\n"
+                "        property bool wallpaperIsVideo: wallpaperPath.endsWith(\".mp4\") || wallpaperPath.endsWith(\".webm\") || wallpaperPath.endsWith(\".mkv\") || wallpaperPath.endsWith(\".avi\") || wallpaperPath.endsWith(\".mov\")\n"
+                "        source: Qt.resolvedUrl(wallpaperIsVideo ? Config.options.background.thumbnailPath : Config.options.background.wallpaperPath)",
+                "    ColorQuantizer {\n"
+                "        id: wallColorQuant\n"
+                "        readonly property var activeMonitorCfg: (Config.options.background.perMonitor && (Config.options.background.selectedMonitor ?? \"\") !== \"\") ? (Config.options.background.monitors?.[Config.options.background.selectedMonitor] ?? null) : null\n"
+                "        property string wallpaperPath: (activeMonitorCfg?.wallpaperPath && activeMonitorCfg.wallpaperPath !== \"\") ? activeMonitorCfg.wallpaperPath : Config.options.background.wallpaperPath\n"
+                "        property string thumbnailPath: (activeMonitorCfg?.thumbnailPath && activeMonitorCfg.thumbnailPath !== \"\") ? activeMonitorCfg.thumbnailPath : Config.options.background.thumbnailPath\n"
+                "        property bool wallpaperIsVideo: wallpaperPath.endsWith(\".mp4\") || wallpaperPath.endsWith(\".webm\") || wallpaperPath.endsWith(\".mkv\") || wallpaperPath.endsWith(\".avi\") || wallpaperPath.endsWith(\".mov\")\n"
+                "        source: Qt.resolvedUrl(wallpaperIsVideo ? thumbnailPath : wallpaperPath)",
+            ),
+        ],
+    )
+
+    ok &= patch_file(
+        ii / "modules/ii/background/widgets/AbstractBackgroundWidget.qml",
+        [
+            (
+                "readonly property string rawWallpaperPath:",
+                "    property bool wallpaperIsVideo: Config.options.background.wallpaperPath.endsWith(\".mp4\") || Config.options.background.wallpaperPath.endsWith(\".webm\") || Config.options.background.wallpaperPath.endsWith(\".mkv\") || Config.options.background.wallpaperPath.endsWith(\".avi\") || Config.options.background.wallpaperPath.endsWith(\".mov\")\n"
+                "    property string wallpaperPath: wallpaperIsVideo ? Config.options.background.thumbnailPath : Config.options.background.wallpaperPath",
+                "    readonly property string monitorName: QsWindow.window?.screen?.name ?? \"\"\n"
+                "    readonly property var monitorCfg: (Config.options.background.perMonitor && monitorName !== \"\") ? (Config.options.background.monitors?.[monitorName] ?? null) : null\n"
+                "    readonly property string rawWallpaperPath: (monitorCfg?.wallpaperPath && monitorCfg.wallpaperPath !== \"\") ? monitorCfg.wallpaperPath : Config.options.background.wallpaperPath\n"
+                "    readonly property string rawThumbnailPath: (monitorCfg?.thumbnailPath && monitorCfg.thumbnailPath !== \"\") ? monitorCfg.thumbnailPath : Config.options.background.thumbnailPath\n"
+                "    property bool wallpaperIsVideo: rawWallpaperPath.endsWith(\".mp4\") || rawWallpaperPath.endsWith(\".webm\") || rawWallpaperPath.endsWith(\".mkv\") || rawWallpaperPath.endsWith(\".avi\") || rawWallpaperPath.endsWith(\".mov\")\n"
+                "    property string wallpaperPath: wallpaperIsVideo ? rawThumbnailPath : rawWallpaperPath",
+            ),
+        ],
+    )
+
+    ok &= patch_file(
+        ii / "modules/ii/wallpaperSelector/WallpaperSelectorContent.qml",
+        [
+            (
+                "readonly property string activeWallpaperPath:",
+                "                        model: Wallpapers.folderModel\n"
+                "                        onModelChanged: currentIndex = 0\n"
+                "                        delegate: WallpaperDirectoryItem {\n"
+                "                            required property var modelData\n"
+                "                            required property int index\n"
+                "                            fileModelData: modelData\n"
+                "                            width: grid.cellWidth\n"
+                "                            height: grid.cellHeight\n"
+                "                            colBackground: (index === grid?.currentIndex || containsMouse) ? Appearance.colors.colPrimary : (fileModelData.filePath === Config.options.background.wallpaperPath) ? Appearance.colors.colSecondaryContainer : ColorUtils.transparentize(Appearance.colors.colPrimaryContainer)\n"
+                "                            colText: (index === grid.currentIndex || containsMouse) ? Appearance.colors.colOnPrimary : (fileModelData.filePath === Config.options.background.wallpaperPath) ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnLayer0",
+                "                        model: Wallpapers.folderModel\n"
+                "                        onModelChanged: currentIndex = 0\n"
+                "                        delegate: WallpaperDirectoryItem {\n"
+                "                            required property var modelData\n"
+                "                            required property int index\n"
+                "                            readonly property string activeWallpaperPath: (Config.options.background.perMonitor && (Config.options.background.selectedMonitor ?? \"\") !== \"\" && Config.options.background.monitors?.[Config.options.background.selectedMonitor]?.wallpaperPath) ? Config.options.background.monitors[Config.options.background.selectedMonitor].wallpaperPath : Config.options.background.wallpaperPath\n"
+                "                            fileModelData: modelData\n"
+                "                            width: grid.cellWidth\n"
+                "                            height: grid.cellHeight\n"
+                "                            colBackground: (index === grid?.currentIndex || containsMouse) ? Appearance.colors.colPrimary : (fileModelData.filePath === activeWallpaperPath) ? Appearance.colors.colSecondaryContainer : ColorUtils.transparentize(Appearance.colors.colPrimaryContainer)\n"
+                "                            colText: (index === grid.currentIndex || containsMouse) ? Appearance.colors.colOnPrimary : (fileModelData.filePath === activeWallpaperPath) ? Appearance.colors.colOnSecondaryContainer : Appearance.colors.colOnLayer0",
             ),
         ],
     )
