@@ -2211,11 +2211,7 @@ def main() -> int:
                 "            }\n"
                 "        }\n"
                 "    }\n\n"
-                "    property string selectedWallpaperMonitor: {\n"
-                "        const saved = Config.options.background.selectedMonitor ?? \"\";\n"
-                "        if (saved !== \"\") return saved;\n"
-                "        return Quickshell.screens.length > 0 ? Quickshell.screens[0].name : \"\";\n"
-                "    }\n\n"
+                "    property string selectedWallpaperMonitor: Quickshell.screens.length > 0 ? Quickshell.screens[0].name : \"\"\n\n"
                 "    readonly property string previewWallpaperPath: {\n"
                 "        if (Config.options.background.perMonitor && quickPage.selectedWallpaperMonitor !== \"\") {\n"
                 "            const entry = Config.options.background.monitors?.[quickPage.selectedWallpaperMonitor];\n"
@@ -2241,6 +2237,43 @@ def main() -> int:
                 "        }\n"
                 "    }\n\n"
                 "    property string selectedWallpaperMonitor: {",
+            ),
+            (
+                "II_TARGET_MONITOR",
+                "                    onClicked: {\n"
+                "                        randomWallProc.scriptPath = `${Directories.scriptPath}/colors/random/random_konachan_wall.sh`;\n"
+                "                        randomWallProc.running = true;\n"
+                "                    }",
+                "                    onClicked: {\n"
+                "                        const mon = (Config.options.background.perMonitor && quickPage.selectedWallpaperMonitor !== \"\") ? quickPage.selectedWallpaperMonitor : \"\";\n"
+                "                        randomWallProc.command = [\"bash\", \"-c\", `II_TARGET_MONITOR=\"${mon}\" \"${FileUtils.trimFileProtocol(Directories.scriptPath)}/colors/random/random_konachan_wall.sh\"`];\n"
+                "                        randomWallProc.running = true;\n"
+                "                    }",
+            ),
+            (
+                'II_TARGET_MONITOR="${mon}" "${FileUtils.trimFileProtocol(Directories.scriptPath)}/colors/random/random_osu_wall.sh"',
+                "                    onClicked: {\n"
+                "                        randomWallProc.scriptPath = `${Directories.scriptPath}/colors/random/random_osu_wall.sh`;\n"
+                "                        randomWallProc.running = true;\n"
+                "                    }",
+                "                    onClicked: {\n"
+                "                        const mon = (Config.options.background.perMonitor && quickPage.selectedWallpaperMonitor !== \"\") ? quickPage.selectedWallpaperMonitor : \"\";\n"
+                "                        randomWallProc.command = [\"bash\", \"-c\", `II_TARGET_MONITOR=\"${mon}\" \"${FileUtils.trimFileProtocol(Directories.scriptPath)}/colors/random/random_osu_wall.sh\"`];\n"
+                "                        randomWallProc.running = true;\n"
+                "                    }",
+            ),
+            (
+                "--monitor \"${quickPage.selectedWallpaperMonitor}\"",
+                "                    onClicked: {\n"
+                "                        Quickshell.execDetached(`${Directories.wallpaperSwitchScriptPath}`);\n"
+                "                    }",
+                "                    onClicked: {\n"
+                "                        if (Config.options.background.perMonitor && quickPage.selectedWallpaperMonitor !== \"\") {\n"
+                "                            Quickshell.execDetached([\"bash\", \"-c\", `${Directories.wallpaperSwitchScriptPath} --monitor \"${quickPage.selectedWallpaperMonitor}\"`]);\n"
+                "                        } else {\n"
+                "                            Quickshell.execDetached(`${Directories.wallpaperSwitchScriptPath}`);\n"
+                "                        }\n"
+                "                    }",
             ),
             (
                 "quickPage.previewWallpaperPath",
@@ -2281,10 +2314,6 @@ def main() -> int:
                 "                    colBackground: isSel ? Appearance.colors.colPrimary : Appearance.colors.colLayer2\n"
                 "                    onClicked: {\n"
                 "                        quickPage.selectedWallpaperMonitor = modelData.name;\n"
-                "                        if (Config.options.background.selectedMonitor !== modelData.name) {\n"
-                "                            Config.options.background.selectedMonitor = modelData.name;\n"
-                "                            wallThemeSyncTimer.restart();\n"
-                "                        }\n"
                 "                    }\n"
                 "                    contentItem: RowLayout {\n"
                 "                        id: monBtnRow\n"
@@ -2307,39 +2336,6 @@ def main() -> int:
                 "        }\n\n"
                 "        ConfigSelectionArray {\n"
                 "            currentValue: Config.options.appearance.palette.type",
-            ),
-            (
-                "wallThemeSyncTimer.restart();\n                }\n            }\n        }\n\n        Flow {",
-                "                if (Config.options.background.perMonitor !== checked) {\n"
-                "                    Config.options.background.perMonitor = checked;\n"
-                "                }\n"
-                "                if (checked && (Config.options.background.selectedMonitor ?? \"\") === \"\" && quickPage.selectedWallpaperMonitor !== \"\") {\n"
-                "                    Config.options.background.selectedMonitor = quickPage.selectedWallpaperMonitor;\n"
-                "                }\n"
-                "            }\n"
-                "        }\n\n"
-                "        Flow {",
-                "                if (Config.options.background.perMonitor !== checked) {\n"
-                "                    Config.options.background.perMonitor = checked;\n"
-                "                    if (checked && (Config.options.background.selectedMonitor ?? \"\") === \"\" && quickPage.selectedWallpaperMonitor !== \"\") {\n"
-                "                        Config.options.background.selectedMonitor = quickPage.selectedWallpaperMonitor;\n"
-                "                    }\n"
-                "                    wallThemeSyncTimer.restart();\n"
-                "                }\n"
-                "            }\n"
-                "        }\n\n"
-                "        Flow {",
-            ),
-            (
-                "if (Config.options.background.selectedMonitor !== modelData.name)",
-                "                    onClicked: {\n"
-                "                        quickPage.selectedWallpaperMonitor = modelData.name;\n"
-                "                        Config.options.background.selectedMonitor = modelData.name;\n"
-                "                    }",
-                "                    onClicked: {\n"
-                "                        quickPage.selectedWallpaperMonitor = modelData.name;\n"
-                "                        Config.options.background.selectedMonitor = modelData.name;\n"
-                "                    }",
             ),
         ],
     )
@@ -2433,33 +2429,7 @@ def main() -> int:
                 "    fi",
             ),
             (
-                "primary_mon=",
-                "set_wallpaper_path() {\n"
-                "    local path=\"$1\"\n"
-                "    if [ -f \"$SHELL_CONFIG_FILE\" ]; then\n"
-                "        local per_mon sel_mon\n"
-                "        per_mon=$(jq -r '.background.perMonitor // false' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
-                "        sel_mon=$(jq -r '.background.selectedMonitor // \"\"' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
-                "        if [[ \"$per_mon\" == \"true\" && -n \"$sel_mon\" ]]; then\n"
-                "            jq --arg mon \"$sel_mon\" --arg path \"$path\" '.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {\"wallpaperPath\": $path}) | if (.background.wallpaperPath // \"\") == \"\" then .background.wallpaperPath = $path else . end' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && mv \"$SHELL_CONFIG_FILE.tmp\" \"$SHELL_CONFIG_FILE\"\n"
-                "        else\n"
-                "            jq --arg path \"$path\" '.background.wallpaperPath = $path' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && mv \"$SHELL_CONFIG_FILE.tmp\" \"$SHELL_CONFIG_FILE\"\n"
-                "        fi\n"
-                "    fi\n"
-                "}\n\n"
-                "set_thumbnail_path() {\n"
-                "    local path=\"$1\"\n"
-                "    if [ -f \"$SHELL_CONFIG_FILE\" ]; then\n"
-                "        local per_mon sel_mon\n"
-                "        per_mon=$(jq -r '.background.perMonitor // false' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
-                "        sel_mon=$(jq -r '.background.selectedMonitor // \"\"' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
-                "        if [[ \"$per_mon\" == \"true\" && -n \"$sel_mon\" ]]; then\n"
-                "            jq --arg mon \"$sel_mon\" --arg path \"$path\" '.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {\"thumbnailPath\": $path}) | if (.background.thumbnailPath // \"\") == \"\" then .background.thumbnailPath = $path else . end' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && mv \"$SHELL_CONFIG_FILE.tmp\" \"$SHELL_CONFIG_FILE\"\n"
-                "        else\n"
-                "            jq --arg path \"$path\" '.background.thumbnailPath = $path' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && mv \"$SHELL_CONFIG_FILE.tmp\" \"$SHELL_CONFIG_FILE\"\n"
-                "        fi\n"
-                "    fi\n"
-                "}",
+                "get_target_monitor()",
                 "get_primary_monitor() {\n"
                 "    hyprctl monitors -j 2>/dev/null | jq -r 'max_by(.width * .height) | .name // \"\"' 2>/dev/null || echo \"\"\n"
                 "}\n\n"
@@ -2499,6 +2469,81 @@ def main() -> int:
                 "        fi\n"
                 "    fi\n"
                 "}",
+                "get_primary_monitor() {\n"
+                "    hyprctl monitors -j 2>/dev/null | jq -r 'max_by(.width * .height) | .name // \"\"' 2>/dev/null || echo \"\"\n"
+                "}\n\n"
+                "get_target_monitor() {\n"
+                "    if [[ -n \"${monitor_flag:-}\" ]]; then\n"
+                "        echo \"$monitor_flag\"\n"
+                "    elif [[ -n \"${II_TARGET_MONITOR:-}\" ]]; then\n"
+                "        echo \"$II_TARGET_MONITOR\"\n"
+                "    else\n"
+                "        hyprctl monitors -j 2>/dev/null | jq -r '(.[] | select(.focused) | .name) // \"\"' 2>/dev/null || echo \"\"\n"
+                "    fi\n"
+                "}\n\n"
+                "write_config_preserve_inode() {\n"
+                "    cat \"$SHELL_CONFIG_FILE.tmp\" > \"$SHELL_CONFIG_FILE\" && rm -f \"$SHELL_CONFIG_FILE.tmp\"\n"
+                "}\n\n"
+                "set_wallpaper_path() {\n"
+                "    local path=\"$1\"\n"
+                "    if [ -f \"$SHELL_CONFIG_FILE\" ]; then\n"
+                "        local per_mon sel_mon primary_mon\n"
+                "        per_mon=$(jq -r '.background.perMonitor // false' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
+                "        sel_mon=$(get_target_monitor)\n"
+                "        primary_mon=$(get_primary_monitor)\n"
+                "        if [[ \"$per_mon\" == \"true\" && -n \"$sel_mon\" ]]; then\n"
+                "            if [[ \"$sel_mon\" == \"$primary_mon\" || -z \"$primary_mon\" ]]; then\n"
+                "                jq --arg mon \"$sel_mon\" --arg path \"$path\" '.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {\"wallpaperPath\": $path}) | .background.wallpaperPath = $path' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && write_config_preserve_inode\n"
+                "            else\n"
+                "                jq --arg mon \"$sel_mon\" --arg path \"$path\" '.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {\"wallpaperPath\": $path}) | if (.background.wallpaperPath // \"\") == \"\" then .background.wallpaperPath = $path else . end' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && write_config_preserve_inode\n"
+                "            fi\n"
+                "        else\n"
+                "            jq --arg path \"$path\" '.background.wallpaperPath = $path' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && write_config_preserve_inode\n"
+                "        fi\n"
+                "    fi\n"
+                "}\n\n"
+                "set_thumbnail_path() {\n"
+                "    local path=\"$1\"\n"
+                "    if [ -f \"$SHELL_CONFIG_FILE\" ]; then\n"
+                "        local per_mon sel_mon primary_mon\n"
+                "        per_mon=$(jq -r '.background.perMonitor // false' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n"
+                "        sel_mon=$(get_target_monitor)\n"
+                "        primary_mon=$(get_primary_monitor)\n"
+                "        if [[ \"$per_mon\" == \"true\" && -n \"$sel_mon\" ]]; then\n"
+                "            if [[ \"$sel_mon\" == \"$primary_mon\" || -z \"$primary_mon\" ]]; then\n"
+                "                jq --arg mon \"$sel_mon\" --arg path \"$path\" '.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {\"thumbnailPath\": $path}) | .background.thumbnailPath = $path' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && write_config_preserve_inode\n"
+                "            else\n"
+                "                jq --arg mon \"$sel_mon\" --arg path \"$path\" '.background.monitors = (.background.monitors // {}) | .background.monitors[$mon] = ((.background.monitors[$mon] // {}) + {\"thumbnailPath\": $path}) | if (.background.thumbnailPath // \"\") == \"\" then .background.thumbnailPath = $path else . end' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && write_config_preserve_inode\n"
+                "            fi\n"
+                "        else\n"
+                "            jq --arg path \"$path\" '.background.thumbnailPath = $path' \"$SHELL_CONFIG_FILE\" > \"$SHELL_CONFIG_FILE.tmp\" && write_config_preserve_inode\n"
+                "        fi\n"
+                "    fi\n"
+                "}",
+            ),
+            (
+                "sm=$(get_target_monitor)\n    if [[ \"$pm\" == \"true\" && -n \"$sm\" ]]; then\n        min_width_desired",
+                "    sm=$(jq -r '.background.selectedMonitor // \"\"' \"$SHELL_CONFIG_FILE\" 2>/dev/null)",
+                "    sm=$(get_target_monitor)",
+            ),
+            (
+                "sm=$(get_target_monitor)\n        prim=$(get_primary_monitor)",
+                "        sm=$(jq -r '.background.selectedMonitor // \"\"' \"$SHELL_CONFIG_FILE\" 2>/dev/null)\n        prim=$(get_primary_monitor)",
+                "        sm=$(get_target_monitor)\n        prim=$(get_primary_monitor)",
+            ),
+            (
+                "--monitor)",
+                "    noswitch_flag=\"\"\n",
+                "    noswitch_flag=\"\"\n    monitor_flag=\"\"\n",
+            ),
+            (
+                "monitor_flag=\"$2\"",
+                "            --noswitch)\n",
+                "            --monitor)\n"
+                "                monitor_flag=\"$2\"\n"
+                "                shift 2\n"
+                "                ;;\n"
+                "            --noswitch)\n",
             ),
             (
                 "imgpath=$(jq -r '.background.wallpaperPath'",
