@@ -770,6 +770,71 @@ def main() -> int:
                     "        }\n"
                     "        Component {\n            id: aiChat",
                 ),
+                (
+                    "(!root.aiChatEnabled && !root.translatorEnabled && !root.animeEnabled)",
+                    "                    ...((root.tabButtonList.length === 0 || (!root.aiChatEnabled && !root.translatorEnabled && root.animeCloset)) ? [placeholder.createObject()] : []),",
+                    "                    ...(((!root.aiChatEnabled && !root.translatorEnabled && !root.animeEnabled) || (!root.aiChatEnabled && !root.translatorEnabled && root.animeCloset)) ? [placeholder.createObject()] : []),",
+                ),
+                (
+                    "SwipeView.isCurrentItem",
+                    "        Component {\n"
+                    "            id: claudeChat\n"
+                    "            CliChatPanel { backend: \"claude\" }\n"
+                    "        }\n"
+                    "        Component {\n"
+                    "            id: codexChat\n"
+                    "            CliChatPanel { backend: \"codex\" }\n"
+                    "        }\n"
+                    "        Component {\n"
+                    "            id: aiChat\n"
+                    "            AiChat {}\n"
+                    "        }\n"
+                    "        Component {\n"
+                    "            id: translator\n"
+                    "            Translator {}\n"
+                    "        }\n"
+                    "        Component {\n"
+                    "            id: anime\n"
+                    "            Anime {}\n"
+                    "        }",
+                    "        Component {\n"
+                    "            id: claudeChat\n"
+                    "            CliChatPanel {\n"
+                    "                backend: \"claude\"\n"
+                    "                visible: SwipeView.isCurrentItem || (swipeView.contentItem?.moving ?? false)\n"
+                    "                enabled: SwipeView.isCurrentItem\n"
+                    "            }\n"
+                    "        }\n"
+                    "        Component {\n"
+                    "            id: codexChat\n"
+                    "            CliChatPanel {\n"
+                    "                backend: \"codex\"\n"
+                    "                visible: SwipeView.isCurrentItem || (swipeView.contentItem?.moving ?? false)\n"
+                    "                enabled: SwipeView.isCurrentItem\n"
+                    "            }\n"
+                    "        }\n"
+                    "        Component {\n"
+                    "            id: aiChat\n"
+                    "            AiChat {\n"
+                    "                visible: SwipeView.isCurrentItem || (swipeView.contentItem?.moving ?? false)\n"
+                    "                enabled: SwipeView.isCurrentItem\n"
+                    "            }\n"
+                    "        }\n"
+                    "        Component {\n"
+                    "            id: translator\n"
+                    "            Translator {\n"
+                    "                visible: SwipeView.isCurrentItem || (swipeView.contentItem?.moving ?? false)\n"
+                    "                enabled: SwipeView.isCurrentItem\n"
+                    "            }\n"
+                    "        }\n"
+                    "        Component {\n"
+                    "            id: anime\n"
+                    "            Anime {\n"
+                    "                visible: SwipeView.isCurrentItem || (swipeView.contentItem?.moving ?? false)\n"
+                    "                enabled: SwipeView.isCurrentItem\n"
+                    "            }\n"
+                    "        }",
+                ),
             ],
         )
 
