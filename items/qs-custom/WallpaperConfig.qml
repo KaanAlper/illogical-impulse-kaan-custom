@@ -320,15 +320,17 @@ ContentPage {
             }
         }
 
-        ConfigSelectionArray {
+        ContentSubsection {
             title: Translation.tr("Fill mode")
-            currentValue: Config.options.background.live.fillMode
-            onSelected: newValue => Config.options.background.live.fillMode = newValue
-            options: [
-                { displayName: Translation.tr("Crop"), icon: "crop", value: "crop" },
-                { displayName: Translation.tr("Fit"), icon: "fit_screen", value: "fit" },
-                { displayName: Translation.tr("Stretch"), icon: "aspect_ratio", value: "stretch" }
-            ]
+            ConfigSelectionArray {
+                currentValue: Config.options.background.live.fillMode
+                onSelected: newValue => Config.options.background.live.fillMode = newValue
+                options: [
+                    { displayName: Translation.tr("Crop"), icon: "crop", value: "crop" },
+                    { displayName: Translation.tr("Fit"), icon: "fit_screen", value: "fit" },
+                    { displayName: Translation.tr("Stretch"), icon: "aspect_ratio", value: "stretch" }
+                ]
+            }
         }
 
         ConfigSwitch {
