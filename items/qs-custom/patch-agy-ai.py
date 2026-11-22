@@ -2210,23 +2210,6 @@ def main() -> int:
                 "    }",
             ),
             (
-                "wallThemeSyncTimer",
-                "    property string selectedWallpaperMonitor: {",
-                "    Timer {\n"
-                "        id: wallThemeSyncTimer\n"
-                "        interval: 180\n"
-                "        repeat: false\n"
-                "        onTriggered: {\n"
-                "            if (Config.options.background.perMonitor) {\n"
-                "                Quickshell.execDetached([\"python3\", Quickshell.shellPath(\"scripts/colors/per-monitor-kitty-theme.py\"), \"sync-all\"]);\n"
-                "            } else {\n"
-                "                Quickshell.execDetached([\"bash\", \"-c\", `${Directories.wallpaperSwitchScriptPath} --noswitch && python3 \"${FileUtils.trimFileProtocol(Quickshell.shellPath('scripts/colors/per-monitor-kitty-theme.py'))}\" apply`]);\n"
-                "            }\n"
-                "        }\n"
-                "    }\n\n"
-                "    property string selectedWallpaperMonitor: {",
-            ),
-            (
                 "II_TARGET_MONITOR",
                 "                    onClicked: {\n"
                 "                        randomWallProc.scriptPath = `${Directories.scriptPath}/colors/random/random_konachan_wall.sh`;\n"
