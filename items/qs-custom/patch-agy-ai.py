@@ -2247,6 +2247,43 @@ def main() -> int:
                 "                    }",
             ),
             (
+                "previewFadeAnim",
+                "            Item {\n"
+                "                implicitWidth: 340\n"
+                "                implicitHeight: 200\n"
+                "                \n"
+                "                StyledImage {\n"
+                "                    id: wallpaperPreview\n"
+                "                    anchors.fill: parent\n"
+                "                    fillMode: Image.PreserveAspectCrop\n"
+                "                    source: quickPage.previewWallpaperPath\n"
+                "                    cache: false",
+                "            Item {\n"
+                "                id: previewFadeWrapper\n"
+                "                implicitWidth: 340\n"
+                "                implicitHeight: 200\n"
+                "                NumberAnimation on opacity {\n"
+                "                    id: previewFadeAnim\n"
+                "                    from: 0.25\n"
+                "                    to: 1\n"
+                "                    duration: 180\n"
+                "                    easing.type: Easing.OutCubic\n"
+                "                    running: false\n"
+                "                }\n"
+                "                Connections {\n"
+                "                    target: quickPage\n"
+                "                    function onPreviewWallpaperPathChanged() {\n"
+                "                        previewFadeAnim.restart();\n"
+                "                    }\n"
+                "                }\n"
+                "                StyledImage {\n"
+                "                    id: wallpaperPreview\n"
+                "                    anchors.fill: parent\n"
+                "                    fillMode: Image.PreserveAspectCrop\n"
+                "                    source: quickPage.previewWallpaperPath\n"
+                "                    cache: true",
+            ),
+            (
                 "quickPage.previewWallpaperPath",
                 "source: Config.options.background.wallpaperPath",
                 "source: quickPage.previewWallpaperPath",
