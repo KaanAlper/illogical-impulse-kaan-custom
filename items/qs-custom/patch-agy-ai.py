@@ -2666,14 +2666,9 @@ def main() -> int:
                     "    property string wallpaperPath: wallpaperIsVideo ? rawThumbnailPath : rawWallpaperPath",
                 ),
                 (
-                    'root.placementStrategy === "fixed"',
-                    '        if (root.placementStrategy === "free" && !root.needsColText) return;',
-                    '        if ((root.placementStrategy === "free" || root.placementStrategy === "fixed") && !root.needsColText) return;',
-                ),
-                (
-                    'if (root.placementStrategy === "free" || root.placementStrategy === "fixed") return;',
-                    '                if (root.placementStrategy === "free") return;',
-                    '                if (root.placementStrategy === "free" || root.placementStrategy === "fixed") return;',
+                    '!(configEntry?.locked ?? false)',
+                    '    draggable: placementStrategy === "free"',
+                    '    draggable: placementStrategy === "free" && !(configEntry?.locked ?? false)',
                 ),
             ],
         )
@@ -3616,22 +3611,53 @@ def main() -> int:
                     "        }\n",
                 ),
                 (
-                    'value: "fixed"',
-                    '                    {\n'
-                    '                        displayName: Translation.tr("Draggable"),\n'
-                    '                        icon: "drag_pan",\n'
-                    '                        value: "free"\n'
-                    '                    },',
-                    '                    {\n'
-                    '                        displayName: Translation.tr("Draggable"),\n'
-                    '                        icon: "drag_pan",\n'
-                    '                        value: "free"\n'
-                    '                    },\n'
-                    '                    {\n'
-                    '                        displayName: Translation.tr("Locked"),\n'
-                    '                        icon: "lock",\n'
-                    '                        value: "fixed"\n'
-                    '                    },',
+                    'Config.options.background.widgets.clock.locked',
+                    '        ConfigSwitch {\n'
+                    '            buttonIcon: "lock_clock"\n',
+                    '        ConfigSwitch {\n'
+                    '            visible: Config.options.background.widgets.clock.placementStrategy === "free"\n'
+                    '            buttonIcon: "lock"\n'
+                    '            text: Translation.tr("Lock position")\n'
+                    '            checked: Config.options.background.widgets.clock.locked\n'
+                    '            onCheckedChanged: {\n'
+                    '                Config.options.background.widgets.clock.locked = checked;\n'
+                    '            }\n'
+                    '        }\n\n'
+                    '        ConfigSwitch {\n'
+                    '            buttonIcon: "lock_clock"\n',
+                ),
+                (
+                    'Config.options.background.widgets.weather.locked',
+                    '        WeatherLocationSettings {\n'
+                    '            visible: Config.options.background.widgets.weather.enable\n'
+                    '        }\n',
+                    '        ConfigSwitch {\n'
+                    '            visible: Config.options.background.widgets.weather.enable && Config.options.background.widgets.weather.placementStrategy === "free"\n'
+                    '            buttonIcon: "lock"\n'
+                    '            text: Translation.tr("Lock position")\n'
+                    '            checked: Config.options.background.widgets.weather.locked\n'
+                    '            onCheckedChanged: {\n'
+                    '                Config.options.background.widgets.weather.locked = checked;\n'
+                    '            }\n'
+                    '        }\n\n'
+                    '        WeatherLocationSettings {\n'
+                    '            visible: Config.options.background.widgets.weather.enable\n'
+                    '        }\n',
+                ),
+            ],
+        )
+        ok &= patch_file(
+            ii / "modules/common/Config.qml",
+            [
+                (
+                    'property bool locked: false',
+                    'property string placementStrategy: "leastBusy" // "free", "leastBusy", "mostBusy"\n',
+                    'property string placementStrategy: "leastBusy" // "free", "leastBusy", "mostBusy"\n                        property bool locked: false\n',
+                ),
+                (
+                    '                        property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"\n                        property bool locked: false',
+                    'property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"\n',
+                    'property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"\n                        property bool locked: false\n',
                 ),
             ],
         )
