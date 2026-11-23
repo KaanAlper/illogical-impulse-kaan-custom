@@ -21,19 +21,6 @@ hl.window_rule({match = {title = "^(AsenaDPI)$" }, float = true})
 hl.window_rule({match = {class = "^(asena-dpi)$" }, float = true})
 
 -- Edge-Drop rules
-hl.window_rule({
-    match = { class = "^(edge-drop)$" },
-    float = true,
-    pin = true,
-    move = {"0", "0"},
-    border_size = 0,
-    no_shadow = true,
-    rounding = 0,
-    no_anim = true,
-    no_blur = true,
-    no_initial_focus = true,
-    opacity = "1.0 1.0"
-})
 
 -- Portal & Share Picker Dialogs (Floating)
 hl.window_rule({match = {class = "hyprland-share-picker"}, float = true})

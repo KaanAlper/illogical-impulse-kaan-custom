@@ -77,7 +77,7 @@
         },
         { "id": "screensaver", "title": "Ekran koruyucu", "desc": "DVD, Matrix, Starfield, Mystify, XANA, Renk şablonu, özel medya, her monitöre ayrı ayar ve çevirileri", "default": true },
         { "id": "lock-power", "title": "Kilit & güç ayarları", "desc": "Genel -> Kilit bölümü (Ekran kilidi, DPMS, Derin uyku, Plymouth XANA logo seçici) ve çevirileri", "default": true },
-        { "id": "startup-apps", "title": "Başlangıç uygulamaları", "desc": "Genel -> Dil altında duyarlı/kaydırılabilir başlangıç uygulamaları tablosu (AsenaDPI, autostart, execs)", "default": true },
+        { "id": "startup-apps", "title": "Başlangıç uygulamaları", "desc": "Genel -> Dil altında duyarlı/kaydırılabilir başlangıç uygulamaları tablosu (AsenaDPI, autostart, execs); Hyprland açılırken autostart uygulamalarını kendisi başlatır", "default": true },
         {
           "id": "ai-sidebar", "title": "Sol panel AI (Agy, Claude, Codex & Anime)", "default": true,
           "desc": "AI sohbet sekmeleri, model seçiciler, anime görüntüleyici ve ilgili çeviriler. CLI'ları seçmesen de Super+A'da kurulu olmayana girince indirme önerilir",
@@ -110,10 +110,9 @@
         "flameshot"
       ],
       "features": [
-        { "id": "rules", "title": "Pencere kuralları", "desc": "rules.lua ve rules.conf", "default": true },
-        { "id": "alttab", "title": "Alt+Tab pencere değiştirici", "desc": "alttab/ yapılandırması ve Alt+Tab / Alt+Shift+Tab kısayolları", "default": true },
-        { "id": "bootsplash", "title": "Açılış logosu", "desc": "bootsplash/ görselleri", "default": true },
-        { "id": "execs-env", "title": "Açılış komutları ve ortam", "desc": "execs.lua, env.lua, general.lua, variables.lua", "default": true }
+        { "id": "rules", "title": "Pencere kuralları", "desc": "Ekran paylaşım seçicisi (yüzen, ortada), Waydroid, AsenaDPI ve nchat pencere kuralları", "default": true },
+        { "id": "alttab", "title": "Alt+Tab pencere değiştirici", "desc": "Alt+Tab / Alt+Shift+Tab kısayolları; Hyprland açılırken kendiliğinden başlar", "default": true },
+        { "id": "bootsplash", "title": "Açılış logosu", "desc": "Açılış logosu; Hyprland açılırken kendiliğinden gösterilir", "default": true }
       ]
     },
     {

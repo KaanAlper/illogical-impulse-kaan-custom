@@ -60,10 +60,9 @@ illogical-impulse-kaan-custom
 │   └── icon-cache                  # Fixes Zen Browser & ArtCraft icons and refreshes hicolor icon-theme.cache
 │
 ├── hypr-custom — Hyprland custom configuration (~/.config/hypr/custom, non-destructive)
-│   ├── rules                       # Window & floating rules (Flameshot, Everything, etc.)
-│   ├── alttab                      # Custom Alt+Tab window switcher + Alt+Tab / Alt+Shift+Tab keybinds
-│   ├── bootsplash                  # Custom boot splash watermark assets
-│   └── execs-env                   # Startup execs, environment variables, general settings, and overrides
+│   ├── rules                       # Window rules: screen-share picker (floating, centered), Waydroid, AsenaDPI, nchat
+│   ├── alttab                      # Alt+Tab window switcher + keybinds; starts automatically with Hyprland
+│   └── bootsplash                  # Boot splash logo; shown automatically when Hyprland starts
 │
 ├── flameshot                       # Installs flameshot, configures Wayland-compatible INI, wires Print keybind
 ├── fish-settings                   # Bash compatibility helpers for Fish ($?, !!, b, bp)
