@@ -3307,6 +3307,32 @@ def main() -> int:
     if has_feat("weather-settings"):
         # One shared weather settings widget (GPS/city search, units, polling) in Settings -> Bar, Background and Services
         ok &= patch_file(
+            ii / "modules/common/Config.qml",
+            [
+                (
+                    "property string district:",
+                    "                    property string city: \"\" // When 'enableGPS' is false\n",
+                    "                    property string city: \"\" // When 'enableGPS' is false ('lat,lon' when picked from the list)\n"
+                    "                    property string country: \"\" // ISO 3166-1 alpha-2 code picked in Settings\n"
+                    "                    property string state: \"\" // Province/state name picked in Settings\n"
+                    "                    property string district: \"\" // District/city name picked in Settings\n"
+                    "                    property string label: \"\" // Human readable name of the picked place\n",
+                ),
+            ],
+        )
+        ok &= patch_file(
+            ii / "services/Weather.qml",
+            [
+                (
+                    "Config.options.bar.weather.label",
+                    '        temp.city = data?.location?.areaName[0]?.value || "City";',
+                    "        // A place picked in Settings is shown by its own name (the API may return an old or nearby area name)\n"
+                    "        const pickedName = (!root.gpsActive && Config.options.bar.weather.label) ? Config.options.bar.weather.label.split(\",\")[0].trim() : \"\";\n"
+                    '        temp.city = pickedName || data?.location?.areaName[0]?.value || "City";',
+                ),
+            ],
+        )
+        ok &= patch_file(
             ii / "modules/settings/BarConfig.qml",
             [
                 (
