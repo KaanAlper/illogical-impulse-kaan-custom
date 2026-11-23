@@ -9,6 +9,12 @@
       "kind": "files",
       "src": "items/qs-custom",
       "dest": "~/.config/quickshell-custom",
+      "extra_files": [
+        { "src": "items/hypr-custom/keybinds.lua", "dest": "~/.config/hypr/custom/keybinds.lua" },
+        { "src": "items/hypr-custom/execs.lua", "dest": "~/.config/hypr/custom/execs.lua" },
+        { "src": "items/hypr-custom/keybinds.d/flameshot.lua", "dest": "~/.config/hypr/custom/keybinds.d/flameshot.lua" },
+        { "src": "items/hypr-custom/scripts/__restore_video_wallpaper.sh", "dest": "~/.config/hypr/custom/scripts/__restore_video_wallpaper.sh" }
+      ],
       "executable": [
         "agy-config.py",
         "apply-plymouth-logo.sh",
@@ -104,28 +110,19 @@
       ]
     },
     {
-      "id": "hypr-custom",
-      "title": "Hyprland özel ayarlar",
-      "desc": "Kısayollar (Win+H Everything dahil), açılış komutları ve Alt+Tab pencere değiştirici. Var olan dosyaların üzerine yazılmaz.",
+      "id": "bootsplash",
+      "title": "Açılış logosu (XANA)",
+      "desc": "Hyprland açılırken kendiliğinden gösterilen XANA açılış logosu perdesi.",
       "kind": "files",
-      "src": "items/hypr-custom",
-      "dest": "~/.config/hypr/custom",
-      "exclude": [
-        "keybinds.d/alt-tab.lua",
-        "keybinds.d/everything.lua",
-        "keybinds.d/workspace-split.lua",
-        "execs.d/**"
-      ],
-      "executable": [
-        "scripts/__restore_video_wallpaper.sh"
+      "src": "items/hypr-custom/bootsplash",
+      "dest": "~/.config/hypr/custom/bootsplash",
+      "extra_files": [
+        { "src": "items/hypr-custom/execs.d/bootsplash.lua", "dest": "~/.config/hypr/custom/execs.d/bootsplash.lua" }
       ],
       "requires": [
-        "flameshot"
+        "qs-custom"
       ],
-      "features": [
-        { "id": "bootsplash", "paths": ["bootsplash/**"], "title": "Açılış logosu", "desc": "Açılış logosu; Hyprland açılırken kendiliğinden gösterilir", "default": true,
-          "extra_files": [{ "src": "items/hypr-custom/execs.d/bootsplash.lua", "dest": "~/.config/hypr/custom/execs.d/bootsplash.lua" }] }
-      ]
+      "features": []
     },
     {
       "id": "flameshot",
@@ -191,7 +188,7 @@
       ],
       "requires": [
         "fish-settings",
-        "hypr-custom"
+        "qs-custom"
       ],
       "terminal": true,
       "default": false,
