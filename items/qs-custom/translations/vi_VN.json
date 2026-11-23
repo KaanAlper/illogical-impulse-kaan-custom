@@ -130,5 +130,8 @@
   "Signing in to %1...": "Đang đăng nhập %1...",
   "Speed": "Tốc độ",
   "Waiting...": "Đang chờ...",
-  "Would you like to install it now?": "Bạn có muốn cài đặt ngay không?"
+  "Would you like to install it now?": "Bạn có muốn cài đặt ngay không?",
+  "Keyboard Layout": "Bố cục bàn phím",
+  "Select the keyboard layout used by Hyprland.\n\"Auto\" keeps the layout from your Hyprland config.": "Chọn bố cục bàn phím mà Hyprland sử dụng.\n\"Tự động\" giữ nguyên bố cục từ cấu hình Hyprland của bạn.",
+  "Auto (Hyprland config)": "Tự động (cấu hình Hyprland)"
 }

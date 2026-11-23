@@ -3151,6 +3151,82 @@ def main() -> int:
             ],
         )
 
+    if has_feat("keyboard-layout"):
+        # Settings -> General -> Language: keyboard layout selector (applied to Hyprland by KeyboardLayoutApplier)
+        ok &= patch_file(
+            ii / "modules/common/Config.qml",
+            [
+                (
+                    "property string keyboard:",
+                    'property string ui: "auto" // UI language. "auto" for system locale, or specific language code like "zh_CN", "en_US"\n',
+                    'property string ui: "auto" // UI language. "auto" for system locale, or specific language code like "zh_CN", "en_US"\n'
+                    '                property string keyboard: "" // XKB keyboard layout code (e.g. "tr", "us"). Empty keeps the Hyprland config\n',
+                ),
+            ],
+        )
+        ok &= patch_file(
+            ii / "modules/settings/GeneralConfig.qml",
+            [
+                (
+                    "keyboardSelector",
+                    '        ContentSubsection {\n'
+                    '            title: Translation.tr("Generate translation with Gemini")',
+                    '        ContentSubsection {\n'
+                    '            title: Translation.tr("Keyboard Layout")\n'
+                    '            tooltip: Translation.tr("Select the keyboard layout used by Hyprland.\\n\\"Auto\\" keeps the layout from your Hyprland config.")\n\n'
+                    '            StyledComboBox {\n'
+                    '                id: keyboardSelector\n'
+                    '                buttonIcon: "keyboard"\n'
+                    '                textRole: "displayName"\n'
+                    '                property var layouts: []\n\n'
+                    '                model: [\n'
+                    '                    {\n'
+                    '                        displayName: Translation.tr("Auto (Hyprland config)"),\n'
+                    '                        value: ""\n'
+                    '                    },\n'
+                    '                    ...layouts\n'
+                    '                ]\n\n'
+                    '                currentIndex: {\n'
+                    '                    const index = model.findIndex(item => item.value === (Config.options.language.keyboard ?? ""));\n'
+                    '                    return index !== -1 ? index : 0;\n'
+                    '                }\n\n'
+                    '                onActivated: index => {\n'
+                    '                    Config.options.language.keyboard = model[index].value;\n'
+                    '                }\n\n'
+                    '                Process {\n'
+                    '                    running: true\n'
+                    '                    command: ["python3", Quickshell.shellPath("scripts/list-keyboard-layouts.py")]\n'
+                    '                    stdout: StdioCollector {\n'
+                    '                        onStreamFinished: {\n'
+                    '                            try {\n'
+                    '                                keyboardSelector.layouts = JSON.parse(text);\n'
+                    '                            } catch (e) {}\n'
+                    '                        }\n'
+                    '                    }\n'
+                    '                }\n'
+                    '            }\n'
+                    '        }\n'
+                    '        ContentSubsection {\n'
+                    '            title: Translation.tr("Generate translation with Gemini")',
+                ),
+            ],
+        )
+        ok &= patch_file(
+            ii / "shell.qml",
+            [
+                (
+                    'import "modules/ii/keyboard"',
+                    'import "modules/common"\n',
+                    'import "modules/common"\nimport "modules/ii/keyboard"\n',
+                ),
+                (
+                    "KeyboardLayoutApplier {}",
+                    "    ReloadPopup {}\n",
+                    "    ReloadPopup {}\n    KeyboardLayoutApplier {}\n",
+                ),
+            ],
+        )
+
     ok &= patch_file(
         ii / "scripts/colors/applycolor.sh",
         [

@@ -130,5 +130,8 @@
   "Signing in to %1...": "מתחבר ל-%1...",
   "Speed": "מהירות",
   "Waiting...": "ממתין...",
-  "Would you like to install it now?": "להתקין עכשיו?"
+  "Would you like to install it now?": "להתקין עכשיו?",
+  "Keyboard Layout": "פריסת מקלדת",
+  "Select the keyboard layout used by Hyprland.\n\"Auto\" keeps the layout from your Hyprland config.": "בחר את פריסת המקלדת ש-Hyprland משתמש בה.\n\"אוטומטי\" שומר על הפריסה מתצורת Hyprland שלך.",
+  "Auto (Hyprland config)": "אוטומטי (תצורת Hyprland)"
 }

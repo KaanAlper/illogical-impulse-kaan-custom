@@ -130,5 +130,8 @@
   "Signing in to %1...": "Signing in to %1...",
   "Speed": "Speed",
   "Waiting...": "Waiting...",
-  "Would you like to install it now?": "Would you like to install it now?"
+  "Would you like to install it now?": "Would you like to install it now?",
+  "Keyboard Layout": "Keyboard Layout",
+  "Select the keyboard layout used by Hyprland.\n\"Auto\" keeps the layout from your Hyprland config.": "Select the keyboard layout used by Hyprland.\n\"Auto\" keeps the layout from your Hyprland config.",
+  "Auto (Hyprland config)": "Auto (Hyprland config)"
 }

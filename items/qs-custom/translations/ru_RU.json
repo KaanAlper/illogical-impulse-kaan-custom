@@ -130,5 +130,8 @@
   "Signing in to %1...": "Вход в %1...",
   "Speed": "Скорость",
   "Waiting...": "Ожидание...",
-  "Would you like to install it now?": "Установить сейчас?"
+  "Would you like to install it now?": "Установить сейчас?",
+  "Keyboard Layout": "Раскладка клавиатуры",
+  "Select the keyboard layout used by Hyprland.\n\"Auto\" keeps the layout from your Hyprland config.": "Выберите раскладку клавиатуры, используемую Hyprland.\n«Авто» сохраняет раскладку из вашей конфигурации Hyprland.",
+  "Auto (Hyprland config)": "Авто (конфигурация Hyprland)"
 }

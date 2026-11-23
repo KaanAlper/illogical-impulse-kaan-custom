@@ -130,5 +130,8 @@
   "Signing in to %1...": "%1 にサインイン中...",
   "Speed": "速度",
   "Waiting...": "待機中...",
-  "Would you like to install it now?": "今すぐインストールしますか？"
+  "Would you like to install it now?": "今すぐインストールしますか？",
+  "Keyboard Layout": "キーボードレイアウト",
+  "Select the keyboard layout used by Hyprland.\n\"Auto\" keeps the layout from your Hyprland config.": "Hyprland が使用するキーボードレイアウトを選択します。\n「自動」では Hyprland の設定のレイアウトを維持します。",
+  "Auto (Hyprland config)": "自動 (Hyprland の設定)"
 }

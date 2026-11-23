@@ -75,6 +75,7 @@
             { "id": "wallpaper-settings", "title": "Duvar kâğıdı ayarları", "desc": "Her monitöre ayrı duvar kâğıdı, sürükle-bırak monitör sırası, ana monitör yıldızı ve Ayarlar -> Duvar Kâğıdı sayfası", "default": true }
           ]
         },
+        { "id": "keyboard-layout", "title": "Klavye dili seçici", "desc": "Ayarlar -> Genel -> Dil altında klavye düzeni (tr, us, de...) seçici; seçim Hyprland'e uygulanır ve açılışta hatırlanır + çevirileri", "default": true },
         { "id": "screensaver", "title": "Ekran koruyucu", "desc": "DVD, Matrix, Starfield, Mystify, XANA, Renk şablonu, özel medya, her monitöre ayrı ayar ve çevirileri", "default": true },
         { "id": "lock-power", "title": "Kilit & güç ayarları", "desc": "Genel -> Kilit bölümü (Ekran kilidi, DPMS, Derin uyku, Plymouth XANA logo seçici) ve çevirileri", "default": true },
         { "id": "startup-apps", "title": "Başlangıç uygulamaları", "desc": "Genel -> Dil altında duyarlı/kaydırılabilir başlangıç uygulamaları tablosu (AsenaDPI, autostart, execs); Hyprland açılırken autostart uygulamalarını kendisi başlatır", "default": true },

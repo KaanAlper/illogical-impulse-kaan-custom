@@ -130,5 +130,8 @@
   "Signing in to %1...": "%1 hesabına giriş yapılıyor...",
   "Speed": "Hız",
   "Waiting...": "Bekleniyor...",
-  "Would you like to install it now?": "Şimdi kurmak ister misiniz?"
+  "Would you like to install it now?": "Şimdi kurmak ister misiniz?",
+  "Keyboard Layout": "Klavye Düzeni",
+  "Select the keyboard layout used by Hyprland.\n\"Auto\" keeps the layout from your Hyprland config.": "Hyprland'in kullandığı klavye düzenini seçin.\n\"Otomatik\", Hyprland yapılandırmanızdaki düzeni korur.",
+  "Auto (Hyprland config)": "Otomatik (Hyprland yapılandırması)"
 }

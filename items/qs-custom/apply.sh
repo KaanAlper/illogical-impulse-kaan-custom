@@ -94,6 +94,12 @@ if has_feat "live-wallpaper"; then
         cp "$CUSTOM_DIR/LiveWallpaperStoreDialogStub.qml" "$II/modules/common/widgets/LiveWallpaperStoreDialog.qml"
     fi
 fi
+if has_feat "keyboard-layout"; then
+    mkdir -p "$II/modules/ii/keyboard"
+    cp "$CUSTOM_DIR/KeyboardLayoutApplier.qml" "$II/modules/ii/keyboard/KeyboardLayoutApplier.qml"
+    cp "$CUSTOM_DIR/list-keyboard-layouts.py" "$II/scripts/list-keyboard-layouts.py"
+    chmod +x "$II/scripts/list-keyboard-layouts.py"
+fi
 if has_feat "icon-cache"; then
     mkdir -p "$HOME/.local/share/icons/hicolor/128x128/apps"
     if [ -f /usr/share/icons/hicolor/128x128/apps/zen-browser.png ]; then

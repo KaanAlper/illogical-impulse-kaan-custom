@@ -130,5 +130,8 @@
   "Signing in to %1...": "正在登录 %1...",
   "Speed": "速度",
   "Waiting...": "等待中...",
-  "Would you like to install it now?": "要现在安装吗？"
+  "Would you like to install it now?": "要现在安装吗？",
+  "Keyboard Layout": "键盘布局",
+  "Select the keyboard layout used by Hyprland.\n\"Auto\" keeps the layout from your Hyprland config.": "选择 Hyprland 使用的键盘布局。\n“自动”将保留你的 Hyprland 配置中的布局。",
+  "Auto (Hyprland config)": "自动（Hyprland 配置）"
 }

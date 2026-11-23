@@ -130,5 +130,8 @@
   "Signing in to %1...": "Masuk ke %1...",
   "Speed": "Kecepatan",
   "Waiting...": "Menunggu...",
-  "Would you like to install it now?": "Pasang sekarang?"
+  "Would you like to install it now?": "Pasang sekarang?",
+  "Keyboard Layout": "Tata Letak Papan Ketik",
+  "Select the keyboard layout used by Hyprland.\n\"Auto\" keeps the layout from your Hyprland config.": "Pilih tata letak papan ketik yang digunakan Hyprland.\n\"Otomatis\" mempertahankan tata letak dari konfigurasi Hyprland Anda.",
+  "Auto (Hyprland config)": "Otomatis (konfigurasi Hyprland)"
 }

@@ -130,5 +130,8 @@
   "Signing in to %1...": "Anmeldung bei %1...",
   "Speed": "Geschwindigkeit",
   "Waiting...": "Warten...",
-  "Would you like to install it now?": "Möchten Sie es jetzt installieren?"
+  "Would you like to install it now?": "Möchten Sie es jetzt installieren?",
+  "Keyboard Layout": "Tastaturlayout",
+  "Select the keyboard layout used by Hyprland.\n\"Auto\" keeps the layout from your Hyprland config.": "Wählen Sie das von Hyprland verwendete Tastaturlayout.\n„Auto“ behält das Layout aus Ihrer Hyprland-Konfiguration.",
+  "Auto (Hyprland config)": "Auto (Hyprland-Konfiguration)"
 }
