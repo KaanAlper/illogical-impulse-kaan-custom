@@ -66,7 +66,6 @@ illogical-impulse-kaan-custom
 │   └── icon-cache                  # Fixes Zen Browser & ArtCraft icons and refreshes hicolor icon-theme.cache
 │
 ├── hypr-custom — Hyprland custom configuration (~/.config/hypr/custom, non-destructive)
-│   ├── rules                       # Window rules: screen-share picker (floating, centered), Waydroid, AsenaDPI, nchat
 │   ├── alttab                      # Alt+Tab window switcher + keybinds; starts automatically with Hyprland
 │   └── bootsplash                  # Boot splash logo; shown automatically when Hyprland starts
 │

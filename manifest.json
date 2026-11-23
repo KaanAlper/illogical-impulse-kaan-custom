@@ -100,7 +100,7 @@
     {
       "id": "hypr-custom",
       "title": "Hyprland özel ayarlar",
-      "desc": "Kısayollar (Win+H Everything dahil), pencere kuralları, açılış komutları ve Alt+Tab pencere değiştirici. Var olan dosyaların üzerine yazılmaz.",
+      "desc": "Kısayollar (Win+H Everything dahil), açılış komutları ve Alt+Tab pencere değiştirici. Var olan dosyaların üzerine yazılmaz.",
       "kind": "files",
       "src": "items/hypr-custom",
       "dest": "~/.config/hypr/custom",
@@ -111,7 +111,6 @@
         "flameshot"
       ],
       "features": [
-        { "id": "rules", "paths": ["rules.lua"], "title": "Pencere kuralları", "desc": "Ekran paylaşım seçicisi (yüzen, ortada), Waydroid, AsenaDPI ve nchat pencere kuralları", "default": true },
         { "id": "alttab", "paths": ["alttab/**"], "title": "Alt+Tab pencere değiştirici", "desc": "Alt+Tab / Alt+Shift+Tab kısayolları; Hyprland açılırken kendiliğinden başlar", "default": true },
         { "id": "bootsplash", "paths": ["bootsplash/**"], "title": "Açılış logosu", "desc": "Açılış logosu; Hyprland açılırken kendiliğinden gösterilir", "default": true }
       ]
