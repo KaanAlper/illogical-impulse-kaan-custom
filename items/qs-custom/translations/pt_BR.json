@@ -169,5 +169,8 @@
   "Staying awake: no screen off, no sleep (click to allow sleep)": "Mantendo ativo: a tela não apaga e não suspende (clique para permitir a suspensão)",
   "Split workspaces by monitor": "Dividir áreas de trabalho por monitor",
   "No 2nd monitor": "Sem segundo monitor",
-  "M%1 %2–%3 | M%4 %5–%6": "M%1 %2–%3 | M%4 %5–%6"
+  "M%1 %2–%3 | M%4 %5–%6": "M%1 %2–%3 | M%4 %5–%6",
+  "Providers": "Provedores",
+  "Sign in required to use Agy": "É necessário entrar para usar o Agy",
+  "Signing in to Agy...": "Entrando no Agy..."
 }

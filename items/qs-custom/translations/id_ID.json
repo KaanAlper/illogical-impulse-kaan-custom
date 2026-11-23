@@ -169,5 +169,8 @@
   "Staying awake: no screen off, no sleep (click to allow sleep)": "Tetap menyala: layar tidak mati, tidak tidur (klik untuk mengizinkan tidur)",
   "Split workspaces by monitor": "Pisahkan ruang kerja per monitor",
   "No 2nd monitor": "Tidak ada monitor ke-2",
-  "M%1 %2–%3 | M%4 %5–%6": "M%1 %2–%3 | M%4 %5–%6"
+  "M%1 %2–%3 | M%4 %5–%6": "M%1 %2–%3 | M%4 %5–%6",
+  "Providers": "Penyedia",
+  "Sign in required to use Agy": "Perlu masuk untuk menggunakan Agy",
+  "Signing in to Agy...": "Masuk ke Agy..."
 }

@@ -169,5 +169,8 @@
   "Staying awake: no screen off, no sleep (click to allow sleep)": "Не засинає: екран не гасне, сну немає (натисніть, щоб дозволити сон)",
   "Split workspaces by monitor": "Розділяти робочі столи за моніторами",
   "No 2nd monitor": "Немає другого монітора",
-  "M%1 %2–%3 | M%4 %5–%6": "M%1 %2–%3 | M%4 %5–%6"
+  "M%1 %2–%3 | M%4 %5–%6": "M%1 %2–%3 | M%4 %5–%6",
+  "Providers": "Провайдери",
+  "Sign in required to use Agy": "Для використання Agy потрібен вхід",
+  "Signing in to Agy...": "Вхід в Agy..."
 }
