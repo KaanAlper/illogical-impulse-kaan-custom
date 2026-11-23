@@ -313,13 +313,52 @@ def cmd_status(args: argparse.Namespace) -> int:
     return 0
 
 
+class SudoSession:
+    """Terminal açmadan yönetici komutlarını çalıştırmak için geçici sudo kabuğu.
+
+    Parola yalnızca bellekte ve alt süreçlerin ortam değişkeninde (DOTSYNC_SUDO_PW) tutulur,
+    diske yazılmaz. `sudo` adlı sarmalayıcı `-n` bayrağını atıp `sudo -A` ile askpass kullanır;
+    böylece kurulum betiklerindeki düz `sudo ...` çağrıları etkileşimsiz çalışır.
+    """
+
+    def __init__(self, password: str, real_sudo: str | None = None) -> None:
+        self.dir = Path(tempfile.mkdtemp(prefix="dotsync-sudo-"))
+        self.dir.chmod(0o700)
+        real = real_sudo or shutil.which("sudo") or "/usr/bin/sudo"
+        askpass = self.dir / "askpass"
+        askpass.write_text("#!/bin/sh\nprintf '%s\\n' \"$DOTSYNC_SUDO_PW\"\n")
+        shim = self.dir / "sudo"
+        shim.write_text(
+            "#!/bin/bash\n"
+            "args=()\n"
+            'for a in "$@"; do [ "$a" = "-n" ] || args+=("$a"); done\n'
+            f'exec {shlex.quote(real)} -A "${{args[@]}}"\n'
+        )
+        askpass.chmod(0o700)
+        shim.chmod(0o700)
+        self.password = password
+
+    def env(self, base: dict[str, str] | None = None) -> dict[str, str]:
+        env = dict(base if base is not None else os.environ)
+        env["PATH"] = f"{self.dir}:{env.get('PATH', '')}"
+        env["SUDO_ASKPASS"] = str(self.dir / "askpass")
+        env["DOTSYNC_SUDO_PW"] = self.password
+        return env
+
+    def close(self) -> None:
+        shutil.rmtree(self.dir, ignore_errors=True)
+        self.password = ""
+
+
 def _run_install(item: dict, repo: Path, env: dict[str, str] | None = None) -> bool:
     """Terminal gerektirmeyen öğelerin `install` komutu (varsa)."""
     cmd = item.get("install")
     if not cmd:
         return True
     cmd = cmd.replace("{repo}", shlex.quote(str(repo)))
-    return subprocess.run(["bash", "-c", cmd], env=env, check=False).returncode == 0
+    # Parolalı (arka plan) kurulumda betik stdin'den okumaya çalışıp takılmasın
+    stdin = subprocess.DEVNULL if env and "DOTSYNC_SUDO_PW" in env else None
+    return subprocess.run(["bash", "-c", cmd], env=env, stdin=stdin, check=False).returncode == 0
 
 
 def _run_post(item: dict, env: dict[str, str] | None = None) -> bool:
@@ -336,6 +375,12 @@ def cmd_apply(args: argparse.Namespace) -> int:
     if unknown:
         _emit(event="error", detail=f"bilinmeyen öğe: {', '.join(unknown)}")
         return 2
+
+    sudo: SudoSession | None = None
+    if getattr(args, "password_stdin", False):
+        pw = sys.stdin.readline().rstrip("\n")
+        if pw:
+            sudo = SudoSession(pw, os.environ.get("DOTSYNC_REAL_SUDO"))
 
     state = state_dir()
     save_declined(state, (load_declined(state) | set(args.decline)) - set(args.ids))
@@ -358,12 +403,14 @@ def cmd_apply(args: argparse.Namespace) -> int:
             _emit(event="done", id=iid, ok=False, detail=f"önkoşul eksik: {', '.join(blockers)}")
             done[iid] = False
             continue
-        if item.get("terminal"):
+        if item.get("terminal") and not sudo:
             terminal_batch.append(item)
             continue
         _emit(event="start", id=iid)
         try:
             item_env = {**os.environ, "DOTSYNC_FEATURES": feature_map.get(iid, "all")}
+            if sudo:
+                item_env = sudo.env(item_env)
             copied = install_files(item, repo) if item["kind"] == "files" else []
             ran = _run_install(item, repo, item_env) and _run_post(item, item_env)
             # Çıkış koduna değil gerçek duruma güven: öğe artık eksiksiz mi?
@@ -396,6 +443,8 @@ def cmd_apply(args: argparse.Namespace) -> int:
                 _emit(event="done", id=item["id"], ok=ok, detail="" if ok else "terminalde tamamlanmadı")
         script.unlink(missing_ok=True)
 
+    if sudo:
+        sudo.close()
     _emit(event="finished", ok=all(done.values()) if done else True)
     return 0 if all(done.values()) else 1
 
@@ -457,6 +506,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("ids", nargs="*", default=[])
     p.add_argument("--decline", nargs="*", default=[])
     p.add_argument("--features", nargs="*", default=[], help="id:feat1,feat2 biçiminde alt özellik seçimi")
+    p.add_argument("--password-stdin", action="store_true", help="yönetici parolasını stdin'den oku; terminal açmadan kur")
     p.set_defaults(fn=cmd_apply)
 
     p = sub.add_parser("decline")

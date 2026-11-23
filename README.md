@@ -37,6 +37,9 @@ illogical-impulse-kaan-custom
 │   │   ├── audio-mono-toggle       # One-click Mono/Stereo audio downmix toggle in the bar
 │   │   ├── audio-output-switcher   # Quick audio output device switcher popup in the bar
 │   │   └── sleep-inhibit-toggle    # Top bar toggle to inhibit idle sleep, DPMS, and lid-close
+│   ├── live-wallpaper              # Native live (video/GIF) wallpapers via QtMultimedia, per-monitor wallpapers,
+│   │                               # drag-to-reorder monitor pills, main-monitor star, Live Store (motionbgs.com)
+│   │                               # and Settings -> Wallpaper page, + 14-lang translations
 │   ├── screensaver                 # Screensaver (DVD, Matrix, Starfield, Mystify, XANA, Color, Custom/GIF/Video/.scr),
 │   │                               # per-monitor settings, deferred lock (keeps running until input), + 14-lang translations
 │   ├── lock-power                  # Settings -> General -> Lock (idle lock, DPMS, Suspend toggles/timeouts,
@@ -56,6 +59,9 @@ illogical-impulse-kaan-custom
 │   ├── hypridle                    # Idle & lock listener defaults
 │   ├── bootsplash                  # Custom boot splash watermark assets
 │   └── execs-env                   # Startup execs, environment variables, general settings, and overrides
+│
+├── live-wallpaper-deps             # ffmpeg (ffprobe, thumbnails), qt6-multimedia-ffmpeg (video playback), jq
+│                                   # Needed by the live-wallpaper feature; installed with pacman
 │
 ├── flameshot                       # Installs flameshot, configures Wayland-compatible INI, wires Print keybind
 ├── fish-settings                   # Bash compatibility helpers for Fish ($?, !!, b, bp)

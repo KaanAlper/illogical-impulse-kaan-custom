@@ -40,6 +40,16 @@ ShellRoot {
     property int applyTotal: 0
     property int applyDone: 0
     property bool allOk: true
+    property bool deferredOnly: false
+    property bool pwMode: false             // true: kurulum terminalsiz, uygulama içi parola ile arka planda
+
+    // Yönetici onayı: 0 yok, 1 eksik bağımlılıklar (İndir / Daha sonra), 2 parola
+    property int dlgStep: 0
+    property bool dlgBusy: false
+    property string dlgError: ""
+    property string pendingPw: ""
+    readonly property string sudoBin: Quickshell.env("DOTSYNC_SUDO") || "sudo"
+    ListModel { id: adminItems }    // title, missing
 
     ListModel {
         id: bootSteps
@@ -137,10 +147,41 @@ ShellRoot {
         statusProc.running = true;
     }
 
-    function startApply() {
+    function needsAdmin(it) { return it.terminal || it.kind === "pkgs"; }
+
+    // "Seçilenleri indir": yönetici gerektiren eksik varsa önce popup
+    function requestApply() {
+        adminItems.clear();
+        for (var i = 0; i < items.count; i++) {
+            var it = items.get(i);
+            if (it.checked && needsAdmin(it)) adminItems.append({ title: it.title, missing: it.missing });
+        }
+        if (adminItems.count === 0) { startApply(false); return; }
+        dlgError = ""; dlgBusy = false; pendingPw = "";
+        dlgStep = 1;
+    }
+
+    // "Daha sonra": yönetici gerektirenler atlanır, reddedilmiş sayılmaz (bir sonraki açılışta tekrar sorulur)
+    function deferAdmin() {
+        dlgStep = 0;
+        startApply(false, true);
+    }
+
+    function submitPassword(pw) {
+        if (dlgBusy || pw === "") return;
+        dlgError = ""; dlgBusy = true; pendingPw = pw;
+        pwCheckProc.running = true;
+        pwWriteTimer.target = pwCheckProc; pwWriteTimer.restart();
+    }
+
+    function startApply(usePw, later) {
         var ids = [], declines = [], featArgs = [];
         for (var i = 0; i < items.count; i++) {
             var it = items.get(i);
+            if (later && it.checked && needsAdmin(it)) {
+                items.setProperty(i, "runState", "skip");
+                continue;
+            }
             if (it.checked) {
                 ids.push(it.id);
                 var feats = JSON.parse(it.featuresJson || "[]");
@@ -168,12 +209,17 @@ ShellRoot {
         var args = ["python3", root.bin, "apply"].concat(ids);
         if (declines.length) args = args.concat(["--decline"]).concat(declines);
         if (featArgs.length) args = args.concat(["--features"]).concat(featArgs);
+        if (usePw) args = args.concat(["--password-stdin"]);
+        pwMode = !!usePw;
+        deferredOnly = !!later && ids.length === 0;
         applyProc.command = args;
         applyTotal = ids.length;
         applyDone = 0;
         allOk = true;
+        if (ids.length === 0 && declines.length === 0) { page = 3; return; }
         page = 2;
         applyProc.running = true;
+        if (usePw) { pwWriteTimer.target = applyProc; pwWriteTimer.restart(); }
     }
 
     function setRun(id, state, detail) {
@@ -265,8 +311,36 @@ ShellRoot {
         onExited: code => { if (code !== 0 && !root.loadError) { root.loadError = "dotsync çalışmadı (kod " + code + ")"; root.loading = false; } }
     }
 
+    // Parola: sudo ile doğrulanır (yalnızca stdin'den; ekrana/arg'a yazılmaz)
+    Process {
+        id: pwCheckProc
+        command: [root.sudoBin, "-S", "-k", "-p", "", "-v"]
+        stdinEnabled: true
+        onExited: code => {
+            root.dlgBusy = false;
+            if (code === 0) {
+                pwInput.text = "";
+                root.dlgStep = 0;
+                root.startApply(true);
+            } else {
+                root.pendingPw = "";
+                root.dlgError = "Parola yanlış. Tekrar dene.";
+            }
+        }
+    }
+    Timer {
+        id: pwWriteTimer
+        property var target: null
+        interval: 200
+        onTriggered: {
+            if (target && root.pendingPw !== "") target.write(root.pendingPw + "\n");
+            if (target === applyProc) root.pendingPw = "";
+        }
+    }
+
     Process {
         id: applyProc
+        stdinEnabled: true
         stdout: SplitParser { onRead: line => root.onEvent(line) }
         onExited: code => { if (root.page === 2) root.page = 3; }
     }
@@ -892,7 +966,7 @@ ShellRoot {
                                         text: root.selectedCount > 0 ? "Seçilenleri indir (" + root.selectedCount + ")" : "Hiçbirini indirme"
                                         color: root.cBg; font.pixelSize: 14; font.weight: Font.DemiBold
                                     }
-                                    MouseArea { id: goArea; anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.startApply() }
+                                    MouseArea { id: goArea; anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: root.requestApply() }
                                 }
                             }
                         }
@@ -921,10 +995,22 @@ ShellRoot {
                                     radius: 3; color: root.cAccent
                                     Behavior on width { NumberAnimation { duration: 220; easing.type: Easing.OutCubic } }
                                 }
+                                // Çalışırken kayan şerit: uzun süren tek bir paket için de hareket gösterir
+                                Rectangle {
+                                    id: shimmer
+                                    visible: root.applyDone < root.applyTotal
+                                    y: 0; height: parent.height; width: parent.width * 0.25; radius: 3
+                                    color: Qt.rgba(1, 1, 1, 0.35)
+                                    SequentialAnimation on x {
+                                        running: shimmer.visible; loops: Animation.Infinite
+                                        NumberAnimation { from: -shimmer.width; to: shimmer.parent.width; duration: 1400; easing.type: Easing.InOutQuad }
+                                    }
+                                }
                             }
                             Text {
                                 Layout.fillWidth: true; wrapMode: Text.WordWrap
-                                text: "Terminal gerektirenler ayrı bir pencerede açılır; parolayı orada girersin."
+                                text: root.pwMode ? "Paketler arka planda indiriliyor; bu birkaç dakika sürebilir. Pencereyi kapatma."
+                                    : "Terminal gerektirenler ayrı bir pencerede açılır; parolayı orada girersin."
                                 color: root.cSub; font.pixelSize: 13
                             }
                             ListView {
@@ -996,7 +1082,9 @@ ShellRoot {
                             }
                             Text {
                                 Layout.fillWidth: true; horizontalAlignment: Text.AlignHCenter; wrapMode: Text.WordWrap
-                                text: root.nothingToDo
+                                text: root.deferredOnly
+                                    ? "Daha sonra için bırakıldı. Bir sonraki açılışta tekrar sorulur."
+                                    : root.nothingToDo
                                     ? "Bu bilgisayarda eksik bir şey yok. Sonraki açılışlarda yalnızca yeni bir şey eksik kalırsa sorulur."
                                     : root.allOk
                                     ? "Seçtiklerin kuruldu. İndirmediklerin için bir daha sorulmayacak (Reddedilenleri sıfırla ile geri açabilirsin)."
@@ -1010,6 +1098,132 @@ ShellRoot {
                                 color: doneArea.pressed ? Qt.darker(root.cAccent, 1.15) : root.cAccent
                                 Text { id: doneTxt; anchors.centerIn: parent; text: "Kapat"; color: root.cBg; font.pixelSize: 14; font.weight: Font.DemiBold }
                                 MouseArea { id: doneArea; anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: Qt.quit() }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ---- yönetici onayı: eksik bağımlılıklar -> parola
+            Rectangle {
+                id: dlgOverlay
+                anchors.fill: parent
+                z: 100
+                visible: root.dlgStep > 0
+                color: Qt.rgba(0, 0, 0, 0.62)
+                onVisibleChanged: if (visible && root.dlgStep === 2) pwInput.forceActiveFocus()
+                MouseArea { anchors.fill: parent; hoverEnabled: true }   // arkadaki sayfayı tıklamaya kapat
+
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: 500
+                    height: dlgCol.implicitHeight + 48
+                    radius: 22
+                    color: root.cSurface
+                    border.color: root.cOutline
+                    border.width: 1
+
+                    ColumnLayout {
+                        id: dlgCol
+                        anchors { left: parent.left; right: parent.right; top: parent.top; margins: 24 }
+                        spacing: 12
+
+                        Text {
+                            text: root.dlgStep === 1 ? "Eksik bağımlılıklar" : "Yönetici parolası"
+                            color: root.cFg; font.pixelSize: 20; font.weight: Font.DemiBold
+                        }
+                        Text {
+                            Layout.fillWidth: true; wrapMode: Text.WordWrap
+                            text: root.dlgStep === 1
+                                ? "Bunlar bu bilgisayarda yok. Şimdi indirilsin mi?"
+                                : "Paketleri kurmak için parolanı gir. Kurulum arka planda yapılır."
+                            color: root.cSub; font.pixelSize: 13
+                        }
+
+                        // 1) eksik listesi
+                        Repeater {
+                            model: root.dlgStep === 1 ? adminItems : null
+                            delegate: ColumnLayout {
+                                required property string title
+                                required property string missing
+                                Layout.fillWidth: true
+                                spacing: 2
+                                Text { text: "• " + title; color: root.cFg; font.pixelSize: 14; font.weight: Font.Medium }
+                                Text {
+                                    visible: missing !== ""
+                                    Layout.fillWidth: true; Layout.leftMargin: 12; wrapMode: Text.WrapAnywhere
+                                    text: missing; color: root.cDim; font.pixelSize: 11
+                                }
+                            }
+                        }
+
+                        // 2) parola alanı
+                        Rectangle {
+                            visible: root.dlgStep === 2
+                            Layout.fillWidth: true; implicitHeight: 44; radius: 12
+                            color: root.cSurface2
+                            border.color: root.dlgError !== "" ? root.cErr : (pwInput.activeFocus ? root.cAccent : root.cOutline)
+                            border.width: 1
+                            TextInput {
+                                id: pwInput
+                                anchors { fill: parent; leftMargin: 14; rightMargin: 14 }
+                                verticalAlignment: TextInput.AlignVCenter
+                                echoMode: TextInput.Password
+                                passwordCharacter: "•"
+                                color: root.cFg; font.pixelSize: 15
+                                enabled: !root.dlgBusy
+                                onAccepted: root.submitPassword(text)
+                                onTextChanged: root.dlgError = ""
+                            }
+                        }
+                        Text {
+                            visible: root.dlgStep === 2 && root.dlgError !== ""
+                            text: root.dlgError; color: root.cErr; font.pixelSize: 12
+                        }
+                        // parola doğrulanırken kayan çubuk
+                        Rectangle {
+                            visible: root.dlgStep === 2 && root.dlgBusy
+                            Layout.fillWidth: true; implicitHeight: 4; radius: 2; color: root.cSurface2; clip: true
+                            Rectangle {
+                                id: pwShimmer
+                                height: parent.height; width: parent.width * 0.3; radius: 2; color: root.cAccent
+                                SequentialAnimation on x {
+                                    running: pwShimmer.visible; loops: Animation.Infinite
+                                    NumberAnimation { from: -pwShimmer.width; to: pwShimmer.parent.width; duration: 1000; easing.type: Easing.InOutQuad }
+                                }
+                            }
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            Layout.topMargin: 6
+                            spacing: 10
+                            Item { Layout.fillWidth: true }
+                            Rectangle {
+                                implicitWidth: backTxt.implicitWidth + 36; implicitHeight: 40; radius: 20
+                                color: backArea.containsMouse ? root.cSurface2 : "transparent"
+                                border.color: root.cOutline; border.width: 1
+                                opacity: root.dlgBusy ? 0.4 : 1
+                                Text { id: backTxt; anchors.centerIn: parent; text: root.dlgStep === 1 ? "Daha sonra" : "Geri"; color: root.cFg; font.pixelSize: 14 }
+                                MouseArea {
+                                    id: backArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
+                                    enabled: !root.dlgBusy
+                                    onClicked: { if (root.dlgStep === 1) root.deferAdmin(); else { root.dlgStep = 1; root.dlgError = ""; } }
+                                }
+                            }
+                            Rectangle {
+                                implicitWidth: okTxt.implicitWidth + 40; implicitHeight: 40; radius: 20
+                                color: okArea.pressed ? Qt.darker(root.cAccent, 1.15) : root.cAccent
+                                opacity: root.dlgBusy ? 0.5 : 1
+                                Text { id: okTxt; anchors.centerIn: parent; text: root.dlgStep === 1 ? "İndir" : "Kur"; color: root.cBg; font.pixelSize: 14; font.weight: Font.DemiBold }
+                                MouseArea {
+                                    id: okArea; anchors.fill: parent; cursorShape: Qt.PointingHandCursor
+                                    enabled: !root.dlgBusy
+                                    onClicked: {
+                                        if (root.dlgStep === 1) { root.dlgStep = 2; pwInput.text = ""; pwInput.forceActiveFocus(); }
+                                        else root.submitPassword(pwInput.text)
+                                    }
+                                }
                             }
                         }
                     }

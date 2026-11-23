@@ -66,6 +66,7 @@
             { "id": "sleep-inhibit-toggle", "title": "Uyku engelleme düğmesi", "desc": "Ekran kapanma/uyku engelleme anahtarı", "default": true }
           ]
         },
+        { "id": "live-wallpaper", "title": "Canlı duvar kâğıdı & Duvar Kâğıdı ayarları", "desc": "Video/GIF duvar kâğıdı, her monitöre ayrı duvar kâğıdı, sürükle-bırak monitör sırası, ana monitör yıldızı, Canlı Mağaza ve Ayarlar -> Duvar Kâğıdı sayfası + çevirileri", "default": true },
         { "id": "screensaver", "title": "Ekran koruyucu", "desc": "DVD, Matrix, Starfield, Mystify, XANA, Renk şablonu, özel medya, her monitöre ayrı ayar ve çevirileri", "default": true },
         { "id": "lock-power", "title": "Kilit & güç ayarları", "desc": "Genel -> Kilit bölümü (Ekran kilidi, DPMS, Derin uyku, Plymouth XANA logo seçici) ve çevirileri", "default": true },
         { "id": "startup-apps", "title": "Başlangıç uygulamaları", "desc": "Genel -> Dil altında duyarlı/kaydırılabilir başlangıç uygulamaları tablosu (AsenaDPI, autostart, execs)", "default": true },
@@ -74,6 +75,14 @@
         { "id": "workspace-split", "title": "Çoklu monitör çalışma alanı", "desc": "Monitöre göre bölme, odaklanmayan monitör vurgusu ve Ctrl+Super+Sol/Sağ (+Shift) monitörler arası geçiş kısayolları", "default": true },
         { "id": "icon-cache", "title": "Uygulama ikon önbelleği", "desc": "Zen Browser ve ArtCraft ikon önbellek düzeltmesi", "default": true }
       ]
+    },
+    {
+      "id": "live-wallpaper-deps",
+      "title": "Canlı duvar kâğıdı bağımlılıkları",
+      "desc": "ffmpeg (ffprobe ve küçük resimler), qt6-multimedia-ffmpeg (video oynatma) ve jq. Canlı duvar kâğıdı için gerekir.",
+      "kind": "pkgs",
+      "pkgs": ["ffmpeg", "qt6-multimedia-ffmpeg", "jq"],
+      "install": "bash {repo}/items/live-wallpaper-deps/install.sh"
     },
     {
       "id": "hypr-custom",

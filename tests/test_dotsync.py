@@ -364,3 +364,42 @@ def test_apply_files_item_reapplies_post_when_files_exist_but_check_fails(cli_en
     assert done["ok"] is True
     assert done["detail"] == "uygulandı"
 
+
+
+def test_sudo_session_runs_plain_sudo_noninteractively(tmp_path):
+    """`sudo -n true` ve `sudo cmd` kurulum betiklerinde askpass ile, terminalsiz çalışmalı."""
+    import subprocess
+
+    log = tmp_path / "log"
+    mock = tmp_path / "realsudo"
+    # Sahte sudo: -A ile gelen askpass çıktısı doğru parola değilse reddeder
+    mock.write_text(
+        "#!/bin/bash\n"
+        'if [ "$1" != "-A" ]; then echo "no -A: $*" >> ' + str(log) + '; exit 9; fi\n'
+        "shift\n"
+        'pw=$("$SUDO_ASKPASS")\n'
+        '[ "$pw" = "s3cret" ] || { echo bad-pw >> ' + str(log) + '; exit 1; }\n'
+        'echo "ran: $*" >> ' + str(log) + '\n'
+        'exec "$@"\n'
+    )
+    mock.chmod(0o755)
+    sess = dotsync.SudoSession("s3cret", str(mock))
+    try:
+        env = sess.env()
+        r = subprocess.run(
+            ["bash", "-c", "sudo -n true && sudo echo hello"],
+            env=env, capture_output=True, text=True, stdin=subprocess.DEVNULL,
+        )
+        assert r.returncode == 0, r.stderr
+        assert "hello" in r.stdout
+        text = log.read_text()
+        assert "ran: true" in text and "ran: echo hello" in text
+        assert "-n" not in text  # shim -n'yi atar, böylece önbellek/parola gereken yol da işler
+        # Yanlış parola reddedilir
+        bad = dotsync.SudoSession("wrong", str(mock))
+        r2 = subprocess.run(["bash", "-c", "sudo true"], env=bad.env(), capture_output=True, stdin=subprocess.DEVNULL)
+        assert r2.returncode != 0
+        bad.close()
+    finally:
+        sess.close()
+    assert not sess.dir.exists()
