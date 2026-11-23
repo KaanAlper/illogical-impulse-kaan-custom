@@ -3320,6 +3320,219 @@ def main() -> int:
                 ),
             ],
         )
+        # Bar weather popup: stays open while the mouse is on it, plus a refresh button (spins while loading)
+        ok &= patch_file(
+            ii / "modules/ii/bar/StyledPopup.qml",
+            [
+                (
+                    "keepOpenOnHover",
+                    "    property real popupBackgroundMargin: 0\n\n"
+                    "    active: hoverTarget && hoverTarget.containsMouse\n",
+                    "    property real popupBackgroundMargin: 0\n"
+                    "    // When true the popup stays open while the mouse moves from the bar item onto the popup\n"
+                    "    property bool keepOpenOnHover: false\n"
+                    "    property bool popupHovered: false\n"
+                    "    readonly property bool targetHovered: !!hoverTarget && hoverTarget.containsMouse\n\n"
+                    "    onTargetHoveredChanged: {\n"
+                    "        if (!targetHovered)\n"
+                    "            closeDelay.restart();\n"
+                    "    }\n"
+                    "    onActiveChanged: {\n"
+                    "        if (!active)\n"
+                    "            popupHovered = false;\n"
+                    "    }\n\n"
+                    "    // Keeps the popup alive briefly after the pointer leaves the bar item so it can reach the popup\n"
+                    "    property Timer closeDelay: Timer {\n"
+                    "        interval: 250\n"
+                    "    }\n\n"
+                    "    active: targetHovered || (keepOpenOnHover && (popupHovered || closeDelay.running))\n",
+                ),
+                (
+                    "- Appearance.sizes.elevationMargin, 0",
+                    "                    (root.hoverTarget.width - popupBackground.implicitWidth) / 2, 0\n",
+                    "                    (root.hoverTarget.width - popupBackground.implicitWidth) / 2 - Appearance.sizes.elevationMargin, 0\n",
+                ),
+                (
+                    "HoverHandler",
+                    "            border.width: 1\n"
+                    "            border.color: Appearance.colors.colLayer0Border\n"
+                    "        }\n",
+                    "            border.width: 1\n"
+                    "            border.color: Appearance.colors.colLayer0Border\n\n"
+                    "            HoverHandler {\n"
+                    "                onHoveredChanged: root.popupHovered = hovered\n"
+                    "            }\n"
+                    "        }\n",
+                ),
+            ],
+        )
+        ok &= patch_file(
+            ii / "modules/ii/bar/weather/WeatherPopup.qml",
+            [
+                (
+                    "keepOpenOnHover",
+                    "StyledPopup {\n"
+                    "    id: root\n\n"
+                    "    ColumnLayout {\n"
+                    "        id: columnLayout\n"
+                    "        anchors.centerIn: parent\n",
+                    "StyledPopup {\n"
+                    "    id: root\n"
+                    "    keepOpenOnHover: true\n\n"
+                    "    Item {\n"
+                    "        implicitWidth: columnLayout.implicitWidth\n"
+                    "        implicitHeight: columnLayout.implicitHeight\n\n"
+                    "        RippleButton {\n"
+                    "            id: refreshButton\n"
+                    "            anchors {\n"
+                    "                top: columnLayout.top\n"
+                    "                right: columnLayout.right\n"
+                    "            }\n"
+                    "            implicitWidth: 28\n"
+                    "            implicitHeight: 28\n"
+                    "            buttonRadius: Appearance.rounding.full\n"
+                    "            onClicked: Weather.getData()\n\n"
+                    "            contentItem: Item {\n"
+                    "                id: refreshIcon\n"
+                    "                implicitWidth: 24\n"
+                    "                implicitHeight: 24\n\n"
+                    "                MaterialSymbol {\n"
+                    "                    anchors.centerIn: parent\n"
+                    '                    text: "refresh"\n'
+                    "                    iconSize: Appearance.font.pixelSize.large\n"
+                    "                    color: Appearance.colors.colOnSurfaceVariant\n"
+                    "                }\n\n"
+                    "                RotationAnimator {\n"
+                    "                    target: refreshIcon\n"
+                    "                    from: 0\n"
+                    "                    to: 360\n"
+                    "                    duration: 900\n"
+                    "                    loops: Animation.Infinite\n"
+                    "                    running: Weather.loading\n"
+                    "                    onRunningChanged: {\n"
+                    "                        if (!running)\n"
+                    "                            refreshIcon.rotation = 0;\n"
+                    "                    }\n"
+                    "                }\n"
+                    "            }\n\n"
+                    "            StyledToolTip {\n"
+                    '                text: Translation.tr("Refresh")\n'
+                    "            }\n"
+                    "        }\n\n"
+                    "    ColumnLayout {\n"
+                    "        id: columnLayout\n"
+                    "        anchors.centerIn: parent\n",
+                ),
+                (
+                    "// big temperature",
+                    "            StyledText {\n"
+                    "                id: temp\n"
+                    "                font.pixelSize: Appearance.font.pixelSize.smaller\n"
+                    "                color: Appearance.colors.colOnSurfaceVariant\n"
+                    '                text: Weather.data.temp + " • " + Translation.tr("Feels like %1").arg(Weather.data.tempFeelsLike)\n'
+                    "            }\n",
+                    "            // big temperature: the main information of the popup\n"
+                    "            RowLayout {\n"
+                    "                Layout.alignment: Qt.AlignHCenter\n"
+                    "                spacing: 8\n\n"
+                    "                MaterialSymbol {\n"
+                    "                    fill: 0\n"
+                    '                    text: Icons.getWeatherIcon(Weather.data.wCode) ?? "cloud"\n'
+                    "                    iconSize: Appearance.font.pixelSize.title * 1.5\n"
+                    "                    color: Appearance.colors.colOnSurface\n"
+                    "                    Layout.alignment: Qt.AlignVCenter\n"
+                    "                }\n"
+                    "                StyledText {\n"
+                    "                    id: temp\n"
+                    "                    text: Weather.data.temp\n"
+                    "                    font {\n"
+                    "                        pixelSize: Appearance.font.pixelSize.title * 1.6\n"
+                    "                        weight: Font.Medium\n"
+                    "                    }\n"
+                    "                    color: Appearance.colors.colOnSurface\n"
+                    "                    Layout.alignment: Qt.AlignVCenter\n"
+                    "                }\n"
+                    "            }\n"
+                    "            StyledText {\n"
+                    "                Layout.alignment: Qt.AlignHCenter\n"
+                    "                font.pixelSize: Appearance.font.pixelSize.smaller\n"
+                    "                color: Appearance.colors.colOnSurfaceVariant\n"
+                    '                text: Translation.tr("Feels like %1").arg(Weather.data.tempFeelsLike)\n'
+                    "            }\n",
+                ),
+                (
+                    "sunrise/sunset cards removed",
+                    "            WeatherCard {\n"
+                    '                title: Translation.tr("Sunrise")\n'
+                    '                symbol: "wb_twilight"\n'
+                    "                value: Weather.data.sunrise\n"
+                    "            }\n"
+                    "            WeatherCard {\n"
+                    '                title: Translation.tr("Sunset")\n'
+                    '                symbol: "bedtime"\n'
+                    "                value: Weather.data.sunset\n"
+                    "            }\n",
+                    "            // sunrise/sunset cards removed\n",
+                ),
+                (
+                    "natural content height",
+                    "        implicitHeight: gridLayout.implicitHeight\n",
+                    "        // natural content height: header, cards and footer all count\n",
+                ),
+                (
+                    "// fill the popup background",
+                    "    Item {\n"
+                    "        implicitWidth: columnLayout.implicitWidth\n"
+                    "        implicitHeight: columnLayout.implicitHeight\n",
+                    "    Item {\n"
+                    "        // fill the popup background so the content stays centred inside its padding\n"
+                    "        anchors.fill: parent\n"
+                    "        implicitWidth: columnLayout.implicitWidth\n"
+                    "        implicitHeight: columnLayout.implicitHeight\n",
+                ),
+                (
+                    "uv card removed",
+                    "            WeatherCard {\n"
+                    '                title: Translation.tr("UV Index")\n'
+                    '                symbol: "wb_sunny"\n'
+                    "                value: Weather.data.uv\n"
+                    "            }\n",
+                    "            // uv card removed\n",
+                ),
+                (
+                    "visibility card removed",
+                    "            WeatherCard {\n"
+                    '                title: Translation.tr("Visibility")\n'
+                    '                symbol: "visibility"\n'
+                    "                value: Weather.data.visib\n"
+                    "            }\n",
+                    "            // visibility card removed\n",
+                ),
+                (
+                    "end of refresh wrapper",
+                    "            color: Appearance.colors.colOnSurfaceVariant\n"
+                    "        }\n"
+                    "    }\n"
+                    "}\n",
+                    "            color: Appearance.colors.colOnSurfaceVariant\n"
+                    "        }\n"
+                    "    }\n"
+                    "    } // end of refresh wrapper\n"
+                    "}\n",
+                ),
+            ],
+        )
+        ok &= patch_file(
+            ii / "services/Weather.qml",
+            [
+                (
+                    "property bool loading:",
+                    "    property bool gpsActive: Config.options.bar.weather.enableGPS\n",
+                    "    property bool gpsActive: Config.options.bar.weather.enableGPS\n"
+                    "    readonly property bool loading: fetcher.running\n",
+                ),
+            ],
+        )
         ok &= patch_file(
             ii / "services/Weather.qml",
             [
@@ -3349,6 +3562,13 @@ def main() -> int:
                     "        WeatherLocationSettings {}\n"
                     "    }\n",
                 ),
+                (
+                    "visible: Config.options.bar.weather.enable",
+                    "        WeatherLocationSettings {}\n",
+                    "        WeatherLocationSettings {\n"
+                    "            visible: Config.options.bar.weather.enable\n"
+                    "        }\n",
+                ),
             ],
         )
         ok &= patch_file(
@@ -3369,6 +3589,13 @@ def main() -> int:
                     "        }\n\n"
                     "        WeatherLocationSettings {}\n"
                     "    }\n",
+                ),
+                (
+                    "visible: Config.options.background.widgets.weather.enable",
+                    "        WeatherLocationSettings {}\n",
+                    "        WeatherLocationSettings {\n"
+                    "            visible: Config.options.background.widgets.weather.enable\n"
+                    "        }\n",
                 ),
             ],
         )
