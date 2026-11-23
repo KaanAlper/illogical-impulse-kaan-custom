@@ -18,7 +18,16 @@ if is_file_exists(HOME .. "/.config/quickshell/ii/modules/ii/altSwitcher/AltSwit
     hl.bind("ALT_R", hl.dsp.global("quickshell:altSwitcherAlt"), { ignore_mods = true, transparent = true })
 end
 
-if is_file_exists(HOME .. "/.config/quickshell/ii/scripts/apply-workspace-split.py") then
+-- Cross-monitor workspace navigation (same rule as the upstream PR): only while the workspaces are split by monitor.
+local function workspaces_are_split()
+    local f = io.open(HOME .. "/.config/hypr/workspaces.lua", "r")
+    if not f then return false end
+    local content = f:read("*a")
+    f:close()
+    return content:find("workspace_rule", 1, true) ~= nil
+end
+
+if is_file_exists(HOME .. "/.config/quickshell/ii/scripts/apply-workspace-split.py") and workspaces_are_split() then
     -- Global workspace navigation across monitors (Ctrl+Super+Left/Right steps -1/+1 instead of monitor-locked r-1/r+1)
     hl.unbind("CTRL + SUPER + Left")
     hl.unbind("CTRL + SUPER + Right")
