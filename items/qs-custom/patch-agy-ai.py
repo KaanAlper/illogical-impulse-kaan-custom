@@ -2665,6 +2665,16 @@ def main() -> int:
                     "    property bool wallpaperIsVideo: rawWallpaperPath.endsWith(\".mp4\") || rawWallpaperPath.endsWith(\".webm\") || rawWallpaperPath.endsWith(\".mkv\") || rawWallpaperPath.endsWith(\".avi\") || rawWallpaperPath.endsWith(\".mov\")\n"
                     "    property string wallpaperPath: wallpaperIsVideo ? rawThumbnailPath : rawWallpaperPath",
                 ),
+                (
+                    'root.placementStrategy === "fixed"',
+                    '        if (root.placementStrategy === "free" && !root.needsColText) return;',
+                    '        if ((root.placementStrategy === "free" || root.placementStrategy === "fixed") && !root.needsColText) return;',
+                ),
+                (
+                    'if (root.placementStrategy === "free" || root.placementStrategy === "fixed") return;',
+                    '                if (root.placementStrategy === "free") return;',
+                    '                if (root.placementStrategy === "free" || root.placementStrategy === "fixed") return;',
+                ),
             ],
         )
 
@@ -3604,6 +3614,24 @@ def main() -> int:
                     "        WeatherLocationSettings {\n"
                     "            visible: Config.options.background.widgets.weather.enable\n"
                     "        }\n",
+                ),
+                (
+                    'value: "fixed"',
+                    '                    {\n'
+                    '                        displayName: Translation.tr("Draggable"),\n'
+                    '                        icon: "drag_pan",\n'
+                    '                        value: "free"\n'
+                    '                    },',
+                    '                    {\n'
+                    '                        displayName: Translation.tr("Draggable"),\n'
+                    '                        icon: "drag_pan",\n'
+                    '                        value: "free"\n'
+                    '                    },\n'
+                    '                    {\n'
+                    '                        displayName: Translation.tr("Locked"),\n'
+                    '                        icon: "lock",\n'
+                    '                        value: "fixed"\n'
+                    '                    },',
                 ),
             ],
         )
