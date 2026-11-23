@@ -3120,6 +3120,17 @@ def main() -> int:
                     '                create_restore_script "$video_path"\n',
                     '                remove_restore  # native live wallpaper: no mpvpaper restore script (execs.lua would start a 2nd player)\n',
                 ),
+                (
+                    "live-wallpaper-store.py record",
+                    '                remove_restore  # native live wallpaper: no mpvpaper restore script (execs.lua would start a 2nd player)\n',
+                    '                remove_restore  # native live wallpaper: no mpvpaper restore script (execs.lua would start a 2nd player)\n'
+                    '                python3 "$SCRIPT_DIR/live-wallpaper-store.py" record "$imgpath" >/dev/null 2>&1 || true\n',
+                ),
+                (
+                    "Images and videos (*.",
+                    "        imgpath=\"$(kdialog --getopenfilename . --title 'Choose wallpaper')\"",
+                    "        imgpath=\"$(kdialog --getopenfilename . 'Images and videos (*.png *.jpg *.jpeg *.webp *.gif *.mp4 *.webm *.mkv *.avi *.mov)' --title 'Choose wallpaper')\"",
+                ),
             ],
         )
 
