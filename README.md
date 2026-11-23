@@ -62,7 +62,6 @@ illogical-impulse-kaan-custom
 ├── hypr-custom — Hyprland custom configuration (~/.config/hypr/custom, non-destructive)
 │   ├── rules                       # Window & floating rules (Flameshot, Everything, etc.)
 │   ├── alttab                      # Custom Alt+Tab window switcher + Alt+Tab / Alt+Shift+Tab keybinds
-│   ├── hypridle                    # Idle & lock listener defaults
 │   ├── bootsplash                  # Custom boot splash watermark assets
 │   └── execs-env                   # Startup execs, environment variables, general settings, and overrides
 │

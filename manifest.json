@@ -99,7 +99,7 @@
     {
       "id": "hypr-custom",
       "title": "Hyprland özel ayarlar",
-      "desc": "Kısayollar (Win+H Everything dahil), pencere kuralları, hypridle (uyku kapalı, sadece kilit/ekran), açılış komutları ve Alt+Tab pencere değiştirici. Var olan dosyaların üzerine yazılmaz.",
+      "desc": "Kısayollar (Win+H Everything dahil), pencere kuralları, açılış komutları ve Alt+Tab pencere değiştirici. Var olan dosyaların üzerine yazılmaz.",
       "kind": "files",
       "src": "items/hypr-custom",
       "dest": "~/.config/hypr/custom",
@@ -112,7 +112,6 @@
       "features": [
         { "id": "rules", "title": "Pencere kuralları", "desc": "rules.lua ve rules.conf", "default": true },
         { "id": "alttab", "title": "Alt+Tab pencere değiştirici", "desc": "alttab/ yapılandırması ve Alt+Tab / Alt+Shift+Tab kısayolları", "default": true },
-        { "id": "hypridle", "title": "Boşta kalma / kilit zamanlayıcısı", "desc": "hypridle.conf", "default": true },
         { "id": "bootsplash", "title": "Açılış logosu", "desc": "bootsplash/ görselleri", "default": true },
         { "id": "execs-env", "title": "Açılış komutları ve ortam", "desc": "execs.lua, env.lua, general.lua, variables.lua", "default": true }
       ]
