@@ -135,5 +135,7 @@
   "Select the keyboard layout used by Hyprland.\n\"Auto\" keeps the layout from your Hyprland config.": "Hyprland'in kullandığı klavye düzenini seçin.\n\"Otomatik\", Hyprland yapılandırmanızdaki düzeni korur.",
   "Auto (Hyprland config)": "Otomatik (Hyprland yapılandırması)",
   "Audio output switcher": "Ses çıkışı seçici",
-  "Mono audio toggle": "Mono ses geçişi"
+  "Mono audio toggle": "Mono ses geçişi",
+  "App volume mixer": "Uygulama ses mikseri",
+  "Stay awake toggle": "Uyanık kal düğmesi"
 }

@@ -135,5 +135,7 @@
   "Select the keyboard layout used by Hyprland.\n\"Auto\" keeps the layout from your Hyprland config.": "Seleziona il layout di tastiera usato da Hyprland.\n\"Auto\" mantiene il layout della tua configurazione Hyprland.",
   "Auto (Hyprland config)": "Auto (configurazione Hyprland)",
   "Audio output switcher": "Selettore uscita audio",
-  "Mono audio toggle": "Interruttore audio mono"
+  "Mono audio toggle": "Interruttore audio mono",
+  "App volume mixer": "Mixer del volume per app",
+  "Stay awake toggle": "Interruttore per restare attivo"
 }

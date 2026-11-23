@@ -135,5 +135,7 @@
   "Select the keyboard layout used by Hyprland.\n\"Auto\" keeps the layout from your Hyprland config.": "Hyprland が使用するキーボードレイアウトを選択します。\n「自動」では Hyprland の設定のレイアウトを維持します。",
   "Auto (Hyprland config)": "自動 (Hyprland の設定)",
   "Audio output switcher": "オーディオ出力切り替え",
-  "Mono audio toggle": "モノラル音声の切り替え"
+  "Mono audio toggle": "モノラル音声の切り替え",
+  "App volume mixer": "アプリ別音量ミキサー",
+  "Stay awake toggle": "スリープ防止トグル"
 }

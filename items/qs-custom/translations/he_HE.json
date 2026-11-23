@@ -135,5 +135,7 @@
   "Select the keyboard layout used by Hyprland.\n\"Auto\" keeps the layout from your Hyprland config.": "בחר את פריסת המקלדת ש-Hyprland משתמש בה.\n\"אוטומטי\" שומר על הפריסה מתצורת Hyprland שלך.",
   "Auto (Hyprland config)": "אוטומטי (תצורת Hyprland)",
   "Audio output switcher": "בורר פלט שמע",
-  "Mono audio toggle": "מתג שמע מונו"
+  "Mono audio toggle": "מתג שמע מונו",
+  "App volume mixer": "מיקסר עוצמת קול לפי אפליקציה",
+  "Stay awake toggle": "מתג הישארות ער"
 }

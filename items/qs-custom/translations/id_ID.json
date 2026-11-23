@@ -135,5 +135,7 @@
   "Select the keyboard layout used by Hyprland.\n\"Auto\" keeps the layout from your Hyprland config.": "Pilih tata letak papan ketik yang digunakan Hyprland.\n\"Otomatis\" mempertahankan tata letak dari konfigurasi Hyprland Anda.",
   "Auto (Hyprland config)": "Otomatis (konfigurasi Hyprland)",
   "Audio output switcher": "Pengalih keluaran audio",
-  "Mono audio toggle": "Tombol audio mono"
+  "Mono audio toggle": "Tombol audio mono",
+  "App volume mixer": "Mixer volume per aplikasi",
+  "Stay awake toggle": "Tombol tetap menyala"
 }

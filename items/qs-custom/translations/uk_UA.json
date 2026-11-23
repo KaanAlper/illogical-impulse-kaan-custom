@@ -135,5 +135,7 @@
   "Select the keyboard layout used by Hyprland.\n\"Auto\" keeps the layout from your Hyprland config.": "Виберіть розкладку клавіатури, яку використовує Hyprland.\n«Авто» зберігає розкладку з вашої конфігурації Hyprland.",
   "Auto (Hyprland config)": "Авто (конфігурація Hyprland)",
   "Audio output switcher": "Перемикач аудіовиходу",
-  "Mono audio toggle": "Перемикач моно-звуку"
+  "Mono audio toggle": "Перемикач моно-звуку",
+  "App volume mixer": "Мікшер гучності застосунків",
+  "Stay awake toggle": "Перемикач «не засинати»"
 }
