@@ -135,6 +135,12 @@ ShellRoot {
         items.setProperty(idx, "featuresJson", JSON.stringify(feats));
     }
 
+    // Katalog görünümü: kimlikten tutarlı bir renk tonu ve baş harf rozeti
+    function hueOf(id) { var h = 0; for (var i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) % 360; return h / 360; }
+    function badgeColor(id) { return Qt.hsla(hueOf(id), 0.55, 0.62, 0.22); }
+    function badgeFg(id) { return Qt.hsla(hueOf(id), 0.75, 0.80, 1); }
+    function initialOf(title) { return (title || "?").trim().charAt(0).toUpperCase(); }
+
     function recount() {
         var n = 0;
         for (var i = 0; i < items.count; i++) if (items.get(i).checked) n++;
@@ -541,10 +547,10 @@ ShellRoot {
                                         return c;
                                     }
                                     width: list.width
-                                    height: rowCol.implicitHeight + 28
-                                    radius: 14
-                                    color: rowArea.containsMouse ? root.cSurface2 : root.cSurface
-                                    border.color: model.checked ? Qt.rgba(0.714, 0.616, 0.973, 0.5) : Qt.rgba(1, 1, 1, 0.10)
+                                    height: cardCol.implicitHeight + 32
+                                    radius: 18
+                                    color: rowArea.containsMouse ? Qt.lighter(root.cSurface, 1.12) : root.cSurface
+                                    border.color: model.checked ? Qt.rgba(0.714, 0.616, 0.973, 0.55) : Qt.rgba(1, 1, 1, 0.09)
                                     border.width: 1
                                     Behavior on color { ColorAnimation { duration: 120 } }
 
@@ -556,152 +562,240 @@ ShellRoot {
                                         onClicked: root.toggleAllFeatures(index, !(model.checked && !model.partial))
                                     }
 
-                                    Rectangle {
-                                        id: box
-                                        x: 18; y: 18; width: 22; height: 22; radius: 7
-                                        color: model.checked ? root.cAccent : "transparent"
-                                        border.color: model.checked ? root.cAccent : root.cDim
-                                        border.width: 2
-                                        Behavior on color { ColorAnimation { duration: 120 } }
-                                        Text {
-                                            anchors.centerIn: parent
-                                            text: model.partial ? "−" : "✓"
-                                            visible: model.checked
-                                            color: root.cBg
-                                            font.pixelSize: 14
-                                            font.weight: Font.Bold
-                                        }
-                                    }
-
                                     ColumnLayout {
-                                        id: rowCol
-                                        anchors { left: box.right; leftMargin: 16; right: parent.right; rightMargin: 18; top: parent.top; topMargin: 14 }
-                                        spacing: 4
+                                        id: cardCol
+                                        anchors { left: parent.left; right: parent.right; top: parent.top; margins: 16 }
+                                        spacing: 14
+
+                                        // ---- başlık: rozet | ad + açıklama | seçim
                                         RowLayout {
                                             Layout.fillWidth: true
-                                            spacing: 8
-                                            Text { text: model.title; color: root.cFg; font.pixelSize: 15; font.weight: Font.Medium }
+                                            spacing: 14
+
                                             Rectangle {
-                                                visible: model.terminal
-                                                radius: 8; color: root.cSurface2
-                                                implicitWidth: termLabel.implicitWidth + 14; implicitHeight: 20
-                                                Text { id: termLabel; anchors.centerIn: parent; text: "terminalde"; color: root.cSub; font.pixelSize: 11 }
-                                            }
-                                            Item { Layout.fillWidth: true }
-                                            Rectangle {
-                                                visible: card.feats.length > 0
-                                                radius: 8
-                                                color: expArea.containsMouse ? root.cSurface : root.cSurface2
-                                                border.color: Qt.rgba(0.714, 0.616, 0.973, 0.35)
-                                                border.width: 1
-                                                implicitWidth: expRow.implicitWidth + 16
-                                                implicitHeight: 24
-                                                RowLayout {
-                                                    id: expRow
+                                                Layout.alignment: Qt.AlignTop
+                                                implicitWidth: 46; implicitHeight: 46; radius: 14
+                                                color: root.badgeColor(model.id)
+                                                Text {
                                                     anchors.centerIn: parent
-                                                    spacing: 4
+                                                    text: root.initialOf(model.title)
+                                                    color: root.badgeFg(model.id)
+                                                    font.pixelSize: 20; font.weight: Font.Bold
+                                                }
+                                            }
+
+                                            ColumnLayout {
+                                                Layout.fillWidth: true
+                                                spacing: 3
+                                                RowLayout {
+                                                    Layout.fillWidth: true
+                                                    spacing: 8
                                                     Text {
-                                                        text: card.selFeatCount + "/" + card.feats.length
-                                                        color: root.cSub
-                                                        font.pixelSize: 11
+                                                        text: model.title
+                                                        color: root.cFg; font.pixelSize: 16; font.weight: Font.DemiBold
+                                                        elide: Text.ElideRight
+                                                        Layout.maximumWidth: 360
                                                     }
+                                                    Rectangle {
+                                                        visible: model.terminal
+                                                        radius: 8; color: root.cSurface2
+                                                        implicitWidth: termLabel.implicitWidth + 14; implicitHeight: 20
+                                                        Text { id: termLabel; anchors.centerIn: parent; text: "terminalde"; color: root.cSub; font.pixelSize: 11 }
+                                                    }
+                                                    Item { Layout.fillWidth: true }
+                                                }
+                                                Text {
+                                                    Layout.fillWidth: true
+                                                    wrapMode: Text.WordWrap
+                                                    maximumLineCount: 3
+                                                    elide: Text.ElideRight
+                                                    text: model.desc
+                                                    color: root.cSub; font.pixelSize: 12
+                                                }
+                                                Text {
+                                                    visible: model.missing !== ""
+                                                    Layout.fillWidth: true
+                                                    elide: Text.ElideRight
+                                                    text: "Eksik: " + model.missing
+                                                    color: root.cDim; font.pixelSize: 11
+                                                }
+                                            }
+
+                                            ColumnLayout {
+                                                Layout.alignment: Qt.AlignTop
+                                                spacing: 8
+                                                Rectangle {
+                                                    Layout.alignment: Qt.AlignRight
+                                                    width: 26; height: 26; radius: 9
+                                                    color: model.checked ? root.cAccent : "transparent"
+                                                    border.color: model.checked ? root.cAccent : root.cDim
+                                                    border.width: 2
+                                                    Behavior on color { ColorAnimation { duration: 120 } }
                                                     Text {
-                                                        text: model.expanded ? "▾" : "▸"
-                                                        color: root.cFg
-                                                        font.pixelSize: 12
+                                                        anchors.centerIn: parent
+                                                        text: model.partial ? "−" : "✓"
+                                                        visible: model.checked
+                                                        color: root.cBg; font.pixelSize: 15; font.weight: Font.Bold
                                                     }
                                                 }
-                                                MouseArea {
-                                                    id: expArea
-                                                    anchors.fill: parent
-                                                    hoverEnabled: true
-                                                    cursorShape: Qt.PointingHandCursor
-                                                    onClicked: mouse => {
-                                                        mouse.accepted = true;
-                                                        items.setProperty(card.cardIdx, "expanded", !model.expanded);
+                                                Rectangle {
+                                                    visible: card.feats.length > 0
+                                                    Layout.alignment: Qt.AlignRight
+                                                    radius: 10
+                                                    color: expArea.containsMouse ? Qt.rgba(1, 1, 1, 0.12) : Qt.rgba(1, 1, 1, 0.07)
+                                                    implicitWidth: expRow.implicitWidth + 18; implicitHeight: 26
+                                                    RowLayout {
+                                                        id: expRow
+                                                        anchors.centerIn: parent
+                                                        spacing: 5
+                                                        Text { text: card.selFeatCount + "/" + card.feats.length + " seçenek"; color: root.cSub; font.pixelSize: 11 }
+                                                        Text { text: model.expanded ? "▾" : "▸"; color: root.cFg; font.pixelSize: 12 }
+                                                    }
+                                                    MouseArea {
+                                                        id: expArea
+                                                        anchors.fill: parent
+                                                        hoverEnabled: true
+                                                        cursorShape: Qt.PointingHandCursor
+                                                        onClicked: mouse => {
+                                                            mouse.accepted = true;
+                                                            items.setProperty(card.cardIdx, "expanded", !model.expanded);
+                                                        }
                                                     }
                                                 }
                                             }
-                                        }
-                                        Text { Layout.fillWidth: true; wrapMode: Text.WordWrap; text: model.desc; color: root.cSub; font.pixelSize: 12 }
-                                        Text {
-                                            Layout.fillWidth: true; elide: Text.ElideRight
-                                            text: "Eksik: " + model.missing
-                                            color: root.cDim; font.pixelSize: 11
                                         }
 
-                                        ColumnLayout {
+                                        // ---- seçenekler: 2 sütunlu katalog kutucukları
+                                        GridLayout {
                                             visible: model.expanded && card.feats.length > 0
                                             Layout.fillWidth: true
-                                            Layout.topMargin: 8
-                                            spacing: 6
+                                            columns: 2
+                                            columnSpacing: 10
+                                            rowSpacing: 10
 
                                             Repeater {
                                                 model: card.feats
-                                                delegate: ColumnLayout {
+                                                delegate: Rectangle {
                                                     id: featWrap
                                                     required property var modelData
                                                     required property int index
                                                     readonly property int featIdx: index
                                                     readonly property var subFeats: modelData.features || []
+                                                    readonly property bool isGroup: subFeats.length > 0
+                                                    readonly property bool open: isGroup && modelData.expanded === true
                                                     readonly property int selSubCount: {
                                                         var c = 0;
                                                         for (var k = 0; k < subFeats.length; k++) if (subFeats[k].checked) c++;
                                                         return c;
                                                     }
+                                                    readonly property bool hasNeeds: modelData.needs && modelData.needs.length > 0
                                                     Layout.fillWidth: true
-                                                    spacing: 4
+                                                    Layout.preferredWidth: 1
+                                                    Layout.columnSpan: open ? 2 : 1
+                                                    Layout.alignment: Qt.AlignTop
+                                                    implicitHeight: featCol.implicitHeight + 24
+                                                    radius: 14
+                                                    color: subArea.containsMouse ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(1, 1, 1, 0.04)
+                                                    border.color: modelData.checked ? Qt.rgba(0.714, 0.616, 0.973, 0.5) : Qt.rgba(1, 1, 1, 0.08)
+                                                    border.width: 1
+                                                    Behavior on color { ColorAnimation { duration: 120 } }
 
-                                                    Rectangle {
-                                                        Layout.fillWidth: true
-                                                        implicitHeight: subRow.implicitHeight + 14
-                                                        radius: 10
-                                                        color: subArea.containsMouse ? Qt.rgba(1, 1, 1, 0.06) : Qt.rgba(0, 0, 0, 0.18)
-                                                        border.color: modelData.checked ? Qt.rgba(0.714, 0.616, 0.973, 0.35) : Qt.rgba(1, 1, 1, 0.08)
-                                                        border.width: 1
-
-                                                        MouseArea {
-                                                            id: subArea
-                                                            anchors.fill: parent
-                                                            hoverEnabled: true
-                                                            cursorShape: Qt.PointingHandCursor
-                                                            onClicked: mouse => {
-                                                                mouse.accepted = true;
-                                                                root.toggleSubFeature(card.cardIdx, featWrap.featIdx);
-                                                            }
+                                                    MouseArea {
+                                                        id: subArea
+                                                        anchors.fill: parent
+                                                        hoverEnabled: true
+                                                        cursorShape: Qt.PointingHandCursor
+                                                        onClicked: mouse => {
+                                                            mouse.accepted = true;
+                                                            root.toggleSubFeature(card.cardIdx, featWrap.featIdx);
                                                         }
+                                                    }
+
+                                                    ColumnLayout {
+                                                        id: featCol
+                                                        anchors { left: parent.left; right: parent.right; top: parent.top; margins: 12 }
+                                                        spacing: 8
 
                                                         RowLayout {
-                                                            id: subRow
-                                                            anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 10 }
+                                                            Layout.fillWidth: true
                                                             spacing: 10
                                                             Rectangle {
-                                                                width: 18; height: 18; radius: 5
-                                                                color: modelData.checked ? root.cAccent : "transparent"
-                                                                border.color: modelData.checked ? root.cAccent : root.cDim
-                                                                border.width: 2
-                                                                Text { anchors.centerIn: parent; text: modelData.partial ? "−" : "✓"; visible: modelData.checked; color: root.cBg; font.pixelSize: 12; font.weight: Font.Bold }
+                                                                Layout.alignment: Qt.AlignTop
+                                                                implicitWidth: 32; implicitHeight: 32; radius: 10
+                                                                color: root.badgeColor(featWrap.modelData.id)
+                                                                Text {
+                                                                    anchors.centerIn: parent
+                                                                    text: root.initialOf(featWrap.modelData.title)
+                                                                    color: root.badgeFg(featWrap.modelData.id)
+                                                                    font.pixelSize: 14; font.weight: Font.Bold
+                                                                }
                                                             }
                                                             ColumnLayout {
                                                                 Layout.fillWidth: true
                                                                 spacing: 2
-                                                                Text { Layout.fillWidth: true; text: modelData.title; color: root.cFg; font.pixelSize: 13; font.weight: Font.Medium }
-                                                                Text { visible: modelData.desc !== ""; Layout.fillWidth: true; wrapMode: Text.WordWrap; text: modelData.desc; color: root.cSub; font.pixelSize: 11 }
+                                                                Text {
+                                                                    Layout.fillWidth: true
+                                                                    text: featWrap.modelData.title
+                                                                    color: root.cFg; font.pixelSize: 13; font.weight: Font.DemiBold
+                                                                    wrapMode: Text.WordWrap; maximumLineCount: 2
+                                                                    elide: Text.ElideRight
+                                                                }
+                                                                Text {
+                                                                    visible: featWrap.modelData.desc !== ""
+                                                                    Layout.fillWidth: true
+                                                                    text: featWrap.modelData.desc
+                                                                    color: root.cDim; font.pixelSize: 11
+                                                                    wrapMode: Text.WordWrap
+                                                                    maximumLineCount: featWrap.open ? 5 : 3
+                                                                    elide: Text.ElideRight
+                                                                }
                                                             }
                                                             Rectangle {
-                                                                visible: featWrap.subFeats.length > 0
-                                                                radius: 7
-                                                                color: subExpArea.containsMouse ? root.cSurface : root.cSurface2
-                                                                border.color: Qt.rgba(0.714, 0.616, 0.973, 0.35)
-                                                                border.width: 1
-                                                                implicitWidth: subExpRow.implicitWidth + 14
-                                                                implicitHeight: 22
+                                                                Layout.alignment: Qt.AlignTop
+                                                                width: 22; height: 22; radius: 7
+                                                                color: featWrap.modelData.checked ? root.cAccent : "transparent"
+                                                                border.color: featWrap.modelData.checked ? root.cAccent : root.cDim
+                                                                border.width: 2
+                                                                Behavior on color { ColorAnimation { duration: 120 } }
+                                                                Text {
+                                                                    anchors.centerIn: parent
+                                                                    text: featWrap.modelData.partial ? "−" : "✓"
+                                                                    visible: featWrap.modelData.checked
+                                                                    color: root.cBg; font.pixelSize: 13; font.weight: Font.Bold
+                                                                }
+                                                            }
+                                                        }
+
+                                                        RowLayout {
+                                                            visible: featWrap.hasNeeds || featWrap.isGroup
+                                                            Layout.fillWidth: true
+                                                            spacing: 8
+                                                            Rectangle {
+                                                                visible: featWrap.hasNeeds
+                                                                radius: 8
+                                                                color: Qt.rgba(0.96, 0.72, 0.35, 0.16)
+                                                                implicitWidth: needLbl.implicitWidth + 16; implicitHeight: 22
+                                                                Layout.maximumWidth: 260
+                                                                Text {
+                                                                    id: needLbl
+                                                                    anchors.fill: parent; anchors.leftMargin: 8; anchors.rightMargin: 8
+                                                                    verticalAlignment: Text.AlignVCenter
+                                                                    text: featWrap.hasNeeds ? "İndirilecek: " + featWrap.modelData.needs.join(", ") : ""
+                                                                    color: "#f5b85a"; font.pixelSize: 10; elide: Text.ElideRight
+                                                                }
+                                                            }
+                                                            Item { Layout.fillWidth: true }
+                                                            Rectangle {
+                                                                visible: featWrap.isGroup
+                                                                radius: 9
+                                                                color: subExpArea.containsMouse ? Qt.rgba(1, 1, 1, 0.14) : Qt.rgba(1, 1, 1, 0.08)
+                                                                implicitWidth: subExpRow.implicitWidth + 16; implicitHeight: 24
                                                                 RowLayout {
                                                                     id: subExpRow
                                                                     anchors.centerIn: parent
                                                                     spacing: 4
-                                                                    Text { text: featWrap.selSubCount + "/" + featWrap.subFeats.length; color: root.cSub; font.pixelSize: 10 }
-                                                                    Text { text: modelData.expanded ? "▾" : "▸"; color: root.cFg; font.pixelSize: 11 }
+                                                                    Text { text: featWrap.selSubCount + "/" + featWrap.subFeats.length + " seçenek"; color: root.cSub; font.pixelSize: 10 }
+                                                                    Text { text: featWrap.modelData.expanded ? "▾" : "▸"; color: root.cFg; font.pixelSize: 11 }
                                                                 }
                                                                 MouseArea {
                                                                     id: subExpArea
@@ -715,53 +809,68 @@ ShellRoot {
                                                                 }
                                                             }
                                                         }
-                                                    }
 
-                                                    ColumnLayout {
-                                                        visible: modelData.expanded && featWrap.subFeats.length > 0
-                                                        Layout.fillWidth: true
-                                                        Layout.leftMargin: 22
-                                                        spacing: 4
+                                                        // grubun alt seçenekleri
+                                                        GridLayout {
+                                                            visible: featWrap.open
+                                                            Layout.fillWidth: true
+                                                            columns: 2
+                                                            columnSpacing: 8
+                                                            rowSpacing: 8
+                                                            Repeater {
+                                                                model: featWrap.subFeats
+                                                                delegate: Rectangle {
+                                                                    id: nest
+                                                                    required property var modelData
+                                                                    required property int index
+                                                                    readonly property bool hasNeeds: modelData.needs && modelData.needs.length > 0
+                                                                    Layout.fillWidth: true
+                                                                    Layout.preferredWidth: 1
+                                                                    Layout.alignment: Qt.AlignTop
+                                                                    implicitHeight: nestCol.implicitHeight + 20
+                                                                    radius: 11
+                                                                    color: nestArea.containsMouse ? Qt.rgba(1, 1, 1, 0.07) : Qt.rgba(0, 0, 0, 0.2)
+                                                                    border.color: modelData.checked ? Qt.rgba(0.714, 0.616, 0.973, 0.45) : Qt.rgba(1, 1, 1, 0.06)
+                                                                    border.width: 1
 
-                                                        Repeater {
-                                                            model: featWrap.subFeats
-                                                            delegate: Rectangle {
-                                                                required property var modelData
-                                                                required property int index
-                                                                Layout.fillWidth: true
-                                                                implicitHeight: nestedRow.implicitHeight + 10
-                                                                radius: 8
-                                                                color: nestedArea.containsMouse ? Qt.rgba(1, 1, 1, 0.05) : Qt.rgba(0, 0, 0, 0.12)
-                                                                border.color: modelData.checked ? Qt.rgba(0.714, 0.616, 0.973, 0.3) : Qt.rgba(1, 1, 1, 0.06)
-                                                                border.width: 1
-
-                                                                MouseArea {
-                                                                    id: nestedArea
-                                                                    anchors.fill: parent
-                                                                    hoverEnabled: true
-                                                                    cursorShape: Qt.PointingHandCursor
-                                                                    onClicked: mouse => {
-                                                                        mouse.accepted = true;
-                                                                        root.toggleNestedFeature(card.cardIdx, featWrap.featIdx, index);
-                                                                    }
-                                                                }
-
-                                                                RowLayout {
-                                                                    id: nestedRow
-                                                                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 8 }
-                                                                    spacing: 8
-                                                                    Rectangle {
-                                                                        width: 16; height: 16; radius: 4
-                                                                        color: modelData.checked ? root.cAccent : "transparent"
-                                                                        border.color: modelData.checked ? root.cAccent : root.cDim
-                                                                        border.width: 2
-                                                                        Text { anchors.centerIn: parent; text: "✓"; visible: modelData.checked; color: root.cBg; font.pixelSize: 11; font.weight: Font.Bold }
+                                                                    MouseArea {
+                                                                        id: nestArea
+                                                                        anchors.fill: parent
+                                                                        hoverEnabled: true
+                                                                        cursorShape: Qt.PointingHandCursor
+                                                                        onClicked: mouse => {
+                                                                            mouse.accepted = true;
+                                                                            root.toggleNestedFeature(card.cardIdx, featWrap.featIdx, nest.index);
+                                                                        }
                                                                     }
                                                                     ColumnLayout {
-                                                                        Layout.fillWidth: true
-                                                                        spacing: 1
-                                                                        Text { Layout.fillWidth: true; text: modelData.title; color: root.cFg; font.pixelSize: 12; font.weight: Font.Medium }
-                                                                        Text { visible: modelData.desc !== ""; Layout.fillWidth: true; wrapMode: Text.WordWrap; text: modelData.desc; color: root.cSub; font.pixelSize: 10 }
+                                                                        id: nestCol
+                                                                        anchors { left: parent.left; right: parent.right; top: parent.top; margins: 10 }
+                                                                        spacing: 4
+                                                                        RowLayout {
+                                                                            Layout.fillWidth: true
+                                                                            spacing: 8
+                                                                            Text { Layout.fillWidth: true; text: nest.modelData.title; color: root.cFg; font.pixelSize: 12; font.weight: Font.Medium; elide: Text.ElideRight }
+                                                                            Rectangle {
+                                                                                width: 18; height: 18; radius: 6
+                                                                                color: nest.modelData.checked ? root.cAccent : "transparent"
+                                                                                border.color: nest.modelData.checked ? root.cAccent : root.cDim
+                                                                                border.width: 2
+                                                                                Text { anchors.centerIn: parent; text: "✓"; visible: nest.modelData.checked; color: root.cBg; font.pixelSize: 11; font.weight: Font.Bold }
+                                                                            }
+                                                                        }
+                                                                        Text {
+                                                                            visible: nest.modelData.desc !== ""
+                                                                            Layout.fillWidth: true
+                                                                            text: nest.modelData.desc; color: root.cDim; font.pixelSize: 10
+                                                                            wrapMode: Text.WordWrap; maximumLineCount: 3; elide: Text.ElideRight
+                                                                        }
+                                                                        Text {
+                                                                            visible: nest.hasNeeds
+                                                                            Layout.fillWidth: true
+                                                                            text: nest.hasNeeds ? "İndirilecek: " + nest.modelData.needs.join(", ") : ""
+                                                                            color: "#f5b85a"; font.pixelSize: 10; wrapMode: Text.WordWrap
+                                                                        }
                                                                     }
                                                                 }
                                                             }
@@ -831,13 +940,18 @@ ShellRoot {
 
                                                 RowLayout {
                                                     Layout.fillWidth: true
-                                                    spacing: 8
+                                                    spacing: 10
+                                                    Rectangle {
+                                                        implicitWidth: 34; implicitHeight: 34; radius: 11
+                                                        color: root.badgeColor(model.id)
+                                                        Text { anchors.centerIn: parent; text: root.initialOf(model.title); color: root.badgeFg(model.id); font.pixelSize: 16; font.weight: Font.Bold }
+                                                    }
                                                     Rectangle {
                                                         radius: 6; color: Qt.rgba(0.651, 0.890, 0.631, 0.18)
                                                         implicitWidth: okLbl.implicitWidth + 12; implicitHeight: 20
                                                         Text { id: okLbl; anchors.centerIn: parent; text: "✓ Yüklü"; color: root.cOk; font.pixelSize: 11; font.weight: Font.Medium }
                                                     }
-                                                    Text { text: model.title; color: root.cFg; font.pixelSize: 14; font.weight: Font.Medium }
+                                                    Text { text: model.title; color: root.cFg; font.pixelSize: 15; font.weight: Font.DemiBold }
                                                     Item { Layout.fillWidth: true }
                                                     Rectangle {
                                                         visible: instCard.feats.length > 0
@@ -866,80 +980,166 @@ ShellRoot {
 
                                                 Text { Layout.fillWidth: true; wrapMode: Text.WordWrap; text: model.desc; color: root.cSub; font.pixelSize: 12 }
 
-                                                ColumnLayout {
+                                                GridLayout {
                                                     visible: model.expanded && instCard.feats.length > 0
                                                     Layout.fillWidth: true
-                                                    Layout.topMargin: 6
-                                                    spacing: 4
+                                                    Layout.topMargin: 12
+                                                    columns: 2
+                                                    columnSpacing: 10
+                                                    rowSpacing: 10
 
                                                     Repeater {
                                                         model: instCard.feats
-                                                        delegate: ColumnLayout {
-                                                            id: instFeatWrap
+                                                        delegate: Rectangle {
+                                                            id: tile
                                                             required property var modelData
                                                             required property int index
                                                             readonly property var subFeats: modelData.features || []
+                                                            readonly property bool isGroup: subFeats.length > 0
+                                                            readonly property bool open: isGroup && modelData.expanded === true
+                                                            readonly property bool incomplete: !isGroup && modelData.needs && modelData.needs.length > 0
                                                             Layout.fillWidth: true
-                                                            spacing: 3
+                                                            Layout.preferredWidth: 1
+                                                            Layout.columnSpan: open ? 2 : 1
+                                                            Layout.alignment: Qt.AlignTop
+                                                            implicitHeight: tileCol.implicitHeight + 26
+                                                            radius: 16
+                                                            color: tileArea.containsMouse && isGroup ? Qt.rgba(1, 1, 1, 0.07) : Qt.rgba(1, 1, 1, 0.035)
+                                                            border.color: open ? Qt.rgba(0.714, 0.616, 0.973, 0.45) : Qt.rgba(1, 1, 1, 0.08)
+                                                            border.width: 1
+                                                            Behavior on color { ColorAnimation { duration: 120 } }
 
-                                                            Rectangle {
-                                                                Layout.fillWidth: true
-                                                                implicitHeight: instSubRow.implicitHeight + 10
-                                                                radius: 9
-                                                                color: Qt.rgba(0, 0, 0, 0.16)
-                                                                RowLayout {
-                                                                    id: instSubRow
-                                                                    anchors { left: parent.left; right: parent.right; verticalCenter: parent.verticalCenter; margins: 10 }
-                                                                    spacing: 8
-                                                                    Text { text: "•"; color: root.cOk; font.pixelSize: 13 }
-                                                                    ColumnLayout {
-                                                                        Layout.fillWidth: true
-                                                                        spacing: 1
-                                                                        Text { Layout.fillWidth: true; text: modelData.title; color: root.cFg; font.pixelSize: 12; font.weight: Font.Medium }
-                                                                        Text { visible: modelData.desc !== ""; Layout.fillWidth: true; wrapMode: Text.WordWrap; text: modelData.desc; color: root.cSub; font.pixelSize: 11 }
-                                                                    }
-                                                                    Rectangle {
-                                                                        visible: instFeatWrap.subFeats.length > 0
-                                                                        radius: 7
-                                                                        color: instSubExpArea.containsMouse ? root.cSurface2 : root.cBg
-                                                                        implicitWidth: instSubExpRow.implicitWidth + 12
-                                                                        implicitHeight: 20
-                                                                        RowLayout {
-                                                                            id: instSubExpRow
-                                                                            anchors.centerIn: parent
-                                                                            spacing: 4
-                                                                            Text { text: instFeatWrap.subFeats.length; color: root.cSub; font.pixelSize: 10 }
-                                                                            Text { text: modelData.expanded ? "▾" : "▸"; color: root.cFg; font.pixelSize: 11 }
-                                                                        }
-                                                                        MouseArea {
-                                                                            id: instSubExpArea
-                                                                            anchors.fill: parent
-                                                                            hoverEnabled: true
-                                                                            cursorShape: Qt.PointingHandCursor
-                                                                            onClicked: {
-                                                                                var f = JSON.parse(installedItems.get(instCard.instIdx).featuresJson || "[]");
-                                                                                f[instFeatWrap.index].expanded = !f[instFeatWrap.index].expanded;
-                                                                                installedItems.setProperty(instCard.instIdx, "featuresJson", JSON.stringify(f));
-                                                                            }
-                                                                        }
-                                                                    }
+                                                            MouseArea {
+                                                                id: tileArea
+                                                                anchors.fill: parent
+                                                                hoverEnabled: true
+                                                                enabled: tile.isGroup
+                                                                cursorShape: Qt.PointingHandCursor
+                                                                onClicked: {
+                                                                    var f = JSON.parse(installedItems.get(instCard.instIdx).featuresJson || "[]");
+                                                                    f[tile.index].expanded = !f[tile.index].expanded;
+                                                                    installedItems.setProperty(instCard.instIdx, "featuresJson", JSON.stringify(f));
                                                                 }
                                                             }
 
                                                             ColumnLayout {
-                                                                visible: modelData.expanded && instFeatWrap.subFeats.length > 0
-                                                                Layout.fillWidth: true
-                                                                Layout.leftMargin: 20
-                                                                spacing: 3
-                                                                Repeater {
-                                                                    model: instFeatWrap.subFeats
-                                                                    delegate: RowLayout {
-                                                                        required property var modelData
+                                                                id: tileCol
+                                                                anchors { left: parent.left; right: parent.right; top: parent.top; margins: 13 }
+                                                                spacing: 10
+
+                                                                RowLayout {
+                                                                    Layout.fillWidth: true
+                                                                    spacing: 11
+                                                                    Rectangle {
+                                                                        implicitWidth: 40; implicitHeight: 40; radius: 12
+                                                                        color: root.badgeColor(tile.modelData.id)
+                                                                        Text {
+                                                                            anchors.centerIn: parent
+                                                                            text: root.initialOf(tile.modelData.title)
+                                                                            color: root.badgeFg(tile.modelData.id)
+                                                                            font.pixelSize: 18; font.weight: Font.Bold
+                                                                        }
+                                                                    }
+                                                                    ColumnLayout {
                                                                         Layout.fillWidth: true
-                                                                        spacing: 6
-                                                                        Text { text: "◦"; color: root.cOk; font.pixelSize: 12 }
-                                                                        Text { text: modelData.title; color: root.cFg; font.pixelSize: 11; font.weight: Font.Medium }
-                                                                        Text { visible: modelData.desc !== ""; Layout.fillWidth: true; elide: Text.ElideRight; text: "— " + modelData.desc; color: root.cSub; font.pixelSize: 10 }
+                                                                        spacing: 2
+                                                                        Text {
+                                                                            Layout.fillWidth: true
+                                                                            text: tile.modelData.title
+                                                                            color: root.cFg; font.pixelSize: 13; font.weight: Font.DemiBold
+                                                                            elide: Text.ElideRight
+                                                                        }
+                                                                        Text {
+                                                                            visible: tile.modelData.desc !== ""
+                                                                            Layout.fillWidth: true
+                                                                            text: tile.modelData.desc
+                                                                            color: root.cDim; font.pixelSize: 11
+                                                                            wrapMode: Text.WordWrap
+                                                                            maximumLineCount: tile.open ? 6 : 2
+                                                                            elide: Text.ElideRight
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                RowLayout {
+                                                                    Layout.fillWidth: true
+                                                                    spacing: 8
+                                                                    Rectangle {
+                                                                        visible: !tile.isGroup
+                                                                        radius: 8
+                                                                        color: tile.incomplete ? Qt.rgba(0.96, 0.72, 0.35, 0.16) : Qt.rgba(0.651, 0.890, 0.631, 0.16)
+                                                                        implicitWidth: stLbl.implicitWidth + 16; implicitHeight: 22
+                                                                        Text {
+                                                                            id: stLbl; anchors.centerIn: parent
+                                                                            text: tile.incomplete ? "İndirilmedi" : "✓ Yüklü"
+                                                                            color: tile.incomplete ? "#f5b85a" : root.cOk
+                                                                            font.pixelSize: 11; font.weight: Font.Medium
+                                                                        }
+                                                                    }
+                                                                    Text {
+                                                                        visible: tile.incomplete
+                                                                        Layout.fillWidth: true
+                                                                        text: tile.incomplete ? tile.modelData.needs.join(", ") : ""
+                                                                        color: root.cDim; font.pixelSize: 10; elide: Text.ElideRight
+                                                                    }
+                                                                    Item { Layout.fillWidth: true; visible: !tile.incomplete }
+                                                                    Rectangle {
+                                                                        visible: tile.isGroup
+                                                                        radius: 8
+                                                                        color: Qt.rgba(1, 1, 1, 0.07)
+                                                                        implicitWidth: grpLbl.implicitWidth + 18; implicitHeight: 22
+                                                                        Text {
+                                                                            id: grpLbl; anchors.centerIn: parent
+                                                                            text: tile.subFeats.length + " parça  " + (tile.open ? "▾" : "▸")
+                                                                            color: root.cSub; font.pixelSize: 11
+                                                                        }
+                                                                    }
+                                                                }
+
+                                                                // Grubun alt özellikleri (açıkken): ikinci katman kartlar
+                                                                GridLayout {
+                                                                    visible: tile.open
+                                                                    Layout.fillWidth: true
+                                                                    columns: 2
+                                                                    columnSpacing: 8
+                                                                    rowSpacing: 8
+                                                                    Repeater {
+                                                                        model: tile.subFeats
+                                                                        delegate: Rectangle {
+                                                                            id: sub
+                                                                            required property var modelData
+                                                                            readonly property bool incomplete: modelData.needs && modelData.needs.length > 0
+                                                                            Layout.fillWidth: true
+                                                                            Layout.preferredWidth: 1
+                                                                            Layout.alignment: Qt.AlignTop
+                                                                            implicitHeight: subCol.implicitHeight + 20
+                                                                            radius: 12
+                                                                            color: Qt.rgba(0, 0, 0, 0.22)
+                                                                            border.color: Qt.rgba(1, 1, 1, 0.06); border.width: 1
+                                                                            ColumnLayout {
+                                                                                id: subCol
+                                                                                anchors { left: parent.left; right: parent.right; top: parent.top; margins: 10 }
+                                                                                spacing: 4
+                                                                                RowLayout {
+                                                                                    Layout.fillWidth: true
+                                                                                    spacing: 7
+                                                                                    Rectangle { implicitWidth: 8; implicitHeight: 8; radius: 4; color: sub.incomplete ? "#f5b85a" : root.cOk }
+                                                                                    Text { Layout.fillWidth: true; text: sub.modelData.title; color: root.cFg; font.pixelSize: 12; font.weight: Font.Medium; elide: Text.ElideRight }
+                                                                                }
+                                                                                Text {
+                                                                                    visible: sub.modelData.desc !== ""
+                                                                                    Layout.fillWidth: true; Layout.leftMargin: 15
+                                                                                    text: sub.modelData.desc; color: root.cDim; font.pixelSize: 10
+                                                                                    wrapMode: Text.WordWrap; maximumLineCount: 3; elide: Text.ElideRight
+                                                                                }
+                                                                                Text {
+                                                                                    visible: sub.incomplete
+                                                                                    Layout.fillWidth: true; Layout.leftMargin: 15
+                                                                                    text: sub.incomplete ? "İndirilmedi: " + sub.modelData.needs.join(", ") : ""
+                                                                                    color: "#f5b85a"; font.pixelSize: 10; wrapMode: Text.WordWrap
+                                                                                }
+                                                                            }
+                                                                        }
                                                                     }
                                                                 }
                                                             }
