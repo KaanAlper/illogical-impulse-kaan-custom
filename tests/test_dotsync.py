@@ -412,3 +412,34 @@ def test_expand_chosen_adds_parents_and_annotate_marks_missing():
     ann = dotsync._annotate_features(item["features"], lambda p: False)
     assert ann[0]["features"][0]["needs"] == ["nope-pkg"]
     assert "needs" not in ann[0]["features"][1]
+
+
+def test_feature_paths_limit_copy_and_missing(tmp_path, monkeypatch):
+    """Seçilmeyen özelliğin dosyaları kopyalanmaz ve eksik sayılmaz; seçim hatırlanır."""
+    monkeypatch.setenv("XDG_STATE_HOME", str(tmp_path / "state"))
+    repo = tmp_path / "repo"
+    (repo / "items/a/feat1").mkdir(parents=True)
+    (repo / "items/a/core.txt").write_text("c")
+    (repo / "items/a/feat1/x.txt").write_text("x")
+    (repo / "items/a/other.txt").write_text("o")
+    dest = tmp_path / "dest"
+    item = {
+        "id": "a", "kind": "files", "src": "items/a", "dest": str(dest),
+        "features": [
+            {"id": "f1", "paths": ["feat1/**"]},
+            {"id": "f2", "paths": ["other.txt"]},
+        ],
+    }
+    assert dotsync._file_owner(item, "feat1/x.txt") == "f1"
+    assert dotsync._file_owner(item, "core.txt") is None
+    copied = dotsync.install_files(item, repo, {"f2"})
+    assert sorted(copied) == ["core.txt", "other.txt"]
+    assert not (dest / "feat1").exists()
+    manifest = {"schema": 1, "items": [item]}
+    # seçim kaydı yokken f1 dosyası eksik görünür; kayıttan sonra görünmez
+    st = dotsync.compute_status(manifest, repo, set(), lambda p: True, {})
+    assert st[0]["state"] == "missing"
+    dotsync.save_chosen(tmp_path / "state" / "dotsync", "a", {"f2"})
+    assert dotsync.load_chosen(tmp_path / "state" / "dotsync") == {"a": {"f2"}}
+    st = dotsync.compute_status(manifest, repo, set(), lambda p: True)
+    assert st[0]["state"] == "ok"

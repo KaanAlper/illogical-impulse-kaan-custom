@@ -101,8 +101,25 @@ def load_manifest(repo: Path) -> dict:
 # ----------------------------------------------------------------------------- state
 
 
-def _file_pairs(item: dict, repo: Path) -> list[tuple[str, Path, Path]]:
-    """(göreli yol, repo'daki dosya, yereldeki hedef). Sembolik bağlar atlanır."""
+def _path_matches(rel: str, pattern: str) -> bool:
+    if pattern.endswith("/**"):
+        return rel.startswith(pattern[:-2])
+    return rel == pattern
+
+
+def _file_owner(item: dict, rel: str) -> str | None:
+    """Dosyayı sahiplenen özelliğin kimliği (özelliklerin `paths` listesi); sahipsizse None (çekirdek)."""
+    for feat, _parents in _walk_features(item.get("features", [])):
+        if any(_path_matches(rel, pat) for pat in feat.get("paths", [])):
+            return feat["id"]
+    return None
+
+
+def _file_pairs(item: dict, repo: Path, chosen: set[str] | None = None) -> list[tuple[str, Path, Path]]:
+    """(göreli yol, repo'daki dosya, yereldeki hedef). Sembolik bağlar atlanır.
+
+    `chosen` verilirse (seçilen özellik kimlikleri), seçilmeyen bir özelliğe ait dosyalar atlanır.
+    """
     src_root = repo / item["src"]
     dest_root = expand(item["dest"])
     pairs = []
@@ -112,6 +129,10 @@ def _file_pairs(item: dict, repo: Path) -> list[tuple[str, Path, Path]]:
             if src.is_symlink():
                 continue
             rel = src.relative_to(src_root).as_posix()
+            if chosen is not None:
+                owner = _file_owner(item, rel)
+                if owner is not None and owner not in chosen:
+                    continue
             pairs.append((rel, src, dest_root / rel))
     return sorted(pairs)
 
@@ -148,10 +169,12 @@ def _failed_conditions(conds: Iterable[dict]) -> list[str]:
     return failed
 
 
-def _missing(item: dict, repo: Path, is_pkg_installed: Callable[[str], bool]) -> list[str]:
+def _missing(
+    item: dict, repo: Path, is_pkg_installed: Callable[[str], bool], chosen: set[str] | None = None
+) -> list[str]:
     kind = item["kind"]
     if kind == "files":
-        missing = [rel for rel, _src, dest in _file_pairs(item, repo) if not os.path.lexists(dest)]
+        missing = [rel for rel, _src, dest in _file_pairs(item, repo, chosen) if not os.path.lexists(dest)]
         if "check" in item:
             missing.extend(_failed_conditions(item["check"]))
         return missing
@@ -195,10 +218,13 @@ def compute_status(
     repo: Path,
     declined: set[str],
     is_pkg_installed: Callable[[str], bool] = _pacman_has,
+    chosen_by_item: dict[str, set[str]] | None = None,
 ) -> list[dict]:
+    if chosen_by_item is None:
+        chosen_by_item = load_chosen(state_dir())
     status = []
     for item in manifest["items"]:
-        missing = _missing(item, repo, is_pkg_installed)
+        missing = _missing(item, repo, is_pkg_installed, chosen_by_item.get(item["id"]))
         status.append(
             {
                 "id": item["id"],
@@ -215,6 +241,27 @@ def compute_status(
             }
         )
     return status
+
+
+def load_chosen(state: Path) -> dict[str, set[str]]:
+    """Önceki kurulumda seçilen özellikler (öğe kimliği -> özellik kimlikleri). Kayıt yoksa hepsi seçili sayılır."""
+    try:
+        data = json.loads((state / "features.json").read_text(encoding="utf-8"))
+        return {str(k): {str(x) for x in v} for k, v in data.items()}
+    except (OSError, ValueError, AttributeError):
+        return {}
+
+
+def save_chosen(state: Path, item_id: str, chosen: set[str] | None) -> None:
+    data = {k: sorted(v) for k, v in load_chosen(state).items()}
+    if chosen is None:
+        data.pop(item_id, None)
+    else:
+        data[item_id] = sorted(chosen)
+    state.mkdir(parents=True, exist_ok=True)
+    tmp = state / "features.json.tmp"
+    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    tmp.replace(state / "features.json")
 
 
 def pending(status: list[dict]) -> list[dict]:
@@ -242,11 +289,11 @@ def save_declined(state: Path, ids: set[str]) -> None:
 # ----------------------------------------------------------------------------- install
 
 
-def install_files(item: dict, repo: Path) -> list[str]:
+def install_files(item: dict, repo: Path, chosen: set[str] | None = None) -> list[str]:
     """Yalnızca yerelde olmayan dosyaları kopyalar; var olanlara dokunmaz."""
     executable = set(item.get("executable", []))
     copied = []
-    for rel, src, dest in _file_pairs(item, repo):
+    for rel, src, dest in _file_pairs(item, repo, chosen):
         if os.path.lexists(dest):
             continue
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -475,7 +522,9 @@ def cmd_apply(args: argparse.Namespace) -> int:
                 feat_ok, feat_note = True, ""
             else:
                 feat_ok, feat_note = _install_features(item, chosen, repo, item_env, bool(sudo))
-            copied = install_files(item, repo) if item["kind"] == "files" else []
+            if item["kind"] == "files":
+                save_chosen(state, iid, chosen)
+            copied = install_files(item, repo, chosen) if item["kind"] == "files" else []
             ran = _run_install(item, repo, item_env) and _run_post(item, item_env)
             # Çıkış koduna değil gerçek duruma güven: öğe artık eksiksiz mi?
             now = {s["id"]: s for s in compute_status(manifest, repo, set())}[iid]

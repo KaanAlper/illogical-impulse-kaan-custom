@@ -17,6 +17,12 @@ git clone https://github.com/KaanAlper/illogical-impulse-kaan-custom.git ~/kaan-
 
 On boot/setup, `dotsync` opens a GUI where each bundle can be expanded (`▸` / `▾`) to pick individual sub-features, along with a collapsible **Already installed** section at the bottom.
 
+### How selection works
+
+What you tick is what gets installed. Features in `manifest.json` can list `paths` (files they own); files a feature owns are only
+copied when that feature is chosen, and everything else is always installed. Your choice is remembered, so unchosen files are not
+reported as missing later. The Hyprland snippets (`execs.lua`, `keybinds.lua`) only act on a feature when its files exist.
+
 ### CLI Commands
 
 ```bash

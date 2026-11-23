@@ -111,9 +111,9 @@
         "flameshot"
       ],
       "features": [
-        { "id": "rules", "title": "Pencere kuralları", "desc": "Ekran paylaşım seçicisi (yüzen, ortada), Waydroid, AsenaDPI ve nchat pencere kuralları", "default": true },
-        { "id": "alttab", "title": "Alt+Tab pencere değiştirici", "desc": "Alt+Tab / Alt+Shift+Tab kısayolları; Hyprland açılırken kendiliğinden başlar", "default": true },
-        { "id": "bootsplash", "title": "Açılış logosu", "desc": "Açılış logosu; Hyprland açılırken kendiliğinden gösterilir", "default": true }
+        { "id": "rules", "paths": ["rules.lua"], "title": "Pencere kuralları", "desc": "Ekran paylaşım seçicisi (yüzen, ortada), Waydroid, AsenaDPI ve nchat pencere kuralları", "default": true },
+        { "id": "alttab", "paths": ["alttab/**"], "title": "Alt+Tab pencere değiştirici", "desc": "Alt+Tab / Alt+Shift+Tab kısayolları; Hyprland açılırken kendiliğinden başlar", "default": true },
+        { "id": "bootsplash", "paths": ["bootsplash/**"], "title": "Açılış logosu", "desc": "Açılış logosu; Hyprland açılırken kendiliğinden gösterilir", "default": true }
       ]
     },
     {
