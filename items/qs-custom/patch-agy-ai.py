@@ -2665,11 +2665,6 @@ def main() -> int:
                     "    property bool wallpaperIsVideo: rawWallpaperPath.endsWith(\".mp4\") || rawWallpaperPath.endsWith(\".webm\") || rawWallpaperPath.endsWith(\".mkv\") || rawWallpaperPath.endsWith(\".avi\") || rawWallpaperPath.endsWith(\".mov\")\n"
                     "    property string wallpaperPath: wallpaperIsVideo ? rawThumbnailPath : rawWallpaperPath",
                 ),
-                (
-                    '!(configEntry?.locked ?? false)',
-                    '    draggable: placementStrategy === "free"',
-                    '    draggable: placementStrategy === "free" && !(configEntry?.locked ?? false)',
-                ),
             ],
         )
 
@@ -3610,6 +3605,38 @@ def main() -> int:
                     "            visible: Config.options.background.widgets.weather.enable\n"
                     "        }\n",
                 ),
+            ],
+        )
+
+    if has_feat("widget-lock"):
+        ok &= patch_file(
+            ii / "modules/common/Config.qml",
+            [
+                (
+                    'property bool locked: false',
+                    'property string placementStrategy: "leastBusy" // "free", "leastBusy", "mostBusy"\n',
+                    'property string placementStrategy: "leastBusy" // "free", "leastBusy", "mostBusy"\n                        property bool locked: false\n',
+                ),
+                (
+                    '                        property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"\n                        property bool locked: false',
+                    'property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"\n',
+                    'property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"\n                        property bool locked: false\n',
+                ),
+            ],
+        )
+        ok &= patch_file(
+            ii / "modules/ii/background/widgets/AbstractBackgroundWidget.qml",
+            [
+                (
+                    '!(configEntry?.locked ?? false)',
+                    '    draggable: placementStrategy === "free"',
+                    '    draggable: placementStrategy === "free" && !(configEntry?.locked ?? false)',
+                ),
+            ],
+        )
+        ok &= patch_file(
+            ii / "modules/settings/BackgroundConfig.qml",
+            [
                 (
                     'Config.options.background.widgets.clock.locked',
                     '        ConfigSwitch {\n'
@@ -3643,21 +3670,6 @@ def main() -> int:
                     '        WeatherLocationSettings {\n'
                     '            visible: Config.options.background.widgets.weather.enable\n'
                     '        }\n',
-                ),
-            ],
-        )
-        ok &= patch_file(
-            ii / "modules/common/Config.qml",
-            [
-                (
-                    'property bool locked: false',
-                    'property string placementStrategy: "leastBusy" // "free", "leastBusy", "mostBusy"\n',
-                    'property string placementStrategy: "leastBusy" // "free", "leastBusy", "mostBusy"\n                        property bool locked: false\n',
-                ),
-                (
-                    '                        property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"\n                        property bool locked: false',
-                    'property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"\n',
-                    'property string placementStrategy: "free" // "free", "leastBusy", "mostBusy"\n                        property bool locked: false\n',
                 ),
             ],
         )
