@@ -49,6 +49,9 @@ illogical-impulse-kaan-custom
 │   │   └── wallpaper-settings      # Settings -> Wallpaper page, per-monitor wallpapers, drag-to-reorder monitor
 │   │                               # pills, main-monitor star + 14-lang translations
 │   ├── alt-tab                     # Alt+Tab / Alt+Shift+Tab window switcher built into the shell + keybinds
+│   ├── keyboard-layout             # Settings -> General -> Language: keyboard layout selector (applied to Hyprland, remembered)
+│   ├── weather-settings            # Shared weather settings (Bar, Background, Services): automatic location or city search, unit,
+│   │                               # refresh; bar weather popup with a refresh button that stays open on hover
 │   ├── screensaver                 # Screensaver (DVD, Matrix, Starfield, Mystify, XANA, Color, Custom/GIF/Video/.scr),
 │   │                               # per-monitor settings, deferred lock (keeps running until input), + 14-lang translations
 │   ├── lock-power                  # Settings -> General -> Lock (idle lock, DPMS, Suspend toggles/timeouts,

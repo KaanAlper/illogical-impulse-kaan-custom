@@ -3310,12 +3310,9 @@ def main() -> int:
             ii / "modules/common/Config.qml",
             [
                 (
-                    "property string district:",
+                    "property string label:",
                     "                    property string city: \"\" // When 'enableGPS' is false\n",
-                    "                    property string city: \"\" // When 'enableGPS' is false ('lat,lon' when picked from the list)\n"
-                    "                    property string country: \"\" // ISO 3166-1 alpha-2 code picked in Settings\n"
-                    "                    property string state: \"\" // Province/state name picked in Settings\n"
-                    "                    property string district: \"\" // District/city name picked in Settings\n"
+                    "                    property string city: \"\" // When 'enableGPS' is false ('lat,lon' when picked from the search results)\n"
                     "                    property string label: \"\" // Human readable name of the picked place\n",
                 ),
             ],

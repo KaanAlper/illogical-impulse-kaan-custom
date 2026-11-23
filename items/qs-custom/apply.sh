@@ -106,8 +106,6 @@ if has_feat "alt-tab"; then
 fi
 if has_feat "weather-settings"; then
     cp "$CUSTOM_DIR/WeatherLocationSettings.qml" "$II/modules/common/widgets/WeatherLocationSettings.qml"
-    cp "$CUSTOM_DIR/weather-geo.py" "$II/scripts/weather-geo.py"
-    chmod +x "$II/scripts/weather-geo.py"
 fi
 if has_feat "everything-search"; then
     cp "$CUSTOM_DIR/everything-update.sh" "$II/scripts/everything-update.sh"

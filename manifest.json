@@ -75,7 +75,7 @@
             { "id": "wallpaper-settings", "title": "Duvar kâğıdı ayarları", "desc": "Her monitöre ayrı duvar kâğıdı, sürükle-bırak monitör sırası, ana monitör yıldızı ve Ayarlar -> Duvar Kâğıdı sayfası", "default": true }
           ]
         },
-        { "id": "weather-settings", "title": "Hava durumu ayarları", "desc": "Çubuk, arka plan ve Servisler sayfalarında ortak hava durumu ayarı: otomatik konum ya da ülke > il > ilçe seçimi (veya şehir arama), sıcaklık birimi, yenileme aralığı + çevirileri", "default": true },
+        { "id": "weather-settings", "title": "Hava durumu ayarları", "desc": "Çubuk, arka plan ve Servisler sayfalarında ortak hava durumu ayarı: otomatik konum ya da şehir arama, sıcaklık birimi, yenileme aralığı; çubuk hava durumu penceresinde yenile düğmesi + çevirileri", "default": true },
         { "id": "keyboard-layout", "title": "Klavye dili seçici", "desc": "Ayarlar -> Genel -> Dil altında klavye düzeni (tr, us, de...) seçici; seçim Hyprland'e uygulanır ve açılışta hatırlanır + çevirileri", "default": true },
         { "id": "alt-tab", "title": "Alt+Tab pencere değiştirici", "desc": "Alt+Tab / Alt+Shift+Tab ile pencere değiştirici (kabuğun içinde çalışır, ayrı program gerekmez) + kısayolları", "default": true },
         { "id": "screensaver", "title": "Ekran koruyucu", "desc": "DVD, Matrix, Starfield, Mystify, XANA, Renk şablonu, özel medya, her monitöre ayrı ayar ve çevirileri", "default": true },
