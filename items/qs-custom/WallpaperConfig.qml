@@ -255,6 +255,7 @@ ContentPage {
                 }
 
                 RippleButtonWithIcon {
+                    visible: liveStoreDialog.available !== false
                     Layout.fillWidth: true
                     buttonRadius: Appearance.rounding.small
                     materialIcon: "storefront"

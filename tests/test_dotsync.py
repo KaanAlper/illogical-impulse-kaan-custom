@@ -403,3 +403,12 @@ def test_sudo_session_runs_plain_sudo_noninteractively(tmp_path):
     finally:
         sess.close()
     assert not sess.dir.exists()
+
+
+def test_expand_chosen_adds_parents_and_annotate_marks_missing():
+    item = {"features": [{"id": "g", "features": [{"id": "x", "pkgs": ["nope-pkg"]}, {"id": "y"}]}, {"id": "z"}]}
+    assert dotsync.expand_chosen(item, "all") is None
+    assert dotsync.expand_chosen(item, "y,z") == {"g", "y", "z"}
+    ann = dotsync._annotate_features(item["features"], lambda p: False)
+    assert ann[0]["features"][0]["needs"] == ["nope-pkg"]
+    assert "needs" not in ann[0]["features"][1]

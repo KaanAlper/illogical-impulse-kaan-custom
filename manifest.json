@@ -66,23 +66,35 @@
             { "id": "sleep-inhibit-toggle", "title": "Uyku engelleme düğmesi", "desc": "Ekran kapanma/uyku engelleme anahtarı", "default": true }
           ]
         },
-        { "id": "live-wallpaper", "title": "Canlı duvar kâğıdı & Duvar Kâğıdı ayarları", "desc": "Video/GIF duvar kâğıdı, her monitöre ayrı duvar kâğıdı, sürükle-bırak monitör sırası, ana monitör yıldızı, Canlı Mağaza ve Ayarlar -> Duvar Kâğıdı sayfası + çevirileri", "default": true },
+        {
+          "id": "live-wallpaper", "title": "Duvar kâğıdı", "default": true,
+          "desc": "Canlı (video/GIF) duvar kâğıdı ve Ayarlar -> Duvar Kâğıdı sayfası; ayrı ayrı seçilebilir",
+          "features": [
+            { "id": "live-video", "title": "Canlı duvar kâğıdı", "desc": "Video/GIF duvar kâğıdı, Canlı Mağaza (motionbgs). Gerekli paketler: ffmpeg, qt6-multimedia-ffmpeg, jq", "default": true,
+              "pkgs": ["ffmpeg", "qt6-multimedia-ffmpeg", "jq"], "install": "bash {repo}/items/live-wallpaper-deps/install.sh" },
+            { "id": "wallpaper-settings", "title": "Duvar kâğıdı ayarları", "desc": "Her monitöre ayrı duvar kâğıdı, sürükle-bırak monitör sırası, ana monitör yıldızı ve Ayarlar -> Duvar Kâğıdı sayfası", "default": true }
+          ]
+        },
         { "id": "screensaver", "title": "Ekran koruyucu", "desc": "DVD, Matrix, Starfield, Mystify, XANA, Renk şablonu, özel medya, her monitöre ayrı ayar ve çevirileri", "default": true },
         { "id": "lock-power", "title": "Kilit & güç ayarları", "desc": "Genel -> Kilit bölümü (Ekran kilidi, DPMS, Derin uyku, Plymouth XANA logo seçici) ve çevirileri", "default": true },
         { "id": "startup-apps", "title": "Başlangıç uygulamaları", "desc": "Genel -> Dil altında duyarlı/kaydırılabilir başlangıç uygulamaları tablosu (AsenaDPI, autostart, execs)", "default": true },
-        { "id": "ai-sidebar", "title": "Sol panel AI (Agy, Claude, Codex & Anime)", "desc": "AI sohbet sekmeleri, model seçiciler, anime görüntüleyici ve ilgili çeviriler", "default": true },
+        {
+          "id": "ai-sidebar", "title": "Sol panel AI (Agy, Claude, Codex & Anime)", "default": true,
+          "desc": "AI sohbet sekmeleri, model seçiciler, anime görüntüleyici ve ilgili çeviriler. CLI'ları seçmesen de Super+A'da kurulu olmayana girince indirme önerilir",
+          "features": [
+            { "id": "ai-panel", "title": "AI paneli", "desc": "Claude | Agy | Codex | Anime sekmeleri, model/effort ve config seçiciler, anime görüntüleyici", "default": true },
+            { "id": "cli-agy", "title": "Antigravity CLI (agy)", "desc": "~/.local/bin/agy: Agy sekmesi için", "default": true,
+              "check": [{ "exists": "~/.local/bin/agy" }], "install": "bash {repo}/items/ai-cli/install.sh agy" },
+            { "id": "cli-claude", "title": "Claude CLI", "desc": "claude-code paketi: Claude sekmesi için", "default": true,
+              "pkgs": ["claude-code"], "install": "bash {repo}/items/ai-cli/install.sh claude" },
+            { "id": "cli-codex", "title": "Codex CLI", "desc": "openai-codex paketi: Codex sekmesi için", "default": true,
+              "pkgs": ["openai-codex"], "install": "bash {repo}/items/ai-cli/install.sh codex" }
+          ]
+        },
         { "id": "everything-search", "title": "Everything dosya arama", "desc": "Super+B (Everything #) ve Super+P (Tüm uygulamalar !) kısayolları, dosya/klasör arama, indeksleme ve araç çubuğu", "default": true },
         { "id": "workspace-split", "title": "Çoklu monitör çalışma alanı", "desc": "Monitöre göre bölme, odaklanmayan monitör vurgusu ve Ctrl+Super+Sol/Sağ (+Shift) monitörler arası geçiş kısayolları", "default": true },
         { "id": "icon-cache", "title": "Uygulama ikon önbelleği", "desc": "Zen Browser ve ArtCraft ikon önbellek düzeltmesi", "default": true }
       ]
-    },
-    {
-      "id": "live-wallpaper-deps",
-      "title": "Canlı duvar kâğıdı bağımlılıkları",
-      "desc": "ffmpeg (ffprobe ve küçük resimler), qt6-multimedia-ffmpeg (video oynatma) ve jq. Canlı duvar kâğıdı için gerekir.",
-      "kind": "pkgs",
-      "pkgs": ["ffmpeg", "qt6-multimedia-ffmpeg", "jq"],
-      "install": "bash {repo}/items/live-wallpaper-deps/install.sh"
     },
     {
       "id": "hypr-custom",
@@ -189,19 +201,6 @@
         }
       ],
       "install": "xdg-mime default org.kde.dolphin.desktop inode/directory"
-    },
-    {
-      "id": "agy-cli",
-      "title": "Antigravity CLI (agy)",
-      "desc": "Super+A AI panelinin kullandığı Antigravity CLI (~/.local/bin/agy) yoksa kurar.",
-      "kind": "check",
-      "check": [
-        {
-          "exists": "~/.local/bin/agy"
-        }
-      ],
-      "terminal": true,
-      "install": "paru -S --needed --noconfirm antigravity"
     },
     {
       "id": "grub-theme",

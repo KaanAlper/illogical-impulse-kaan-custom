@@ -160,6 +160,36 @@ def _missing(item: dict, repo: Path, is_pkg_installed: Callable[[str], bool]) ->
     return _failed_conditions(item.get("check", []))
 
 
+def _annotate_features(features: list[dict], is_pkg_installed: Callable[[str], bool]) -> list[dict]:
+    """Özelliklere `needs` ekler: bir özelliğin kendi paketi/denetimi varsa eksik olanlar (yalnızca bilgi)."""
+    out = []
+    for feat in features:
+        g = dict(feat)
+        if "pkgs" in feat or "check" in feat:
+            g["needs"] = [p for p in feat.get("pkgs", []) if not is_pkg_installed(p)] + _failed_conditions(feat.get("check", []))
+        if "features" in feat:
+            g["features"] = _annotate_features(feat["features"], is_pkg_installed)
+        out.append(g)
+    return out
+
+
+def _walk_features(features: list[dict], parents: tuple[str, ...] = ()):
+    for feat in features:
+        yield feat, parents
+        yield from _walk_features(feat.get("features", []), parents + (feat["id"],))
+
+
+def expand_chosen(item: dict, spec: str) -> set[str] | None:
+    """`a,b` seçimini ata özelliklerle genişletir. `all` -> None (hepsi)."""
+    if spec == "all":
+        return None
+    chosen = {x.strip() for x in spec.split(",") if x.strip()}
+    for feat, parents in _walk_features(item.get("features", [])):
+        if feat["id"] in chosen:
+            chosen.update(parents)
+    return chosen
+
+
 def compute_status(
     manifest: dict,
     repo: Path,
@@ -181,7 +211,7 @@ def compute_status(
                 "terminal": bool(item.get("terminal")),
                 "default": bool(item.get("default", True)),
                 "requires": item.get("requires", []),
-                "features": item.get("features", []),
+                "features": _annotate_features(item.get("features", []), is_pkg_installed),
             }
         )
     return status
@@ -368,6 +398,33 @@ def _run_post(item: dict, env: dict[str, str] | None = None) -> bool:
     return ok
 
 
+def _install_features(
+    item: dict, chosen: set[str] | None, repo: Path, env: dict[str, str], have_sudo: bool
+) -> tuple[bool, str]:
+    """Seçilen özelliklerin kendi paketlerini/kurulumunu yapar (ör. canlı duvar kâğıdı -> ffmpeg).
+
+    Yönetici parolası (sudo oturumu) ya da etkileşimli terminal yoksa kurulum denenmez; not olarak bildirilir.
+    """
+    ok, skipped = True, []
+    interactive = sys.stdin.isatty()
+    for feat, _parents in _walk_features(item.get("features", [])):
+        cmd = feat.get("install")
+        if not cmd or (chosen is not None and feat["id"] not in chosen):
+            continue
+        needs = _annotate_features([feat], _pacman_has)[0].get("needs", [])
+        if not needs:
+            continue
+        if not have_sudo and not interactive:
+            skipped.append(feat.get("title", feat["id"]))
+            continue
+        cmd = cmd.replace("{repo}", shlex.quote(str(repo)))
+        stdin = subprocess.DEVNULL if have_sudo else None
+        if subprocess.run(["bash", "-c", cmd], env=env, stdin=stdin, check=False).returncode != 0:
+            ok = False
+    note = ("kurulmadı (parola gerekir): " + ", ".join(skipped)) if skipped else ""
+    return ok, note
+
+
 def cmd_apply(args: argparse.Namespace) -> int:
     manifest, repo = _load(False)
     by_id = {i["id"]: i for i in manifest["items"]}
@@ -409,16 +466,25 @@ def cmd_apply(args: argparse.Namespace) -> int:
         _emit(event="start", id=iid)
         try:
             item_env = {**os.environ, "DOTSYNC_FEATURES": feature_map.get(iid, "all")}
+            chosen = expand_chosen(item, feature_map.get(iid, "all"))
+            if chosen is not None:
+                item_env["DOTSYNC_FEATURES"] = ",".join(sorted(chosen))
             if sudo:
                 item_env = sudo.env(item_env)
+            if getattr(args, "skip_feature_install", False):
+                feat_ok, feat_note = True, ""
+            else:
+                feat_ok, feat_note = _install_features(item, chosen, repo, item_env, bool(sudo))
             copied = install_files(item, repo) if item["kind"] == "files" else []
             ran = _run_install(item, repo, item_env) and _run_post(item, item_env)
             # Çıkış koduna değil gerçek duruma güven: öğe artık eksiksiz mi?
             now = {s["id"]: s for s in compute_status(manifest, repo, set())}[iid]
-            ok = ran and now["state"] == "ok"
+            ok = ran and feat_ok and now["state"] == "ok"
             detail = f"{len(copied)} dosya kopyalandı" if item["kind"] == "files" and copied else ("uygulandı" if item["kind"] == "files" else "")
             if not ok and now["missing"]:
                 detail = "eksik kaldı: " + ", ".join(now["missing"][:3])
+            elif feat_note:
+                detail = feat_note
         except OSError as exc:
             ok, detail = False, str(exc)
         done[iid] = ok
@@ -506,6 +572,7 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("ids", nargs="*", default=[])
     p.add_argument("--decline", nargs="*", default=[])
     p.add_argument("--features", nargs="*", default=[], help="id:feat1,feat2 biçiminde alt özellik seçimi")
+    p.add_argument("--skip-feature-install", action="store_true", help="özelliklerin paket kurulumlarını atla (Daha sonra)")
     p.add_argument("--password-stdin", action="store_true", help="yönetici parolasını stdin'den oku; terminal açmadan kur")
     p.set_defaults(fn=cmd_apply)
 

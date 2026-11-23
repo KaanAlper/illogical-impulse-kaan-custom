@@ -37,16 +37,22 @@ illogical-impulse-kaan-custom
 │   │   ├── audio-mono-toggle       # One-click Mono/Stereo audio downmix toggle in the bar
 │   │   ├── audio-output-switcher   # Quick audio output device switcher popup in the bar
 │   │   └── sleep-inhibit-toggle    # Top bar toggle to inhibit idle sleep, DPMS, and lid-close
-│   ├── live-wallpaper              # Native live (video/GIF) wallpapers via QtMultimedia, per-monitor wallpapers,
-│   │                               # drag-to-reorder monitor pills, main-monitor star, Live Store (motionbgs.com)
-│   │                               # and Settings -> Wallpaper page, + 14-lang translations
+│   ├── live-wallpaper              # Wallpaper group (each part selectable on its own)
+│   │   ├── live-video              # Native live (video/GIF) wallpapers via QtMultimedia + Live Store (motionbgs.com);
+│   │   │                           # installs ffmpeg, qt6-multimedia-ffmpeg and jq
+│   │   └── wallpaper-settings      # Settings -> Wallpaper page, per-monitor wallpapers, drag-to-reorder monitor
+│   │                               # pills, main-monitor star + 14-lang translations
 │   ├── screensaver                 # Screensaver (DVD, Matrix, Starfield, Mystify, XANA, Color, Custom/GIF/Video/.scr),
 │   │                               # per-monitor settings, deferred lock (keeps running until input), + 14-lang translations
 │   ├── lock-power                  # Settings -> General -> Lock (idle lock, DPMS, Suspend toggles/timeouts,
 │   │                               # conditional Plymouth xana logo picker), hypridle sync, + 14-lang translations
 │   ├── startup-apps                # Settings -> General -> Startup Apps (responsive scrollable grid for autostart & Hyprland execs)
-│   ├── ai-sidebar                  # Left sidebar tabs: Claude | Agy | Codex | Anime, model/effort & config pickers,
-│   │                               # floating anime image viewer, startup auth safety, + 14-lang translations
+│   ├── ai-sidebar                  # Left sidebar AI (Claude | Agy | Codex | Anime), + 14-lang translations
+│   │   ├── ai-panel                # The tabs, model/effort & config pickers, floating anime image viewer
+│   │   ├── cli-agy                 # Installs the Antigravity CLI (~/.local/bin/agy)
+│   │   ├── cli-claude              # Installs claude-code
+│   │   └── cli-codex               # Installs openai-codex
+│   │                               # (CLIs you skip are offered inside Super+A when you open that tab)
 │   ├── everything-search           # Everything (#) file search via plocate + systemd timer, sort/filter toolbar,
 │   │                               # Super+B (files #) and Super+P (all apps A-Z !)
 │   ├── workspace-split             # Per-monitor workspace splitting in Bar Settings, dims unfocused monitor
@@ -60,9 +66,6 @@ illogical-impulse-kaan-custom
 │   ├── bootsplash                  # Custom boot splash watermark assets
 │   └── execs-env                   # Startup execs, environment variables, general settings, and overrides
 │
-├── live-wallpaper-deps             # ffmpeg (ffprobe, thumbnails), qt6-multimedia-ffmpeg (video playback), jq
-│                                   # Needed by the live-wallpaper feature; installed with pacman
-│
 ├── flameshot                       # Installs flameshot, configures Wayland-compatible INI, wires Print keybind
 ├── fish-settings                   # Bash compatibility helpers for Fish ($?, !!, b, bp)
 │
@@ -75,6 +78,5 @@ illogical-impulse-kaan-custom
 ├── autologin-lock                  # (Optional, default off, sudo) Disables display managers and sets greetd
 │                                   # tty1 autologin directly into Hyprland + ii lock screen
 ├── default-file-manager            # Sets Dolphin as the default handler for folders (inode/directory)
-├── agy-cli                         # (Terminal) Installs Antigravity CLI via paru if ~/.local/bin/agy is missing
 └── grub-theme                      # (Terminal, sudo) Installs Marathon-NewCascadia GRUB theme & /etc/default/grub settings
 ```

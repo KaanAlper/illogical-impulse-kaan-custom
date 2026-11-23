@@ -78,16 +78,21 @@ if has_feat "screensaver"; then
 fi
 if has_feat "live-wallpaper"; then
     cp "$CUSTOM_DIR/MonitorOrderPills.qml" "$II/modules/common/widgets/MonitorOrderPills.qml"
-    cp "$CUSTOM_DIR/LiveWallpaperStoreDialog.qml" "$II/modules/common/widgets/LiveWallpaperStoreDialog.qml"
     cp "$CUSTOM_DIR/WallpaperConfig.qml" "$II/modules/settings/WallpaperConfig.qml"
-    cp "$CUSTOM_DIR/live-wallpaper-store.py" "$II/scripts/colors/live-wallpaper-store.py"
-    chmod +x "$II/scripts/colors/live-wallpaper-store.py"
     rm -f "$II/modules/settings/MonitorOrderPills.qml"
-    # Runtime dependencies of native live wallpapers (the "live-wallpaper-deps" item installs them)
-    for dep in ffmpeg ffprobe jq; do
-        command -v "$dep" >/dev/null 2>&1 || echo "! Canlı duvar kâğıdı için '$dep' eksik (dotsync: live-wallpaper-deps)" >&2
-    done
-    pacman -Q qt6-multimedia-ffmpeg >/dev/null 2>&1 || echo "! qt6-multimedia-ffmpeg eksik: video duvar kâğıdı oynatılamayabilir" >&2
+    if has_feat "live-video"; then
+        cp "$CUSTOM_DIR/LiveWallpaperStoreDialog.qml" "$II/modules/common/widgets/LiveWallpaperStoreDialog.qml"
+        cp "$CUSTOM_DIR/live-wallpaper-store.py" "$II/scripts/colors/live-wallpaper-store.py"
+        chmod +x "$II/scripts/colors/live-wallpaper-store.py"
+        # Runtime dependencies of native live wallpapers (installed by the live-video feature)
+        for dep in ffmpeg ffprobe jq; do
+            command -v "$dep" >/dev/null 2>&1 || echo "! Canlı duvar kâğıdı için '$dep' eksik" >&2
+        done
+        pacman -Q qt6-multimedia-ffmpeg >/dev/null 2>&1 || echo "! qt6-multimedia-ffmpeg eksik: video duvar kâğıdı oynatılamayabilir" >&2
+    else
+        # Canlı Mağaza kapalı: ayarlar sayfası için boş bir yer tutucu, düğme gizlenir
+        cp "$CUSTOM_DIR/LiveWallpaperStoreDialogStub.qml" "$II/modules/common/widgets/LiveWallpaperStoreDialog.qml"
+    fi
 fi
 if has_feat "icon-cache"; then
     mkdir -p "$HOME/.local/share/icons/hicolor/128x128/apps"

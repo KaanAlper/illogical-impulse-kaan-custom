@@ -154,7 +154,18 @@ ShellRoot {
         adminItems.clear();
         for (var i = 0; i < items.count; i++) {
             var it = items.get(i);
-            if (it.checked && needsAdmin(it)) adminItems.append({ title: it.title, missing: it.missing });
+            if (!it.checked) continue;
+            if (needsAdmin(it)) adminItems.append({ title: it.title, missing: it.missing });
+            var fl = JSON.parse(it.featuresJson || "[]");
+            for (var j = 0; j < fl.length; j++) {
+                var sub = fl[j].features || [];
+                var cand = sub.length > 0 ? sub : [fl[j]];
+                for (var k = 0; k < cand.length; k++) {
+                    var c = cand[k];
+                    if (c.checked && c.needs && c.needs.length > 0)
+                        adminItems.append({ title: c.title, missing: c.needs.join(", ") });
+                }
+            }
         }
         if (adminItems.count === 0) { startApply(false); return; }
         dlgError = ""; dlgBusy = false; pendingPw = "";
@@ -210,6 +221,7 @@ ShellRoot {
         if (declines.length) args = args.concat(["--decline"]).concat(declines);
         if (featArgs.length) args = args.concat(["--features"]).concat(featArgs);
         if (usePw) args = args.concat(["--password-stdin"]);
+        if (later) args = args.concat(["--skip-feature-install"]);
         pwMode = !!usePw;
         deferredOnly = !!later && ids.length === 0;
         applyProc.command = args;
@@ -271,6 +283,7 @@ ShellRoot {
                                     id: sf.id,
                                     title: sf.title || sf.id,
                                     desc: sf.desc || "",
+                                    needs: sf.needs || [],
                                     checked: fChecked && (sf.default !== false)
                                 });
                             }
@@ -278,6 +291,7 @@ ShellRoot {
                                 id: f.id,
                                 title: f.title || f.id,
                                 desc: f.desc || "",
+                                needs: f.needs || [],
                                 checked: fChecked,
                                 partial: false,
                                 expanded: false,
