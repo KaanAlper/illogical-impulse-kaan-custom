@@ -106,7 +106,8 @@
           "extra_files": [{ "src": "items/hypr-custom/keybinds.d/everything.lua", "dest": "~/.config/hypr/custom/keybinds.d/everything.lua" }] },
         { "id": "workspace-split", "title": "Çoklu monitör çalışma alanı", "desc": "Monitöre göre bölme, odaklanmayan monitör vurgusu ve Ctrl+Super+Sol/Sağ (+Shift) monitörler arası geçiş kısayolları", "default": true,
           "extra_files": [{ "src": "items/hypr-custom/keybinds.d/workspace-split.lua", "dest": "~/.config/hypr/custom/keybinds.d/workspace-split.lua" }] },
-        { "id": "widget-lock", "title": "Widget konum kilitleme", "desc": "Arka plan saat ve hava durumu widget'ları Sürüklenebilir moddayken 'Konumu kilitle' anahtarı + çevirileri", "default": true }
+        { "id": "widget-lock", "title": "Widget konum kilitleme", "desc": "Arka plan saat ve hava durumu widget'ları Sürüklenebilir moddayken 'Konumu kilitle' anahtarı + çevirileri", "default": true },
+        { "id": "bar-compact", "title": "Küçük ekran bar düzeni", "desc": "1366px ve altı ekranlarda çubuk simgelerini kısaltır ve saat-hava durumu çakışmasını önler", "default": true }
       ]
     },
     {

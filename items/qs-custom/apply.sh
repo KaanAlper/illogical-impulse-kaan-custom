@@ -222,29 +222,30 @@ for _name, _opt in (("SleepInhibitToggle", "showSleepInhibitToggle"), ("AppVolum
             f.write(src)
         print(f"  BarContent.qml: {_name} artik Ayarlar anahtarina bagli")
 
-# Raise shorten threshold to 1366 so 1280px secondary monitors don't overlap bar icons.
-old_thresh = "(Appearance.sizes.barShortenScreenWidthThreshold >= screen?.width) ? 1 : 0"
-new_thresh = "(Math.max(Appearance.sizes.barShortenScreenWidthThreshold, 1366) >= screen?.width) ? 1 : 0"
-if new_thresh not in src and old_thresh in src:
-    src = src.replace(old_thresh, new_thresh, 1)
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(src)
-    print("  BarContent.qml: kucuk monitor esigi -> 1366px")
+# Raise shorten threshold to 1366 and let rightCenterGroup expand for ClockWidget on narrow monitors.
+feats_env = os.environ.get("DOTSYNC_FEATURES", "all")
+if feats_env == "all" or "bar-compact" in feats_env.split(","):
+    old_thresh = "(Appearance.sizes.barShortenScreenWidthThreshold >= screen?.width) ? 1 : 0"
+    new_thresh = "(Math.max(Appearance.sizes.barShortenScreenWidthThreshold, 1366) >= screen?.width) ? 1 : 0"
+    if new_thresh not in src and old_thresh in src:
+        src = src.replace(old_thresh, new_thresh, 1)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(src)
+        print("  BarContent.qml: kucuk monitor esigi -> 1366px")
 
-# Prevent ClockWidget from overflowing rightCenterGroup into WeatherBar on narrow monitors
-old_rcg = """        MouseArea {
+    old_rcg = """        MouseArea {
             id: rightCenterGroup
             anchors.verticalCenter: parent.verticalCenter
             implicitWidth: root.centerSideModuleWidth"""
-new_rcg = """        MouseArea {
+    new_rcg = """        MouseArea {
             id: rightCenterGroup
             anchors.verticalCenter: parent.verticalCenter
             implicitWidth: Math.max(root.centerSideModuleWidth, rightCenterGroupContent.implicitWidth)"""
-if new_rcg not in src and old_rcg in src:
-    src = src.replace(old_rcg, new_rcg, 1)
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(src)
-    print("  BarContent.qml: rightCenterGroup genisligi saate gore esnetildi")
+    if new_rcg not in src and old_rcg in src:
+        src = src.replace(old_rcg, new_rcg, 1)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(src)
+        print("  BarContent.qml: rightCenterGroup genisligi saate gore esnetildi")
 
 sys.exit(1 if missing else 0)
 PY
