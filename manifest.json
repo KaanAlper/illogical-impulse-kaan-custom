@@ -113,6 +113,9 @@
         "flameshot"
       ],
       "features": [
+        { "id": "keybinds", "paths": ["keybinds.lua"], "title": "Özel kısayollar", "desc": "Win+H Everything arama, Print Flameshot, Alt+Tab ve monitör geçiş kısayolları", "default": true },
+        { "id": "execs", "paths": ["execs.lua"], "title": "Açılış komutları", "desc": "Hyprland açılışında XDG autostart ve başlangıç betikleri", "default": true },
+        { "id": "hypr-scripts", "paths": ["scripts/**"], "title": "Duvar kâğıdı & yardımcı betikler", "desc": "Video duvar kâğıdı geri yükleme ve yardımcı Hyprland betikleri", "default": true },
         { "id": "bootsplash", "paths": ["bootsplash/**"], "title": "Açılış logosu", "desc": "Açılış logosu; Hyprland açılırken kendiliğinden gösterilir", "default": true }
       ]
     },
