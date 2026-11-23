@@ -166,5 +166,8 @@
   "Refresh": "刷新",
   "Search for a place": "搜索地点",
   "Sleep allowed (click to stay awake)": "允许睡眠（点击保持唤醒）",
-  "Staying awake: no screen off, no sleep (click to allow sleep)": "保持唤醒：屏幕不熄灭，不睡眠（点击允许睡眠）"
+  "Staying awake: no screen off, no sleep (click to allow sleep)": "保持唤醒：屏幕不熄灭，不睡眠（点击允许睡眠）",
+  "Split workspaces by monitor": "按显示器拆分工作区",
+  "No 2nd monitor": "没有第二台显示器",
+  "M%1 %2–%3 | M%4 %5–%6": "M%1 %2–%3 | M%4 %5–%6"
 }

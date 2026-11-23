@@ -166,5 +166,8 @@
   "Refresh": "Aggiornamento",
   "Search for a place": "Cerca un luogo",
   "Sleep allowed (click to stay awake)": "Sospensione consentita (clic per restare attivo)",
-  "Staying awake: no screen off, no sleep (click to allow sleep)": "Resta attivo: lo schermo non si spegne, niente sospensione (clic per consentire la sospensione)"
+  "Staying awake: no screen off, no sleep (click to allow sleep)": "Resta attivo: lo schermo non si spegne, niente sospensione (clic per consentire la sospensione)",
+  "Split workspaces by monitor": "Dividi gli spazi di lavoro per monitor",
+  "No 2nd monitor": "Nessun secondo monitor",
+  "M%1 %2–%3 | M%4 %5–%6": "M%1 %2–%3 | M%4 %5–%6"
 }

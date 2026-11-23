@@ -166,5 +166,8 @@
   "Refresh": "Yenileme",
   "Search for a place": "Bir yer ara",
   "Sleep allowed (click to stay awake)": "Uyku serbest (uyanık kalmak için tıkla)",
-  "Staying awake: no screen off, no sleep (click to allow sleep)": "Uyanık kalınıyor: ekran kapanmaz, uyku yok (uykuya izin vermek için tıkla)"
+  "Staying awake: no screen off, no sleep (click to allow sleep)": "Uyanık kalınıyor: ekran kapanmaz, uyku yok (uykuya izin vermek için tıkla)",
+  "Split workspaces by monitor": "Çalışma alanlarını monitöre göre böl",
+  "No 2nd monitor": "2. monitör yok",
+  "M%1 %2–%3 | M%4 %5–%6": "M%1 %2–%3 | M%4 %5–%6"
 }

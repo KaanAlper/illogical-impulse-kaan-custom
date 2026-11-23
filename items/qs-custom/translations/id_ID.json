@@ -166,5 +166,8 @@
   "Refresh": "Penyegaran",
   "Search for a place": "Cari tempat",
   "Sleep allowed (click to stay awake)": "Tidur diizinkan (klik untuk tetap menyala)",
-  "Staying awake: no screen off, no sleep (click to allow sleep)": "Tetap menyala: layar tidak mati, tidak tidur (klik untuk mengizinkan tidur)"
+  "Staying awake: no screen off, no sleep (click to allow sleep)": "Tetap menyala: layar tidak mati, tidak tidur (klik untuk mengizinkan tidur)",
+  "Split workspaces by monitor": "Pisahkan ruang kerja per monitor",
+  "No 2nd monitor": "Tidak ada monitor ke-2",
+  "M%1 %2–%3 | M%4 %5–%6": "M%1 %2–%3 | M%4 %5–%6"
 }

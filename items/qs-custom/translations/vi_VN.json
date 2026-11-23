@@ -166,5 +166,8 @@
   "Refresh": "Làm mới",
   "Search for a place": "Tìm kiếm địa điểm",
   "Sleep allowed (click to stay awake)": "Cho phép ngủ (nhấp để giữ thức)",
-  "Staying awake: no screen off, no sleep (click to allow sleep)": "Đang giữ thức: màn hình không tắt, không ngủ (nhấp để cho phép ngủ)"
+  "Staying awake: no screen off, no sleep (click to allow sleep)": "Đang giữ thức: màn hình không tắt, không ngủ (nhấp để cho phép ngủ)",
+  "Split workspaces by monitor": "Chia không gian làm việc theo màn hình",
+  "No 2nd monitor": "Không có màn hình thứ 2",
+  "M%1 %2–%3 | M%4 %5–%6": "M%1 %2–%3 | M%4 %5–%6"
 }
