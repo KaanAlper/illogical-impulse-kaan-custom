@@ -248,19 +248,66 @@ if feats_env == "all" or "bar-compact" in feats_env.split(","):
         print("  BarContent.qml: rightCenterGroup genisligi saate gore esnetildi")
 
     old_date = "showDate: (Config.options.bar.verbose && root.useShortenedForm < 2)"
-    new_date = "showDate: (Config.options.bar.verbose && root.useShortenedForm < 2 && ((root.width / 2 - middleCenterGroup.width / 2 - 12 - rightSectionRowLayout.implicitWidth) >= 145))"
-    prev_dates = [
-        "showDate: (Config.options.bar.verbose && root.useShortenedForm === 0)",
-        "showDate: (Config.options.bar.verbose && (root.useShortenedForm === 0 || (root.useShortenedForm === 1 && !Config.options.bar.weather.enable)))",
+    new_clock_weather = """showDate: (Config.options.bar.verbose && root.useShortenedForm < 2 && ((root.width / 2 - middleCenterGroup.width / 2 - 12 - rightSectionRowLayout.implicitWidth) >= 210))
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.fillWidth: false
+                }
+
+                StyledText {
+                    visible: Config.options.bar.weather.enable
+                    Layout.alignment: Qt.AlignVCenter
+                    font.pixelSize: Appearance.font.pixelSize.small
+                    color: Appearance.colors.colOnLayer1
+                    text: "•"
+                }
+
+                Loader {
+                    active: Config.options.bar.weather.enable
+                    visible: active
+                    Layout.alignment: Qt.AlignVCenter
+                    sourceComponent: WeatherBar {}
+                }
+
+                Item {
+                    Layout.fillWidth: true"""
+    old_clock_block = """showDate: (Config.options.bar.verbose && root.useShortenedForm < 2)
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.fillWidth: true"""
+    prev_clock_blocks = [
+        old_clock_block,
+        """showDate: (Config.options.bar.verbose && root.useShortenedForm === 0)
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.fillWidth: true""",
+        """showDate: (Config.options.bar.verbose && (root.useShortenedForm === 0 || (root.useShortenedForm === 1 && !Config.options.bar.weather.enable)))
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.fillWidth: true""",
+        """showDate: (Config.options.bar.verbose && root.useShortenedForm < 2 && ((root.width / 2 - middleCenterGroup.width / 2 - 12 - rightSectionRowLayout.implicitWidth) >= 145))
+                    Layout.alignment: Qt.AlignVCenter
+                    Layout.fillWidth: true""",
     ]
-    if new_date not in src:
-        for _pd in [old_date] + prev_dates:
+    changed = False
+    if new_clock_weather not in src:
+        for _pd in prev_clock_blocks:
             if _pd in src:
-                src = src.replace(_pd, new_date, 1)
+                src = src.replace(_pd, new_clock_weather, 1)
+                changed = True
                 break
+    old_weather_right = """            // Weather
+            Loader {
+                Layout.leftMargin: 4
+                active: Config.options.bar.weather.enable
+
+                sourceComponent: BarGroup {
+                    WeatherBar {}
+                }
+            }\n"""
+    if old_weather_right in src:
+        src = src.replace(old_weather_right, "", 1)
+        changed = True
+    if changed:
         with open(path, "w", encoding="utf-8") as f:
             f.write(src)
-        print("  BarContent.qml: tarih gorunurlugu dinamik bosluga baglandi")
+        print("  BarContent.qml: hava durumu saatin yanina alindi ve dinamik bosluk guncellendi")
 
 sys.exit(1 if missing else 0)
 PY
