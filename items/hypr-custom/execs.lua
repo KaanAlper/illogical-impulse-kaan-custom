@@ -1,14 +1,13 @@
 -- Commands executed once at Hyprland startup (not on config reload).
--- Each block only runs when the feature it belongs to is installed (its files exist).
-hl.on("hyprland.start", function ()
-    -- Instant XANA Wayland curtain matching Plymouth until LockScreen (WlSessionLock) takes over
-    if is_file_exists(HOME .. "/.config/hypr/custom/bootsplash/shell.qml") then
-        hl.exec_cmd("qs -p $HOME/.config/hypr/custom/bootsplash/shell.qml")
-    end
+-- Feature-specific startup hooks live in ~/.config/hypr/custom/execs.d/*.lua
+-- and are installed as part of their parent feature in dotsync.
 
-    -- Run XDG autostart apps (AsenaDPI, Discord, Flameshot, etc.) after tray is ready
-    if is_file_exists(HOME .. "/.config/quickshell/ii/scripts/startup-apps.py") then
-        hl.exec_cmd("bash -c 'sleep 3 && python3 $HOME/.config/quickshell/ii/scripts/startup-apps.py run-autostart'")
+hl.on("hyprland.start", function ()
+    for _, name in ipairs({ "bootsplash", "startup-apps" }) do
+        local p = HOME .. "/.config/hypr/custom/execs.d/" .. name .. ".lua"
+        if is_file_exists(p) then
+            dofile(p)
+        end
     end
 
     -- Focus configured default monitor (or largest resolution monitor) on startup

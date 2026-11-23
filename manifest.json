@@ -77,10 +77,12 @@
         },
         { "id": "weather-settings", "title": "Hava durumu ayarları", "desc": "Çubuk, arka plan ve Servisler sayfalarında ortak hava durumu ayarı: otomatik konum ya da şehir arama, sıcaklık birimi, yenileme aralığı; çubuk hava durumu penceresinde yenile düğmesi + çevirileri", "default": true },
         { "id": "keyboard-layout", "title": "Klavye dili seçici", "desc": "Ayarlar -> Genel -> Dil altında klavye düzeni (tr, us, de...) seçici; seçim Hyprland'e uygulanır ve açılışta hatırlanır + çevirileri", "default": true },
-        { "id": "alt-tab", "title": "Alt+Tab pencere değiştirici", "desc": "Alt+Tab / Alt+Shift+Tab ile pencere değiştirici (kabuğun içinde çalışır, ayrı program gerekmez) + kısayolları", "default": true },
+        { "id": "alt-tab", "title": "Alt+Tab pencere değiştirici", "desc": "Alt+Tab / Alt+Shift+Tab ile pencere değiştirici (kabuğun içinde çalışır, ayrı program gerekmez) + kısayolları", "default": true,
+          "extra_files": [{ "src": "items/hypr-custom/keybinds.d/alt-tab.lua", "dest": "~/.config/hypr/custom/keybinds.d/alt-tab.lua" }] },
         { "id": "screensaver", "title": "Ekran koruyucu", "desc": "DVD, Matrix, Starfield, Mystify, XANA, Renk şablonu, özel medya, her monitöre ayrı ayar ve çevirileri", "default": true },
         { "id": "lock-power", "title": "Kilit & güç ayarları", "desc": "Genel -> Kilit bölümü (Ekran kilidi, DPMS, Derin uyku, Plymouth XANA logo seçici) ve çevirileri", "default": true },
-        { "id": "startup-apps", "title": "Başlangıç uygulamaları", "desc": "Genel -> Dil altında duyarlı/kaydırılabilir başlangıç uygulamaları tablosu (AsenaDPI, autostart, execs); Hyprland açılırken autostart uygulamalarını kendisi başlatır", "default": true },
+        { "id": "startup-apps", "title": "Başlangıç uygulamaları", "desc": "Genel -> Dil altında duyarlı/kaydırılabilir başlangıç uygulamaları tablosu (AsenaDPI, autostart, execs); Hyprland açılırken autostart uygulamalarını kendisi başlatır", "default": true,
+          "extra_files": [{ "src": "items/hypr-custom/execs.d/startup-apps.lua", "dest": "~/.config/hypr/custom/execs.d/startup-apps.lua" }] },
         {
           "id": "ai-sidebar", "title": "Sol panel AI (Agy, Claude, Codex & Anime)", "default": true,
           "desc": "AI sohbet sekmeleri, model seçiciler, anime görüntüleyici ve ilgili çeviriler. CLI'ları seçmesen de Super+A'da kurulu olmayana girince indirme önerilir",
@@ -94,8 +96,10 @@
               "pkgs": ["openai-codex"], "install": "bash {repo}/items/ai-cli/install.sh codex" }
           ]
         },
-        { "id": "everything-search", "title": "Everything dosya arama", "desc": "Super+B (Everything #) ve Super+P (Tüm uygulamalar !) kısayolları, dosya/klasör arama, indeksleme ve araç çubuğu", "default": true },
-        { "id": "workspace-split", "title": "Çoklu monitör çalışma alanı", "desc": "Monitöre göre bölme, odaklanmayan monitör vurgusu ve Ctrl+Super+Sol/Sağ (+Shift) monitörler arası geçiş kısayolları", "default": true },
+        { "id": "everything-search", "title": "Everything dosya arama", "desc": "Super+B (Everything #) ve Super+P (Tüm uygulamalar !) kısayolları, dosya/klasör arama, indeksleme ve araç çubuğu", "default": true,
+          "extra_files": [{ "src": "items/hypr-custom/keybinds.d/everything.lua", "dest": "~/.config/hypr/custom/keybinds.d/everything.lua" }] },
+        { "id": "workspace-split", "title": "Çoklu monitör çalışma alanı", "desc": "Monitöre göre bölme, odaklanmayan monitör vurgusu ve Ctrl+Super+Sol/Sağ (+Shift) monitörler arası geçiş kısayolları", "default": true,
+          "extra_files": [{ "src": "items/hypr-custom/keybinds.d/workspace-split.lua", "dest": "~/.config/hypr/custom/keybinds.d/workspace-split.lua" }] },
         { "id": "widget-lock", "title": "Widget konum kilitleme", "desc": "Arka plan saat ve hava durumu widget'ları Sürüklenebilir moddayken 'Konumu kilitle' anahtarı + çevirileri", "default": true }
       ]
     },
@@ -106,6 +110,12 @@
       "kind": "files",
       "src": "items/hypr-custom",
       "dest": "~/.config/hypr/custom",
+      "exclude": [
+        "keybinds.d/alt-tab.lua",
+        "keybinds.d/everything.lua",
+        "keybinds.d/workspace-split.lua",
+        "execs.d/**"
+      ],
       "executable": [
         "scripts/__restore_video_wallpaper.sh"
       ],
@@ -113,10 +123,8 @@
         "flameshot"
       ],
       "features": [
-        { "id": "keybinds", "paths": ["keybinds.lua"], "title": "Özel kısayollar", "desc": "Win+H Everything arama, Print Flameshot, Alt+Tab ve monitör geçiş kısayolları", "default": true },
-        { "id": "execs", "paths": ["execs.lua"], "title": "Açılış komutları", "desc": "Hyprland açılışında XDG autostart ve başlangıç betikleri", "default": true },
-        { "id": "hypr-scripts", "paths": ["scripts/**"], "title": "Duvar kâğıdı & yardımcı betikler", "desc": "Video duvar kâğıdı geri yükleme ve yardımcı Hyprland betikleri", "default": true },
-        { "id": "bootsplash", "paths": ["bootsplash/**"], "title": "Açılış logosu", "desc": "Açılış logosu; Hyprland açılırken kendiliğinden gösterilir", "default": true }
+        { "id": "bootsplash", "paths": ["bootsplash/**"], "title": "Açılış logosu", "desc": "Açılış logosu; Hyprland açılırken kendiliğinden gösterilir", "default": true,
+          "extra_files": [{ "src": "items/hypr-custom/execs.d/bootsplash.lua", "dest": "~/.config/hypr/custom/execs.d/bootsplash.lua" }] }
       ]
     },
     {
