@@ -3243,6 +3243,13 @@ def main() -> int:
                     "                property bool showSleepInhibitToggle: true // Keep-awake (sleep inhibitor) toggle\n"
                     "                property JsonObject resources: JsonObject {",
                 ),
+                (
+                    "showAudioMonoToggle",
+                    "                property bool showSleepInhibitToggle: true // Keep-awake (sleep inhibitor) toggle\n",
+                    "                property bool showSleepInhibitToggle: true // Keep-awake (sleep inhibitor) toggle\n"
+                    "                property bool showAudioMonoToggle: true // Mono/stereo downmix toggle\n"
+                    "                property bool showAudioOutputSwitcher: true // Audio output device switcher\n",
+                ),
             ],
         )
         ok &= patch_file(
@@ -3273,6 +3280,36 @@ def main() -> int:
                     "            }\n"
                     "        }\n\n"
                     "        ConfigRow {\n",
+                ),
+                (
+                    "showAudioMonoToggle",
+                    "                    Config.options.bar.showSleepInhibitToggle = checked;\n"
+                    "                }\n"
+                    "            }\n"
+                    "        }\n\n",
+                    "                    Config.options.bar.showSleepInhibitToggle = checked;\n"
+                    "                }\n"
+                    "            }\n"
+                    "        }\n\n"
+                    "        ConfigRow {\n"
+                    "            uniform: true\n"
+                    "            ConfigSwitch {\n"
+                    '                buttonIcon: "headphones"\n'
+                    '                text: Translation.tr("Audio output switcher")\n'
+                    "                checked: Config.options.bar.showAudioOutputSwitcher\n"
+                    "                onCheckedChanged: {\n"
+                    "                    Config.options.bar.showAudioOutputSwitcher = checked;\n"
+                    "                }\n"
+                    "            }\n"
+                    "            ConfigSwitch {\n"
+                    '                buttonIcon: "speaker"\n'
+                    '                text: Translation.tr("Mono audio toggle")\n'
+                    "                checked: Config.options.bar.showAudioMonoToggle\n"
+                    "                onCheckedChanged: {\n"
+                    "                    Config.options.bar.showAudioMonoToggle = checked;\n"
+                    "                }\n"
+                    "            }\n"
+                    "        }\n\n",
                 ),
             ],
         )

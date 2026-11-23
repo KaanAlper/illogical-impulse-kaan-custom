@@ -133,5 +133,7 @@
   "Would you like to install it now?": "Встановити зараз?",
   "Keyboard Layout": "Розкладка клавіатури",
   "Select the keyboard layout used by Hyprland.\n\"Auto\" keeps the layout from your Hyprland config.": "Виберіть розкладку клавіатури, яку використовує Hyprland.\n«Авто» зберігає розкладку з вашої конфігурації Hyprland.",
-  "Auto (Hyprland config)": "Авто (конфігурація Hyprland)"
+  "Auto (Hyprland config)": "Авто (конфігурація Hyprland)",
+  "Audio output switcher": "Перемикач аудіовиходу",
+  "Mono audio toggle": "Перемикач моно-звуку"
 }

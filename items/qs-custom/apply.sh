@@ -170,7 +170,7 @@ widgets = [
      "\n"),
     ("audio-mono-toggle", "AudioMonoToggle",
      "            AudioMonoToggle {\n"
-     "                visible: root.useShortenedForm < 2\n"
+     "                visible: Config.options.bar.showAudioMonoToggle && root.useShortenedForm < 2\n"
      "                Layout.alignment: Qt.AlignVCenter\n"
      "                Layout.leftMargin: 4\n"
      "                Layout.rightMargin: 4\n"
@@ -178,7 +178,7 @@ widgets = [
      "\n"),
     ("audio-output-switcher", "AudioOutputSwitcher",
      "            AudioOutputSwitcher {\n"
-     "                visible: root.useShortenedForm < 2\n"
+     "                visible: Config.options.bar.showAudioOutputSwitcher && root.useShortenedForm < 2\n"
      "                Layout.alignment: Qt.AlignVCenter\n"
      "                Layout.leftMargin: 4\n"
      "                Layout.rightMargin: 4\n"
@@ -223,7 +223,7 @@ if skipped:
     print("  BarContent.qml: zaten yamalı -> " + ", ".join(skipped))
 
 # 2a) Upgrade already-inserted blocks: honour the new Settings -> Bar switches
-for _name, _opt in (("SleepInhibitToggle", "showSleepInhibitToggle"), ("AppVolumeMixer", "showAppVolumeMixer")):
+for _name, _opt in (("SleepInhibitToggle", "showSleepInhibitToggle"), ("AppVolumeMixer", "showAppVolumeMixer"), ("AudioMonoToggle", "showAudioMonoToggle"), ("AudioOutputSwitcher", "showAudioOutputSwitcher")):
     _old = f"            {_name} {{\n                visible: root.useShortenedForm < 2\n"
     _new = f"            {_name} {{\n                visible: Config.options.bar.{_opt} && root.useShortenedForm < 2\n"
     if _old in src:

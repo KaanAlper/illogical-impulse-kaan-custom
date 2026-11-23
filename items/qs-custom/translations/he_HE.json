@@ -133,5 +133,7 @@
   "Would you like to install it now?": "להתקין עכשיו?",
   "Keyboard Layout": "פריסת מקלדת",
   "Select the keyboard layout used by Hyprland.\n\"Auto\" keeps the layout from your Hyprland config.": "בחר את פריסת המקלדת ש-Hyprland משתמש בה.\n\"אוטומטי\" שומר על הפריסה מתצורת Hyprland שלך.",
-  "Auto (Hyprland config)": "אוטומטי (תצורת Hyprland)"
+  "Auto (Hyprland config)": "אוטומטי (תצורת Hyprland)",
+  "Audio output switcher": "בורר פלט שמע",
+  "Mono audio toggle": "מתג שמע מונו"
 }

@@ -133,5 +133,7 @@
   "Would you like to install it now?": "Deseja instalar agora?",
   "Keyboard Layout": "Layout do teclado",
   "Select the keyboard layout used by Hyprland.\n\"Auto\" keeps the layout from your Hyprland config.": "Selecione o layout de teclado usado pelo Hyprland.\n\"Auto\" mantém o layout da sua configuração do Hyprland.",
-  "Auto (Hyprland config)": "Auto (configuração do Hyprland)"
+  "Auto (Hyprland config)": "Auto (configuração do Hyprland)",
+  "Audio output switcher": "Seletor de saída de áudio",
+  "Mono audio toggle": "Alternar áudio mono"
 }
