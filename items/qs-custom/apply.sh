@@ -248,12 +248,16 @@ if feats_env == "all" or "bar-compact" in feats_env.split(","):
         print("  BarContent.qml: rightCenterGroup genisligi saate gore esnetildi")
 
     old_date = "showDate: (Config.options.bar.verbose && root.useShortenedForm < 2)"
-    new_date = "showDate: (Config.options.bar.verbose && root.useShortenedForm === 0)"
-    if new_date not in src and old_date in src:
-        src = src.replace(old_date, new_date, 1)
+    new_date = "showDate: (Config.options.bar.verbose && (root.useShortenedForm === 0 || (root.useShortenedForm === 1 && !Config.options.bar.weather.enable)))"
+    prev_date = "showDate: (Config.options.bar.verbose && root.useShortenedForm === 0)"
+    if new_date not in src:
+        if prev_date in src:
+            src = src.replace(prev_date, new_date, 1)
+        elif old_date in src:
+            src = src.replace(old_date, new_date, 1)
         with open(path, "w", encoding="utf-8") as f:
             f.write(src)
-        print("  BarContent.qml: kucuk ekranda tarih gizlendi")
+        print("  BarContent.qml: kucuk ekranda tarih yalnizca hava durumu acikken gizlendi")
 
 sys.exit(1 if missing else 0)
 PY
