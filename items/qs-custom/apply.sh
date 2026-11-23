@@ -162,7 +162,7 @@ with open(path, encoding="utf-8") as f:
 widgets = [
     ("sleep-inhibit-toggle", "SleepInhibitToggle",
      "            SleepInhibitToggle {\n"
-     "                visible: root.useShortenedForm < 2\n"
+     "                visible: Config.options.bar.showSleepInhibitToggle && root.useShortenedForm < 2\n"
      "                Layout.alignment: Qt.AlignVCenter\n"
      "                Layout.leftMargin: 4\n"
      "                Layout.rightMargin: 4\n"
@@ -186,7 +186,7 @@ widgets = [
      "\n"),
     ("app-volume-mixer", "AppVolumeMixer",
      "            AppVolumeMixer {\n"
-     "                visible: root.useShortenedForm < 2\n"
+     "                visible: Config.options.bar.showAppVolumeMixer && root.useShortenedForm < 2\n"
      "                Layout.alignment: Qt.AlignVCenter\n"
      "                Layout.leftMargin: 4\n"
      "                Layout.rightMargin: 4\n"
@@ -221,6 +221,16 @@ if inserted:
     print("  BarContent.qml: eklendi -> " + ", ".join(inserted))
 if skipped:
     print("  BarContent.qml: zaten yamalı -> " + ", ".join(skipped))
+
+# 2a) Upgrade already-inserted blocks: honour the new Settings -> Bar switches
+for _name, _opt in (("SleepInhibitToggle", "showSleepInhibitToggle"), ("AppVolumeMixer", "showAppVolumeMixer")):
+    _old = f"            {_name} {{\n                visible: root.useShortenedForm < 2\n"
+    _new = f"            {_name} {{\n                visible: Config.options.bar.{_opt} && root.useShortenedForm < 2\n"
+    if _old in src:
+        src = src.replace(_old, _new, 1)
+        with open(path, "w", encoding="utf-8") as f:
+            f.write(src)
+        print(f"  BarContent.qml: {_name} artik Ayarlar anahtarina bagli")
 
 # Raise shorten threshold to 1366 so 1280px secondary monitors don't overlap bar icons.
 old_thresh = "(Appearance.sizes.barShortenScreenWidthThreshold >= screen?.width) ? 1 : 0"

@@ -3227,6 +3227,56 @@ def main() -> int:
             ],
         )
 
+    if has_feat("bar-widgets") or has_feat("app-volume-mixer") or has_feat("sleep-inhibit-toggle"):
+        # Settings -> Bar -> Utility buttons: switches to show/hide the app volume mixer and the stay-awake toggle
+        ok &= patch_file(
+            ii / "modules/common/Config.qml",
+            [
+                (
+                    "showAppVolumeMixer",
+                    "                property bool verbose: true\n"
+                    "                property bool vertical: false\n"
+                    "                property JsonObject resources: JsonObject {",
+                    "                property bool verbose: true\n"
+                    "                property bool vertical: false\n"
+                    "                property bool showAppVolumeMixer: true // Per-app volume mixer button\n"
+                    "                property bool showSleepInhibitToggle: true // Keep-awake (sleep inhibitor) toggle\n"
+                    "                property JsonObject resources: JsonObject {",
+                ),
+            ],
+        )
+        ok &= patch_file(
+            ii / "modules/settings/BarConfig.qml",
+            [
+                (
+                    "showAppVolumeMixer",
+                    '        title: Translation.tr("Utility buttons")\n\n'
+                    "        ConfigRow {\n",
+                    '        title: Translation.tr("Utility buttons")\n\n'
+                    "        ConfigRow {\n"
+                    "            uniform: true\n"
+                    "            ConfigSwitch {\n"
+                    '                buttonIcon: "instant_mix"\n'
+                    '                text: Translation.tr("App volume mixer")\n'
+                    "                checked: Config.options.bar.showAppVolumeMixer\n"
+                    "                onCheckedChanged: {\n"
+                    "                    Config.options.bar.showAppVolumeMixer = checked;\n"
+                    "                }\n"
+                    "            }\n"
+                    "            ConfigSwitch {\n"
+                    '                buttonIcon: "bedtime_off"\n'
+                    '                text: Translation.tr("Stay awake toggle")\n'
+                    "                checked: Config.options.bar.showSleepInhibitToggle\n"
+                    "                onCheckedChanged: {\n"
+                    "                    Config.options.bar.showSleepInhibitToggle = checked;\n"
+                    "                }\n"
+                    "            }\n"
+                    "        }\n\n"
+                    "        ConfigRow {\n",
+                ),
+            ],
+        )
+
     ok &= patch_file(
         ii / "scripts/colors/applycolor.sh",
         [
