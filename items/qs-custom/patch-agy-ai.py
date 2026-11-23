@@ -1388,34 +1388,6 @@ def main() -> int:
             ],
         )
 
-    if has_feat("icon-cache"):
-        # 12. AppSearch.qml: map zen/dolphin/artcraft window classes -> desktop icon names
-        ok &= patch_file(
-            ii / "services/AppSearch.qml",
-            [
-                (
-                    '"dolphin": "org.kde.dolphin"',
-                    '        "footclient": "foot",\n    })',
-                    '        "footclient": "foot",\n'
-                    '        "zen": "zen-browser",\n'
-                    '        "dolphin": "org.kde.dolphin",\n'
-                    '        "artcraft-launcher": "ai.storyteller.artcraft-launcher",\n'
-                    '        "artcraft": "ai.storyteller.artcraft-launcher",\n    })',
-                    "optional",
-                ),
-                (
-                    '"dolphin": "org.kde.dolphin"',
-                    '        "footclient": "foot",\n        "zen": "zen-browser",',
-                    '        "footclient": "foot",\n'
-                    '        "zen": "zen-browser",\n'
-                    '        "dolphin": "org.kde.dolphin",\n'
-                    '        "artcraft-launcher": "ai.storyteller.artcraft-launcher",\n'
-                    '        "artcraft": "ai.storyteller.artcraft-launcher",',
-                    "optional",
-                ),
-            ],
-        )
-
     if has_feat("ai-sidebar"):
         # 13. GoogleCloud.qml: don't trigger keyring password popup on boot before LockScreen unlocks keyring
         ok &= patch_file(
@@ -3310,6 +3282,24 @@ def main() -> int:
                     "                }\n"
                     "            }\n"
                     "        }\n\n",
+                ),
+            ],
+        )
+
+    if has_feat("alt-tab"):
+        # Built-in Alt+Tab window switcher (AltSwitcher) mounted in the ii panel family
+        ok &= patch_file(
+            ii / "panelFamilies/IllogicalImpulseFamily.qml",
+            [
+                (
+                    "import qs.modules.ii.altSwitcher",
+                    "import qs.modules.ii.background\n",
+                    "import qs.modules.ii.altSwitcher\nimport qs.modules.ii.background\n",
+                ),
+                (
+                    "AltSwitcher {}",
+                    "Scope {\n",
+                    "Scope {\n    PanelLoader { component: AltSwitcher {} }\n",
                 ),
             ],
         )

@@ -48,6 +48,7 @@ illogical-impulse-kaan-custom
 │   │   │                           # installs ffmpeg, qt6-multimedia-ffmpeg and jq
 │   │   └── wallpaper-settings      # Settings -> Wallpaper page, per-monitor wallpapers, drag-to-reorder monitor
 │   │                               # pills, main-monitor star + 14-lang translations
+│   ├── alt-tab                     # Alt+Tab / Alt+Shift+Tab window switcher built into the shell + keybinds
 │   ├── screensaver                 # Screensaver (DVD, Matrix, Starfield, Mystify, XANA, Color, Custom/GIF/Video/.scr),
 │   │                               # per-monitor settings, deferred lock (keeps running until input), + 14-lang translations
 │   ├── lock-power                  # Settings -> General -> Lock (idle lock, DPMS, Suspend toggles/timeouts,
@@ -61,12 +62,10 @@ illogical-impulse-kaan-custom
 │   │                               # (CLIs you skip are offered inside Super+A when you open that tab)
 │   ├── everything-search           # Everything (#) file search via plocate + systemd timer, sort/filter toolbar,
 │   │                               # Super+B (files #) and Super+P (all apps A-Z !)
-│   ├── workspace-split             # Per-monitor workspace splitting in Bar Settings, dims unfocused monitor
-│   │                               # workspace indicator, Ctrl+Super+Left/Right (+Shift) cross-monitor navigation
-│   └── icon-cache                  # Fixes Zen Browser & ArtCraft icons and refreshes hicolor icon-theme.cache
+│   └── workspace-split             # Per-monitor workspace splitting in Bar Settings, dims unfocused monitor
+│                                   # workspace indicator, Ctrl+Super+Left/Right (+Shift) cross-monitor navigation
 │
 ├── hypr-custom — Hyprland custom configuration (~/.config/hypr/custom, non-destructive)
-│   ├── alttab                      # Alt+Tab window switcher + keybinds; starts automatically with Hyprland
 │   └── bootsplash                  # Boot splash logo; shown automatically when Hyprland starts
 │
 ├── flameshot                       # Installs flameshot, configures Wayland-compatible INI, wires Print keybind

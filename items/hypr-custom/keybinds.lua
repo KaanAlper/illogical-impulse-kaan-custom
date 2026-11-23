@@ -9,13 +9,13 @@ if is_file_exists("/usr/bin/flameshot") then
     hl.bind("Print", hl.dsp.exec_cmd("flameshot gui"), { description = "Screenshot: Flameshot GUI" })
 end
 
-if is_file_exists(HOME .. "/.config/hypr/custom/alttab/shell.qml") then
-    -- Alt+Tab window switcher (custom/alttab/shell.qml): hold Alt, Tab moves forward, Shift+Tab back,
+if is_file_exists(HOME .. "/.config/quickshell/ii/modules/ii/altSwitcher/AltSwitcher.qml") then
+    -- Alt+Tab window switcher (built into the shell): hold Alt, Tab moves forward, Shift+Tab back,
     -- releasing Alt switches to the selection. Alt itself is bound transparently, so applications still get it.
-    hl.bind("ALT + Tab", hl.dsp.global("alttab:next"), { description = "Window: Alt+Tab switcher" })
-    hl.bind("ALT + SHIFT + Tab", hl.dsp.global("alttab:prev"), { description = "Window: Alt+Tab switcher (back)" })
-    hl.bind("ALT_L", hl.dsp.global("alttab:alt"), { ignore_mods = true, transparent = true })
-    hl.bind("ALT_R", hl.dsp.global("alttab:alt"), { ignore_mods = true, transparent = true })
+    hl.bind("ALT + Tab", hl.dsp.global("quickshell:altSwitcherNext"), { description = "Shell: Alt+Tab window switcher" })
+    hl.bind("ALT + SHIFT + Tab", hl.dsp.global("quickshell:altSwitcherPrev"), { description = "Shell: Alt+Tab window switcher (back)" })
+    hl.bind("ALT_L", hl.dsp.global("quickshell:altSwitcherAlt"), { ignore_mods = true, transparent = true })
+    hl.bind("ALT_R", hl.dsp.global("quickshell:altSwitcherAlt"), { ignore_mods = true, transparent = true })
 end
 
 if is_file_exists(HOME .. "/.config/quickshell/ii/scripts/apply-workspace-split.py") then

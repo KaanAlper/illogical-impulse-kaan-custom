@@ -6,11 +6,6 @@ hl.on("hyprland.start", function ()
         hl.exec_cmd("qs -p $HOME/.config/hypr/custom/bootsplash/shell.qml")
     end
 
-    -- Alt+Tab window switcher daemon
-    if is_file_exists(HOME .. "/.config/hypr/custom/alttab/shell.qml") then
-        hl.exec_cmd("qs -p $HOME/.config/hypr/custom/alttab/shell.qml")
-    end
-
     -- Run XDG autostart apps (AsenaDPI, Discord, Flameshot, etc.) after tray is ready
     if is_file_exists(HOME .. "/.config/quickshell/ii/scripts/startup-apps.py") then
         hl.exec_cmd("bash -c 'sleep 3 && python3 $HOME/.config/quickshell/ii/scripts/startup-apps.py run-autostart'")

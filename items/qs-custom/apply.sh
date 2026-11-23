@@ -100,22 +100,9 @@ if has_feat "keyboard-layout"; then
     cp "$CUSTOM_DIR/list-keyboard-layouts.py" "$II/scripts/list-keyboard-layouts.py"
     chmod +x "$II/scripts/list-keyboard-layouts.py"
 fi
-if has_feat "icon-cache"; then
-    mkdir -p "$HOME/.local/share/icons/hicolor/128x128/apps"
-    if [ -f /usr/share/icons/hicolor/128x128/apps/zen-browser.png ]; then
-        ln -sf /usr/share/icons/hicolor/128x128/apps/zen-browser.png "$HOME/.local/share/icons/hicolor/128x128/apps/zen-browser.png"
-        ln -sf /usr/share/icons/hicolor/128x128/apps/zen-browser.png "$HOME/.local/share/icons/hicolor/128x128/apps/zen.png"
-    fi
-    if [ -f /usr/share/icons/hicolor/128x128/apps/ai.storyteller.artcraft-launcher.png ]; then
-        ln -sf /usr/share/icons/hicolor/128x128/apps/ai.storyteller.artcraft-launcher.png "$HOME/.local/share/icons/hicolor/128x128/apps/ai.storyteller.artcraft-launcher.png"
-        ln -sf /usr/share/icons/hicolor/128x128/apps/ai.storyteller.artcraft-launcher.png "$HOME/.local/share/icons/hicolor/128x128/apps/artcraft-launcher.png"
-    fi
-    if [ -f /usr/share/icons/hicolor/index.theme ]; then
-        ln -sf /usr/share/icons/hicolor/index.theme "$HOME/.local/share/icons/hicolor/index.theme"
-    fi
-    if command -v gtk-update-icon-cache >/dev/null 2>&1; then
-        gtk-update-icon-cache -f -t "$HOME/.local/share/icons/hicolor" >/dev/null 2>&1 || true
-    fi
+if has_feat "alt-tab"; then
+    mkdir -p "$II/modules/ii/altSwitcher"
+    cp "$CUSTOM_DIR/AltSwitcher.qml" "$II/modules/ii/altSwitcher/AltSwitcher.qml"
 fi
 if has_feat "everything-search"; then
     cp "$CUSTOM_DIR/everything-update.sh" "$II/scripts/everything-update.sh"
