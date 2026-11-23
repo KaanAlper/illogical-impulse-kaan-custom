@@ -1467,6 +1467,35 @@ def main() -> int:
         )
 
     if has_feat("screensaver"):
+        # Lock screen: hide the password box / buttons while the screensaver is playing underneath
+        ok &= patch_file(
+            ii / "GlobalStates.qml",
+            [
+                (
+                    "property bool screensaverActive: false",
+                    "    property bool sidebarLeftOpen: false",
+                    "    property bool sidebarLeftOpen: false\n"
+                    "    property bool screensaverActive: false",
+                ),
+            ],
+        )
+        ok &= patch_file(
+            ii / "modules/ii/lock/LockSurface.qml",
+            [
+                (
+                    "GlobalStates.screensaverActive ? 0 : 1",
+                    "    hoverEnabled: true\n    acceptedButtons: Qt.LeftButton\n",
+                    "    // Screensaver is drawn below the (transparent) lock surface: keep the lock UI out of its way\n"
+                    "    opacity: GlobalStates.screensaverActive ? 0 : 1\n"
+                    "    Behavior on opacity {\n"
+                    "        NumberAnimation { duration: 250 }\n"
+                    "    }\n"
+                    "    hoverEnabled: true\n    acceptedButtons: Qt.LeftButton\n",
+                ),
+            ],
+        )
+
+    if has_feat("screensaver"):
         # 15. settings.qml: register Screensaver page in left navigation
         ok &= patch_file(
             ii / "settings.qml",
