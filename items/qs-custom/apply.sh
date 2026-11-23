@@ -231,6 +231,21 @@ if new_thresh not in src and old_thresh in src:
         f.write(src)
     print("  BarContent.qml: kucuk monitor esigi -> 1366px")
 
+# Prevent ClockWidget from overflowing rightCenterGroup into WeatherBar on narrow monitors
+old_rcg = """        MouseArea {
+            id: rightCenterGroup
+            anchors.verticalCenter: parent.verticalCenter
+            implicitWidth: root.centerSideModuleWidth"""
+new_rcg = """        MouseArea {
+            id: rightCenterGroup
+            anchors.verticalCenter: parent.verticalCenter
+            implicitWidth: Math.max(root.centerSideModuleWidth, rightCenterGroupContent.implicitWidth)"""
+if new_rcg not in src and old_rcg in src:
+    src = src.replace(old_rcg, new_rcg, 1)
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(src)
+    print("  BarContent.qml: rightCenterGroup genisligi saate gore esnetildi")
+
 sys.exit(1 if missing else 0)
 PY
 rc=$?
