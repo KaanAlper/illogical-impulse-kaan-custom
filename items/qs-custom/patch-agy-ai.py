@@ -3121,6 +3121,27 @@ def main() -> int:
         ],
     )
 
+    ok &= patch_file(
+        ii / "scripts/colors/applycolor.sh",
+        [
+            (
+                "# skip ptys owned by kitty",
+                "  for file in /dev/pts/*; do\n"
+                "    if [[ $file =~ ^/dev/pts/[0-9]+$ ]]; then\n",
+                "  # kitty windows are themed by apply_kitty (SIGUSR1 reload). Writing the escape sequences into\n"
+                "  # them too makes full-screen TUIs (e.g. Claude Code) stop repainting until the next click.\n"
+                "  local kitty_ptys=\" \"\n"
+                "  if pidof kitty >/dev/null; then\n"
+                "    kitty_ptys=\" $(ps -o tty= --ppid \"$(pidof kitty | tr ' ' ',')\" 2>/dev/null | awk '{printf \"/dev/%s \", $1}')\"\n"
+                "  fi\n"
+                "  for file in /dev/pts/*; do\n"
+                "    # skip ptys owned by kitty\n"
+                "    [[ \"$kitty_ptys\" == *\" $file \"* ]] && continue\n"
+                "    if [[ $file =~ ^/dev/pts/[0-9]+$ ]]; then\n",
+            ),
+        ],
+    )
+
     return 0 if ok else 1
 
 
