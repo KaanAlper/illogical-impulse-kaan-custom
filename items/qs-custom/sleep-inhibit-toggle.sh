@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # sleep-inhibit-toggle.sh
-# Toggle a system-wide sleep/idle inhibitor ("uyku modu kapalı" switch for the bar).
+# Toggle a system-wide sleep/idle inhibitor (the bar's "stay awake" toggle).
 #
 # Implemented with a detached `systemd-inhibit ... sleep infinity` process that holds a
 # logind BLOCK lock for:
@@ -28,7 +28,7 @@ STATE_FILE="$STATE_DIR/sleep-inhibit.state"
 WHAT="sleep:idle:handle-lid-switch"
 WHO="Quickshell bar"
 # Unique marker: lets us find/kill a stray inhibitor whose PID file was lost.
-WHY="uyku-modu-kapali (quickshell-sleep-inhibit)"
+WHY="stay awake (quickshell-sleep-inhibit)"
 
 # --- helpers -----------------------------------------------------------------
 
@@ -70,7 +70,7 @@ running_pid() {
 
 notify() {
     command -v notify-send >/dev/null 2>&1 || return 0
-    notify-send -a "Uyku" -i "$2" -t 2000 "$1" "$3" >/dev/null 2>&1 || true
+    notify-send -a "Sleep" -i "$2" -t 2000 "$1" "$3" >/dev/null 2>&1 || true
 }
 
 # --- actions -----------------------------------------------------------------
@@ -89,12 +89,12 @@ inhibit_on() {
     sleep 0.3
     if ! kill -0 "$pid" 2>/dev/null; then
         write_state off
-        notify "Uyku modu" "dialog-error" "Kilit kurulamadı"
+        notify "Stay awake" "dialog-error" "Could not take the sleep inhibitor"
         return 1
     fi
     printf '%s\n' "$pid" >"$PID_FILE"
     write_state on
-    notify "Uyku modu KAPALI" "preferences-desktop-screensaver" "Ekran kapanmaz, sistem uyumaz"
+    notify "Staying awake" "preferences-desktop-screensaver" "The screen stays on and the system won't sleep"
 }
 
 inhibit_off() {
@@ -107,7 +107,7 @@ inhibit_off() {
     fi
     rm -f "$PID_FILE"
     write_state off
-    notify "Uyku modu AÇIK" "preferences-desktop-screensaver" "Normal uyku/ekran zamanlayıcıları geri geldi"
+    notify "Sleep allowed" "preferences-desktop-screensaver" "Normal sleep and screen timers are back"
 }
 
 status() {

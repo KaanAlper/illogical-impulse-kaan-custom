@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Manage startup applications from ~/.config/autostart, /etc/xdg/autostart, and ~/.config/hypr/custom/execs.lua."""
+"""Manage startup applications from ~/.config/autostart, /etc/xdg/autostart, and ~/.config/hypr/custom/execs.{conf,lua}."""
 
 import json
 import os
@@ -9,9 +9,11 @@ import sys
 
 USER_AUTOSTART = pathlib.Path.home() / ".config/autostart"
 SYS_AUTOSTART = pathlib.Path("/etc/xdg/autostart")
-HYPR_EXECS = pathlib.Path.home() / ".config/hypr/custom/execs.lua"
+HYPR_EXECS_LUA = pathlib.Path.home() / ".config/hypr/custom/execs.lua"
+HYPR_EXECS_CONF = pathlib.Path.home() / ".config/hypr/custom/execs.conf"
 
-EXEC_RE = re.compile(r'^(\s*)(--\s*\[disabled\]\s*)?hl\.exec_cmd\((["\'])(.+)\3\)\s*$')
+EXEC_LUA_RE = re.compile(r'^(\s*)(--\s*\[disabled\]\s*)?hl\.exec_cmd\((["\'])(.+)\3\)\s*$')
+EXEC_CONF_RE = re.compile(r'^(\s*)(#\s*\[disabled\]\s*)?exec-once\s*=\s*(.+?)\s*$')
 
 
 def _applies_to_desktop(d: dict[str, str]) -> bool:
@@ -44,15 +46,6 @@ def _parse_desktop(path: pathlib.Path) -> dict[str, str]:
 
 
 def _friendly_hypr_name(cmd: str) -> tuple[str, str]:
-    low = cmd.lower()
-    if "asena-dpi-tray" in low:
-        return ("AsenaDPI Tray", "preferences-desktop-display")
-    if "alttab/shell.qml" in low:
-        return ("Alt+Tab Switcher", "view_carousel")
-    if "bootsplash/shell.qml" in low:
-        return ("XANA Bootsplash", "wallpaper")
-    if "hl.dsp.focus" in low:
-        return ("Default Monitor Focus", "desktop_windows")
     parts = cmd.strip().split()
     base = os.path.basename(parts[0]) if parts else cmd
     return (base, "terminal")
@@ -61,31 +54,45 @@ def _friendly_hypr_name(cmd: str) -> tuple[str, str]:
 def list_apps() -> list[dict]:
     items: list[dict] = []
 
-    # 1. Hyprland custom execs.lua entries
-    hypr_asena_enabled = None
-    hypr_mtime = HYPR_EXECS.stat().st_mtime if HYPR_EXECS.exists() else 0
-    if HYPR_EXECS.exists():
-        for idx, line in enumerate(HYPR_EXECS.read_text(encoding="utf-8", errors="replace").splitlines()):
-            m = EXEC_RE.match(line)
+    # 1. Hyprland custom execs.lua / execs.conf entries
+    if HYPR_EXECS_LUA.exists():
+        mtime = HYPR_EXECS_LUA.stat().st_mtime
+        for idx, line in enumerate(HYPR_EXECS_LUA.read_text(encoding="utf-8", errors="replace").splitlines()):
+            m = EXEC_LUA_RE.match(line)
             if not m:
                 continue
             disabled = bool(m.group(2))
             cmd = m.group(4)
-            if "hl.dsp.focus" in cmd:
-                continue
-            if "asena-dpi-tray" in cmd.lower():
-                hypr_asena_enabled = not disabled
-                continue
             name, icon = _friendly_hypr_name(cmd)
             items.append({
-                "id": f"hypr:{idx}",
+                "id": f"hyprlua:{idx}",
                 "name": name,
                 "cmd": cmd,
                 "icon": icon,
                 "source": "Hypr",
                 "enabled": not disabled,
                 "removable": False,
-                "mtime": hypr_mtime,
+                "mtime": mtime,
+            })
+
+    if HYPR_EXECS_CONF.exists():
+        mtime = HYPR_EXECS_CONF.stat().st_mtime
+        for idx, line in enumerate(HYPR_EXECS_CONF.read_text(encoding="utf-8", errors="replace").splitlines()):
+            m = EXEC_CONF_RE.match(line)
+            if not m:
+                continue
+            disabled = bool(m.group(2))
+            cmd = m.group(3)
+            name, icon = _friendly_hypr_name(cmd)
+            items.append({
+                "id": f"hyprconf:{idx}",
+                "name": name,
+                "cmd": cmd,
+                "icon": icon,
+                "source": "Hypr",
+                "enabled": not disabled,
+                "removable": False,
+                "mtime": mtime,
             })
 
     # 2. XDG autostart entries (user overrides system)
@@ -111,8 +118,6 @@ def list_apps() -> list[dict]:
         hidden = d.get("Hidden", "").lower() == "true"
         gnome_en = d.get("X-GNOME-Autostart-enabled", "true").lower() != "false"
         enabled = (not hidden) and gnome_en
-        if fname == "asena-dpi-tray.desktop" and hypr_asena_enabled is not None:
-            enabled = enabled and hypr_asena_enabled
         try:
             mtime = p.stat().st_mtime
         except OSError:
@@ -128,45 +133,45 @@ def list_apps() -> list[dict]:
             "mtime": mtime,
         })
 
-    if hypr_asena_enabled is not None and "asena-dpi-tray.desktop" not in seen_files:
-        items.append({
-            "id": "asena:tray",
-            "name": "AsenaDPI",
-            "cmd": "/usr/local/bin/asena-dpi-tray",
-            "icon": "preferences-desktop-display",
-            "source": "Hypr",
-            "enabled": hypr_asena_enabled,
-            "removable": False,
-            "mtime": hypr_mtime,
-        })
-
-    items.sort(key=lambda x: (0 if x["enabled"] else 1, 0 if "asena" in x["name"].lower() else 1, x["name"].lower()))
+    items.sort(key=lambda x: (0 if x["enabled"] else 1, x["name"].lower()))
     return items
 
 
 def toggle_app(item_id: str, enable: bool) -> int:
-    if item_id.startswith("hypr:"):
+    if item_id.startswith("hyprlua:"):
         idx = int(item_id.split(":", 1)[1])
-        if not HYPR_EXECS.exists():
+        if not HYPR_EXECS_LUA.exists():
             return 1
-        lines = HYPR_EXECS.read_text(encoding="utf-8").splitlines(keepends=True)
+        lines = HYPR_EXECS_LUA.read_text(encoding="utf-8").splitlines(keepends=True)
         if 0 <= idx < len(lines):
-            m = EXEC_RE.match(lines[idx].rstrip("\r\n"))
+            m = EXEC_LUA_RE.match(lines[idx].rstrip("\r\n"))
             if m:
                 indent, _dis, q, cmd = m.group(1), m.group(2), m.group(3), m.group(4)
                 nl = "\n" if lines[idx].endswith("\n") else ""
                 prefix = "" if enable else "-- [disabled] "
                 lines[idx] = f"{indent}{prefix}hl.exec_cmd({q}{cmd}{q}){nl}"
-                HYPR_EXECS.write_text("".join(lines), encoding="utf-8")
+                HYPR_EXECS_LUA.write_text("".join(lines), encoding="utf-8")
+                return 0
+        return 1
+
+    if item_id.startswith("hyprconf:"):
+        idx = int(item_id.split(":", 1)[1])
+        if not HYPR_EXECS_CONF.exists():
+            return 1
+        lines = HYPR_EXECS_CONF.read_text(encoding="utf-8").splitlines(keepends=True)
+        if 0 <= idx < len(lines):
+            m = EXEC_CONF_RE.match(lines[idx].rstrip("\r\n"))
+            if m:
+                indent, _dis, cmd = m.group(1), m.group(2), m.group(3)
+                nl = "\n" if lines[idx].endswith("\n") else ""
+                prefix = "" if enable else "# [disabled] "
+                lines[idx] = f"{indent}{prefix}exec-once = {cmd}{nl}"
+                HYPR_EXECS_CONF.write_text("".join(lines), encoding="utf-8")
                 return 0
         return 1
 
     if item_id.startswith("xdg:"):
         fname = item_id.split(":", 1)[1]
-        if fname == "asena-dpi-tray.desktop" and HYPR_EXECS.exists():
-            for idx, ln in enumerate(HYPR_EXECS.read_text(encoding="utf-8", errors="replace").splitlines()):
-                if "asena-dpi-tray" in ln.lower() and EXEC_RE.match(ln):
-                    toggle_app(f"hypr:{idx}", enable)
         USER_AUTOSTART.mkdir(parents=True, exist_ok=True)
         dst = USER_AUTOSTART / fname
         src = dst if dst.exists() else (SYS_AUTOSTART / fname)
@@ -248,11 +253,6 @@ def add_app(name: str, cmd: str, icon_override: str = "") -> int:
 def remove_app(item_id: str) -> int:
     if item_id.startswith("xdg:"):
         fname = item_id.split(":", 1)[1]
-        if fname == "asena-dpi-tray.desktop" and HYPR_EXECS.exists():
-            lines = HYPR_EXECS.read_text(encoding="utf-8", errors="replace").splitlines(keepends=True)
-            kept = [ln for ln in lines if "asena-dpi-tray" not in ln.lower()]
-            if len(kept) != len(lines):
-                HYPR_EXECS.write_text("".join(kept), encoding="utf-8")
         dst = USER_AUTOSTART / fname
         if dst.exists() and not (SYS_AUTOSTART / fname).exists():
             dst.unlink()
@@ -271,8 +271,6 @@ def run_autostart() -> int:
         for p in sorted(base.glob("*.desktop")):
             seen_files[p.name] = _parse_desktop(p)
     for fname, d in seen_files.items():
-        if fname == "cachyos-hello.desktop":
-            continue
         if d.get("Hidden", "").lower() == "true":
             continue
         if d.get("X-GNOME-Autostart-enabled", "true").lower() == "false":

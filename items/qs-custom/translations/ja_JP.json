@@ -164,5 +164,7 @@
   "Celsius (°C)": "摂氏 (°C)",
   "Fahrenheit (°F)": "華氏 (°F)",
   "Refresh": "更新",
-  "Search for a place": "場所を検索"
+  "Search for a place": "場所を検索",
+  "Sleep allowed (click to stay awake)": "スリープ許可（クリックで起きたままにする）",
+  "Staying awake: no screen off, no sleep (click to allow sleep)": "起きたままにしています：画面は消灯せず、スリープしません（クリックでスリープを許可）"
 }

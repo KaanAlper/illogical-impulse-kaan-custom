@@ -164,5 +164,7 @@
   "Celsius (°C)": "Celsius (°C)",
   "Fahrenheit (°F)": "Fahrenheit (°F)",
   "Refresh": "Aggiornamento",
-  "Search for a place": "Cerca un luogo"
+  "Search for a place": "Cerca un luogo",
+  "Sleep allowed (click to stay awake)": "Sospensione consentita (clic per restare attivo)",
+  "Staying awake: no screen off, no sleep (click to allow sleep)": "Resta attivo: lo schermo non si spegne, niente sospensione (clic per consentire la sospensione)"
 }

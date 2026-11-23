@@ -164,5 +164,7 @@
   "Celsius (°C)": "צלזיוס (°C)",
   "Fahrenheit (°F)": "פרנהייט (°F)",
   "Refresh": "רענון",
-  "Search for a place": "חפש מקום"
+  "Search for a place": "חפש מקום",
+  "Sleep allowed (click to stay awake)": "מצב שינה מותר (לחץ כדי להישאר ער)",
+  "Staying awake: no screen off, no sleep (click to allow sleep)": "נשאר ער: המסך לא נכבה, אין שינה (לחץ כדי לאפשר שינה)"
 }

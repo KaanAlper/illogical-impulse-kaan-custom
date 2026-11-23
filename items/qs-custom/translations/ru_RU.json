@@ -164,5 +164,7 @@
   "Celsius (°C)": "Цельсий (°C)",
   "Fahrenheit (°F)": "Фаренгейт (°F)",
   "Refresh": "Обновление",
-  "Search for a place": "Поиск места"
+  "Search for a place": "Поиск места",
+  "Sleep allowed (click to stay awake)": "Спящий режим разрешён (нажмите, чтобы не засыпать)",
+  "Staying awake: no screen off, no sleep (click to allow sleep)": "Не засыпает: экран не гаснет, спящего режима нет (нажмите, чтобы разрешить сон)"
 }

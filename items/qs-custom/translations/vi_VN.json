@@ -164,5 +164,7 @@
   "Celsius (°C)": "Độ C (°C)",
   "Fahrenheit (°F)": "Độ F (°F)",
   "Refresh": "Làm mới",
-  "Search for a place": "Tìm kiếm địa điểm"
+  "Search for a place": "Tìm kiếm địa điểm",
+  "Sleep allowed (click to stay awake)": "Cho phép ngủ (nhấp để giữ thức)",
+  "Staying awake: no screen off, no sleep (click to allow sleep)": "Đang giữ thức: màn hình không tắt, không ngủ (nhấp để cho phép ngủ)"
 }

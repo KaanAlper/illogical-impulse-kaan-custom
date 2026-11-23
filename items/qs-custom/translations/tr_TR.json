@@ -164,5 +164,7 @@
   "Celsius (°C)": "Santigrat (°C)",
   "Fahrenheit (°F)": "Fahrenhayt (°F)",
   "Refresh": "Yenileme",
-  "Search for a place": "Bir yer ara"
+  "Search for a place": "Bir yer ara",
+  "Sleep allowed (click to stay awake)": "Uyku serbest (uyanık kalmak için tıkla)",
+  "Staying awake: no screen off, no sleep (click to allow sleep)": "Uyanık kalınıyor: ekran kapanmaz, uyku yok (uykuya izin vermek için tıkla)"
 }

@@ -7,7 +7,7 @@ import qs.modules.common
 import qs.modules.common.widgets
 
 /**
- * Bar indicator that turns system sleep on/off ("uyku modu" switch).
+ * Bar toggle that keeps the system awake: blocks suspend, idle (lock / screen off / auto-suspend) and lid-close sleep.
  *
  * Left-click runs scripts/sleep-inhibit-toggle.sh, which holds a logind BLOCK inhibitor
  * (sleep + idle + handle-lid-switch) via a detached `systemd-inhibit` process. While it is
@@ -20,8 +20,6 @@ import qs.modules.common.widgets
  * and the FileView below watches it, so the icon also follows changes made from a terminal.
  * `statusProc` is the authority at startup (it self-heals a stale PID file and creates the
  * state file, which is what gives the watcher something to attach to).
- *
- * Sibling of AudioMonoToggle / AudioOutputSwitcher (independent; none touches the others).
  */
 MouseArea {
     id: root
@@ -101,9 +99,7 @@ MouseArea {
 
     PopupToolTip {
         id: tooltip
-        text: root.inhibited
-            ? Translation.tr("Sleep mode OFF — screen won't turn off, system won't sleep (click to re-enable)")
-            : Translation.tr("Sleep mode ON — click to disable")
+        text: root.inhibited ? Translation.tr("Staying awake: no screen off, no sleep (click to allow sleep)") : Translation.tr("Sleep allowed (click to stay awake)")
         extraVisibleCondition: root.containsMouse
         alternativeVisibleCondition: extraVisibleCondition
         anchorEdges: (!Config.options.bar.bottom && !Config.options.bar.vertical) ? Edges.Bottom : Edges.Top

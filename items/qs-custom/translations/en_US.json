@@ -164,5 +164,7 @@
   "Celsius (°C)": "Celsius (°C)",
   "Fahrenheit (°F)": "Fahrenheit (°F)",
   "Refresh": "Refresh",
-  "Search for a place": "Search for a place"
+  "Search for a place": "Search for a place",
+  "Sleep allowed (click to stay awake)": "Sleep allowed (click to stay awake)",
+  "Staying awake: no screen off, no sleep (click to allow sleep)": "Staying awake: no screen off, no sleep (click to allow sleep)"
 }

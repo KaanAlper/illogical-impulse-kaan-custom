@@ -11,7 +11,7 @@ import qs.modules.common
 import qs.modules.common.widgets
 
 /**
- * Bar button with a per-app volume mixer popup (EarTrumpet-style), ported from Logical Lunge's native bar.
+ * Bar button with a per-app volume mixer popup (EarTrumpet-style).
  * Click the icon to open a popup with the default output device and every app playing sound on it:
  * - the device row and one row per app, each with its icon, name, slider and percentage;
  * - an app's streams (a browser has several) are grouped into one row and set together;
@@ -20,8 +20,6 @@ import qs.modules.common.widgets
  * - apps are named after their window: Electron/Chromium-based apps report themselves as "Chromium", so the
  *   stream's process is walked up to the process that owns a Hyprland window, and that window's app is shown.
  * A click outside closes the popup (HyprlandFocusGrab), like the tray overflow popup.
- *
- * Sibling of AudioMonoToggle / AudioOutputSwitcher (independent; none touches the others).
  */
 MouseArea {
     id: root

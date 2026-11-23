@@ -164,5 +164,7 @@
   "Celsius (°C)": "Celsius (°C)",
   "Fahrenheit (°F)": "Fahrenheit (°F)",
   "Refresh": "Penyegaran",
-  "Search for a place": "Cari tempat"
+  "Search for a place": "Cari tempat",
+  "Sleep allowed (click to stay awake)": "Tidur diizinkan (klik untuk tetap menyala)",
+  "Staying awake: no screen off, no sleep (click to allow sleep)": "Tetap menyala: layar tidak mati, tidak tidur (klik untuk mengizinkan tidur)"
 }
