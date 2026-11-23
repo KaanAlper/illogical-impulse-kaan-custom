@@ -137,5 +137,12 @@
   "Audio output switcher": "Ses çıkışı seçici",
   "Mono audio toggle": "Mono ses geçişi",
   "App volume mixer": "Uygulama ses mikseri",
-  "Stay awake toggle": "Uyanık kal düğmesi"
+  "Stay awake toggle": "Uyanık kal düğmesi",
+  "Current location: %1": "Geçerli konum: %1",
+  "No city selected": "Şehir seçilmedi",
+  "Search for a city": "Şehir ara",
+  "Searching...": "Aranıyor...",
+  "No matching city found": "Eşleşen şehir bulunamadı",
+  "Could not search cities. Check your internet connection.": "Şehirler aranamadı. İnternet bağlantınızı kontrol edin.",
+  "All apps": "Tüm uygulamalar"
 }

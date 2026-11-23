@@ -137,5 +137,12 @@
   "Audio output switcher": "オーディオ出力切り替え",
   "Mono audio toggle": "モノラル音声の切り替え",
   "App volume mixer": "アプリ別音量ミキサー",
-  "Stay awake toggle": "スリープ防止トグル"
+  "Stay awake toggle": "スリープ防止トグル",
+  "Current location: %1": "現在の場所: %1",
+  "No city selected": "都市が選択されていません",
+  "Search for a city": "都市を検索",
+  "Searching...": "検索中...",
+  "No matching city found": "一致する都市が見つかりません",
+  "Could not search cities. Check your internet connection.": "都市を検索できませんでした。インターネット接続を確認してください。",
+  "All apps": "すべてのアプリ"
 }

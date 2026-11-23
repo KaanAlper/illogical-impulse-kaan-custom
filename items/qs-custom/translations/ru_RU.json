@@ -137,5 +137,12 @@
   "Audio output switcher": "Переключатель аудиовыхода",
   "Mono audio toggle": "Переключатель моно-звука",
   "App volume mixer": "Микшер громкости приложений",
-  "Stay awake toggle": "Переключатель «не засыпать»"
+  "Stay awake toggle": "Переключатель «не засыпать»",
+  "Current location: %1": "Текущее местоположение: %1",
+  "No city selected": "Город не выбран",
+  "Search for a city": "Поиск города",
+  "Searching...": "Поиск...",
+  "No matching city found": "Подходящий город не найден",
+  "Could not search cities. Check your internet connection.": "Не удалось выполнить поиск городов. Проверьте подключение к интернету.",
+  "All apps": "Все приложения"
 }

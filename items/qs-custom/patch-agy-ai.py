@@ -3304,6 +3304,59 @@ def main() -> int:
             ],
         )
 
+    if has_feat("weather-settings"):
+        # One shared weather settings widget (GPS/city search, units, polling) in Settings -> Bar, Background and Services
+        ok &= patch_file(
+            ii / "modules/settings/BarConfig.qml",
+            [
+                (
+                    "WeatherLocationSettings",
+                    "            onCheckedChanged: {\n"
+                    "                Config.options.bar.weather.enable = checked;\n"
+                    "            }\n"
+                    "        }\n"
+                    "    }\n",
+                    "            onCheckedChanged: {\n"
+                    "                Config.options.bar.weather.enable = checked;\n"
+                    "            }\n"
+                    "        }\n\n"
+                    "        WeatherLocationSettings {}\n"
+                    "    }\n",
+                ),
+            ],
+        )
+        ok &= patch_file(
+            ii / "modules/settings/BackgroundConfig.qml",
+            [
+                (
+                    "WeatherLocationSettings",
+                    '                        value: "mostBusy"\n'
+                    "                    },\n"
+                    "                ]\n"
+                    "            }\n"
+                    "        }\n"
+                    "    }\n",
+                    '                        value: "mostBusy"\n'
+                    "                    },\n"
+                    "                ]\n"
+                    "            }\n"
+                    "        }\n\n"
+                    "        WeatherLocationSettings {}\n"
+                    "    }\n",
+                ),
+            ],
+        )
+        ok &= patch_file(
+            ii / "modules/settings/ServicesConfig.qml",
+            [
+                (
+                    "WeatherLocationSettings",
+                    '        ConfigRow {\n            ConfigSwitch {\n                buttonIcon: "assistant_navigation"\n                text: Translation.tr("Enable GPS based location")\n                checked: Config.options.bar.weather.enableGPS\n                onCheckedChanged: {\n                    Config.options.bar.weather.enableGPS = checked;\n                }\n            }\n            ConfigSwitch {\n                buttonIcon: "thermometer"\n                text: Translation.tr("Fahrenheit unit")\n                checked: Config.options.bar.weather.useUSCS\n                onCheckedChanged: {\n                    Config.options.bar.weather.useUSCS = checked;\n                }\n                StyledToolTip {\n                    text: Translation.tr("It may take a few seconds to update")\n                }\n            }\n        }\n        \n        MaterialTextArea {\n            Layout.fillWidth: true\n            placeholderText: Translation.tr("City name")\n            text: Config.options.bar.weather.city\n            wrapMode: TextEdit.Wrap\n            onTextChanged: {\n                Config.options.bar.weather.city = text;\n            }\n        }\n        ConfigSpinBox {\n            icon: "av_timer"\n            text: Translation.tr("Polling interval (m)")\n            value: Config.options.bar.weather.fetchInterval\n            from: 5\n            to: 50\n            stepSize: 5\n            onValueChanged: {\n                Config.options.bar.weather.fetchInterval = value;\n            }\n        }\n',
+                    "        WeatherLocationSettings {}\n",
+                ),
+            ],
+        )
+
     ok &= patch_file(
         ii / "scripts/colors/applycolor.sh",
         [

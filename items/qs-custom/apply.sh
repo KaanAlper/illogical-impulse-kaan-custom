@@ -104,6 +104,9 @@ if has_feat "alt-tab"; then
     mkdir -p "$II/modules/ii/altSwitcher"
     cp "$CUSTOM_DIR/AltSwitcher.qml" "$II/modules/ii/altSwitcher/AltSwitcher.qml"
 fi
+if has_feat "weather-settings"; then
+    cp "$CUSTOM_DIR/WeatherLocationSettings.qml" "$II/modules/common/widgets/WeatherLocationSettings.qml"
+fi
 if has_feat "everything-search"; then
     cp "$CUSTOM_DIR/everything-update.sh" "$II/scripts/everything-update.sh"
     chmod +x "$II/scripts/everything-update.sh"

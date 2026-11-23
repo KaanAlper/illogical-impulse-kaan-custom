@@ -137,5 +137,12 @@
   "Audio output switcher": "Pengalih keluaran audio",
   "Mono audio toggle": "Tombol audio mono",
   "App volume mixer": "Mixer volume per aplikasi",
-  "Stay awake toggle": "Tombol tetap menyala"
+  "Stay awake toggle": "Tombol tetap menyala",
+  "Current location: %1": "Lokasi saat ini: %1",
+  "No city selected": "Belum ada kota dipilih",
+  "Search for a city": "Cari kota",
+  "Searching...": "Mencari...",
+  "No matching city found": "Kota tidak ditemukan",
+  "Could not search cities. Check your internet connection.": "Tidak dapat mencari kota. Periksa koneksi internet Anda.",
+  "All apps": "Semua aplikasi"
 }

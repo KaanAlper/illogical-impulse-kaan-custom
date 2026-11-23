@@ -137,5 +137,12 @@
   "Audio output switcher": "Audio output switcher",
   "Mono audio toggle": "Mono audio toggle",
   "App volume mixer": "App volume mixer",
-  "Stay awake toggle": "Stay awake toggle"
+  "Stay awake toggle": "Stay awake toggle",
+  "Current location: %1": "Current location: %1",
+  "No city selected": "No city selected",
+  "Search for a city": "Search for a city",
+  "Searching...": "Searching...",
+  "No matching city found": "No matching city found",
+  "Could not search cities. Check your internet connection.": "Could not search cities. Check your internet connection.",
+  "All apps": "All apps"
 }

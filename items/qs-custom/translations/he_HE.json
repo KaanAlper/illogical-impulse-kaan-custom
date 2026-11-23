@@ -137,5 +137,12 @@
   "Audio output switcher": "בורר פלט שמע",
   "Mono audio toggle": "מתג שמע מונו",
   "App volume mixer": "מיקסר עוצמת קול לפי אפליקציה",
-  "Stay awake toggle": "מתג הישארות ער"
+  "Stay awake toggle": "מתג הישארות ער",
+  "Current location: %1": "מיקום נוכחי: %1",
+  "No city selected": "לא נבחרה עיר",
+  "Search for a city": "חפש עיר",
+  "Searching...": "מחפש...",
+  "No matching city found": "לא נמצאה עיר תואמת",
+  "Could not search cities. Check your internet connection.": "לא ניתן היה לחפש ערים. בדוק את חיבור האינטרנט.",
+  "All apps": "כל האפליקציות"
 }

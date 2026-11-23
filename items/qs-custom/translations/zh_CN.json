@@ -137,5 +137,12 @@
   "Audio output switcher": "音频输出切换",
   "Mono audio toggle": "单声道音频切换",
   "App volume mixer": "应用音量混合器",
-  "Stay awake toggle": "保持唤醒开关"
+  "Stay awake toggle": "保持唤醒开关",
+  "Current location: %1": "当前位置：%1",
+  "No city selected": "未选择城市",
+  "Search for a city": "搜索城市",
+  "Searching...": "正在搜索...",
+  "No matching city found": "未找到匹配的城市",
+  "Could not search cities. Check your internet connection.": "无法搜索城市。请检查网络连接。",
+  "All apps": "所有应用"
 }

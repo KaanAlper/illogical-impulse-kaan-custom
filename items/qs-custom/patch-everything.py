@@ -350,6 +350,50 @@ def main() -> int:
         ],
     )
 
+    # N. ServicesConfig.qml: Files (#) and All apps (!) prefix fields next to the other search prefixes
+    ok &= patch_file(
+        ii / "modules/settings/ServicesConfig.qml",
+        [
+            (
+                "Config.options.search.prefix.files",
+                "                    onTextChanged: {\n"
+                "                        Config.options.search.prefix.webSearch = text;\n"
+                "                    }\n"
+                "                }\n"
+                "            }\n",
+                "                    onTextChanged: {\n"
+                "                        Config.options.search.prefix.webSearch = text;\n"
+                "                    }\n"
+                "                }\n"
+                "            }\n\n"
+                "            ConfigRow {\n"
+                "                uniform: true\n"
+                "                MaterialTextArea {\n"
+                "                    Layout.fillWidth: true\n"
+                '                    placeholderText: Translation.tr("Files")\n'
+                "                    text: Config.options.search.prefix.files\n"
+                "                    wrapMode: TextEdit.Wrap\n"
+                "                    onTextChanged: {\n"
+                "                        Config.options.search.prefix.files = text;\n"
+                "                    }\n"
+                "                }\n"
+                "                MaterialTextArea {\n"
+                "                    Layout.fillWidth: true\n"
+                '                    placeholderText: Translation.tr("All apps")\n'
+                "                    text: Config.options.search.prefix.allApps\n"
+                "                    wrapMode: TextEdit.Wrap\n"
+                "                    onTextChanged: {\n"
+                "                        Config.options.search.prefix.allApps = text;\n"
+                "                    }\n"
+                "                }\n"
+                "                Item {\n"
+                "                    Layout.fillWidth: true\n"
+                "                }\n"
+                "            }\n",
+            ),
+        ],
+    )
+
     return 0 if ok else 1
 
 

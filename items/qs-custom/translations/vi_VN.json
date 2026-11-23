@@ -137,5 +137,12 @@
   "Audio output switcher": "Bộ chuyển đầu ra âm thanh",
   "Mono audio toggle": "Nút chuyển âm thanh mono",
   "App volume mixer": "Bộ trộn âm lượng theo ứng dụng",
-  "Stay awake toggle": "Nút giữ thức"
+  "Stay awake toggle": "Nút giữ thức",
+  "Current location: %1": "Vị trí hiện tại: %1",
+  "No city selected": "Chưa chọn thành phố",
+  "Search for a city": "Tìm kiếm thành phố",
+  "Searching...": "Đang tìm kiếm...",
+  "No matching city found": "Không tìm thấy thành phố phù hợp",
+  "Could not search cities. Check your internet connection.": "Không thể tìm kiếm thành phố. Hãy kiểm tra kết nối internet.",
+  "All apps": "Tất cả ứng dụng"
 }

@@ -137,5 +137,12 @@
   "Audio output switcher": "Перемикач аудіовиходу",
   "Mono audio toggle": "Перемикач моно-звуку",
   "App volume mixer": "Мікшер гучності застосунків",
-  "Stay awake toggle": "Перемикач «не засинати»"
+  "Stay awake toggle": "Перемикач «не засинати»",
+  "Current location: %1": "Поточне розташування: %1",
+  "No city selected": "Місто не вибрано",
+  "Search for a city": "Пошук міста",
+  "Searching...": "Пошук...",
+  "No matching city found": "Відповідне місто не знайдено",
+  "Could not search cities. Check your internet connection.": "Не вдалося виконати пошук міст. Перевірте підключення до інтернету.",
+  "All apps": "Усі застосунки"
 }
