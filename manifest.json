@@ -242,6 +242,54 @@
           "default": false
         }
       ]
+    },
+    {
+      "id": "pacman-aria2",
+      "title": "pacman: aria2 ile hızlı indirme",
+      "desc": "/etc/pacman.conf'a XferCommand ekler: paketler aria2c ile 16 bağlantıdan paralel indirilir (aria2 yoksa kurulur). Yönetici parolası ister.",
+      "kind": "check",
+      "check": [
+        {
+          "file_has": [
+            "/etc/pacman.conf",
+            "XferCommand = /usr/bin/aria2c"
+          ]
+        }
+      ],
+      "terminal": true,
+      "install": "bash {repo}/items/pacman-config/install.sh aria2"
+    },
+    {
+      "id": "pacman-chaotic-aur",
+      "title": "pacman: Chaotic-AUR deposu",
+      "desc": "Chaotic-AUR anahtarını ve mirrorlist'ini kurar, [chaotic-aur] deposunu /etc/pacman.conf'a ekler (hazır derlenmiş AUR paketleri). Yönetici parolası ister.",
+      "kind": "check",
+      "check": [
+        {
+          "file_has": [
+            "/etc/pacman.conf",
+            "[chaotic-aur]"
+          ]
+        },
+        {
+          "exists": "/etc/pacman.d/chaotic-mirrorlist"
+        }
+      ],
+      "terminal": true,
+      "install": "bash {repo}/items/pacman-config/install.sh chaotic"
+    },
+    {
+      "id": "makepkg-aria2",
+      "title": "makepkg/paru: aria2 ile kaynak indirme",
+      "desc": "AUR paketlerinin kaynak dosyalarını (makepkg DLAGENTS; paru/yay dahil) aria2 ile 16 bağlantıdan indirir. /etc/makepkg.conf.d/aria2.conf drop-in'i ekler. Yönetici parolası ister.",
+      "kind": "check",
+      "check": [
+        {
+          "exists": "/etc/makepkg.conf.d/aria2.conf"
+        }
+      ],
+      "terminal": true,
+      "install": "bash {repo}/items/pacman-config/install.sh makepkg-aria2"
     }
   ]
 }
