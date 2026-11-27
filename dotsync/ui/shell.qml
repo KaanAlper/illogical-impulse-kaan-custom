@@ -79,7 +79,7 @@ ShellRoot {
                 if (f.checked) sel += 1;
             }
         }
-        items.setProperty(idx, "featuresJson", JSON.stringify(feats));
+        list.keepScroll(function() { items.setProperty(idx, "featuresJson", JSON.stringify(feats)); });
         items.setProperty(idx, "checked", sel > 0);
         items.setProperty(idx, "partial", sel > 0 && sel < total);
         root.recount();
@@ -94,7 +94,7 @@ ShellRoot {
             var sub = feats[j].features || [];
             for (var k = 0; k < sub.length; k++) sub[k].checked = newVal;
         }
-        items.setProperty(idx, "featuresJson", JSON.stringify(feats));
+        list.keepScroll(function() { items.setProperty(idx, "featuresJson", JSON.stringify(feats)); });
         items.setProperty(idx, "checked", newVal);
         items.setProperty(idx, "partial", false);
         root.recount();
@@ -132,7 +132,7 @@ ShellRoot {
         var feats = JSON.parse(it.featuresJson || "[]");
         if (featIdx < 0 || featIdx >= feats.length) return;
         feats[featIdx].expanded = !feats[featIdx].expanded;
-        items.setProperty(idx, "featuresJson", JSON.stringify(feats));
+        list.keepScroll(function() { items.setProperty(idx, "featuresJson", JSON.stringify(feats)); });
     }
 
     // Katalog görünümü: kimlikten tutarlı bir renk tonu ve baş harf rozeti
@@ -317,10 +317,14 @@ ShellRoot {
                     }
                     root.recount();
                     root.loading = false;
-                    if (items.count === 0) {
+                    if (items.count === 0 && !(root.setupMode && installedItems.count > 0)) {
                         if (!root.setupMode) Qt.quit();
                         root.nothingToDo = true;
                         root.page = 3;
+                    } else if (items.count === 0) {
+                        // setup modu: eksik olmasa da kurulu olanları göster (liste açık başlar)
+                        root.showInstalled = true;
+                        root.page = 1;
                     } else if (root.page === 0 || root.page === 3) {
                         root.page = 1;
                     }
@@ -526,6 +530,7 @@ ShellRoot {
                                 Layout.fillWidth: true
                                 wrapMode: Text.WordWrap
                                 text: root.loadError ? root.loadError
+                                    : (!root.loading && items.count === 0) ? "Bu bilgisayarda eksik bir şey yok. Kurulu olanlar aşağıda listelendi."
                                     : "GitHub'daki ayarlarında olup bu bilgisayarda bulunmayanlar. İndirmek istediklerini işaretle; işaretlemediklerin için bir daha sorulmaz."
                                 color: root.loadError ? root.cErr : root.cSub
                                 font.pixelSize: 13
@@ -539,6 +544,14 @@ ShellRoot {
                                 clip: true
                                 model: items
                                 boundsBehavior: Flickable.StopAtBounds
+                                // Kart açılıp kapanınca içerik yüksekliği değişir; ListView konumu başa atmasın.
+                                property real keepY: -1
+                                onContentHeightChanged: if (keepY >= 0) contentY = keepY
+                                function keepScroll(change) {
+                                    keepY = contentY;
+                                    change();
+                                    Qt.callLater(function() { if (list.keepY >= 0) list.contentY = list.keepY; list.keepY = -1; });
+                                }
                                 delegate: Rectangle {
                                     id: card
                                     readonly property int cardIdx: index
@@ -660,7 +673,7 @@ ShellRoot {
                                                         cursorShape: Qt.PointingHandCursor
                                                         onClicked: mouse => {
                                                             mouse.accepted = true;
-                                                            items.setProperty(card.cardIdx, "expanded", !model.expanded);
+                                                            list.keepScroll(function() { items.setProperty(card.cardIdx, "expanded", !model.expanded); });
                                                         }
                                                     }
                                                 }
@@ -902,7 +915,7 @@ ShellRoot {
                                             anchors.fill: parent
                                             hoverEnabled: true
                                             cursorShape: Qt.PointingHandCursor
-                                            onClicked: root.showInstalled = !root.showInstalled
+                                            onClicked: list.keepScroll(function() { root.showInstalled = !root.showInstalled; })
                                         }
 
                                         RowLayout {
@@ -975,7 +988,7 @@ ShellRoot {
                                                             anchors.fill: parent
                                                             hoverEnabled: true
                                                             cursorShape: Qt.PointingHandCursor
-                                                            onClicked: installedItems.setProperty(instCard.instIdx, "expanded", !model.expanded)
+                                                            onClicked: list.keepScroll(function() { installedItems.setProperty(instCard.instIdx, "expanded", !model.expanded); })
                                                         }
                                                     }
                                                 }
@@ -1020,7 +1033,7 @@ ShellRoot {
                                                                 onClicked: {
                                                                     var f = JSON.parse(installedItems.get(instCard.instIdx).featuresJson || "[]");
                                                                     f[tile.index].expanded = !f[tile.index].expanded;
-                                                                    installedItems.setProperty(instCard.instIdx, "featuresJson", JSON.stringify(f));
+                                                                    list.keepScroll(function() { installedItems.setProperty(instCard.instIdx, "featuresJson", JSON.stringify(f)); });
                                                                 }
                                                             }
 
@@ -1169,11 +1182,12 @@ ShellRoot {
                                     implicitWidth: laterTxt.implicitWidth + 40; implicitHeight: 42; radius: 21
                                     color: laterArea.containsMouse ? root.cSurface2 : "transparent"
                                     border.color: root.cOutline; border.width: 1
-                                    Text { id: laterTxt; anchors.centerIn: parent; text: "Şimdi değil"; color: root.cFg; font.pixelSize: 14 }
+                                    Text { id: laterTxt; anchors.centerIn: parent; text: items.count === 0 ? "Kapat" : "Şimdi değil"; color: root.cFg; font.pixelSize: 14 }
                                     MouseArea { id: laterArea; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Qt.quit() }
                                 }
                                 Rectangle {
                                     implicitWidth: goTxt.implicitWidth + 44; implicitHeight: 42; radius: 21
+                                    visible: items.count > 0
                                     enabled: !root.loading && items.count > 0
                                     opacity: enabled ? 1 : 0.4
                                     color: goArea.pressed ? Qt.darker(root.cAccent, 1.15) : root.cAccent
