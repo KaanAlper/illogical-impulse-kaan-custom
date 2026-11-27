@@ -95,6 +95,11 @@ def load_manifest(repo: Path) -> dict:
                 raise ManifestError(f"{iid}: dest eksik")
             for rel in item.get("executable", []):
                 _safe_rel(rel, f"{iid}.executable")
+        for ef in item.get("extra_files", []):
+            _safe_rel(ef.get("src", ""), f"{iid}.extra_files.src")
+        for feat, _parents in _walk_features(item.get("features", [])):
+            for ef in feat.get("extra_files", []):
+                _safe_rel(ef.get("src", ""), f"{iid}.{feat.get('id', '')}.extra_files.src")
     return manifest
 
 
@@ -137,6 +142,28 @@ def _file_pairs(item: dict, repo: Path, chosen: set[str] | None = None) -> list[
     return sorted(pairs)
 
 
+def _extra_file_pairs(
+    item: dict, repo: Path, chosen: set[str] | None = None
+) -> list[tuple[str, Path, Path, bool]]:
+    """Öğe ve seçili özelliklerdeki `extra_files` girdileri: (göreli kaynak, kaynak, hedef, overwrite)."""
+    pairs = []
+    seen_dest: set[Path] = set()
+    entries = list(item.get("extra_files", []))
+    for feat, _parents in _walk_features(item.get("features", [])):
+        if chosen is None or feat["id"] in chosen:
+            entries.extend(feat.get("extra_files", []))
+    for ef in entries:
+        src = repo / ef["src"]
+        if not src.is_file() or src.is_symlink():
+            continue
+        dest = expand(ef["dest"])
+        if dest in seen_dest:
+            continue
+        seen_dest.add(dest)
+        pairs.append((ef["src"], src, dest, bool(ef.get("overwrite", False))))
+    return pairs
+
+
 def _pacman_has(pkg: str) -> bool:
     return subprocess.run(
         ["pacman", "-Q", pkg], capture_output=True, check=False
@@ -172,9 +199,12 @@ def _failed_conditions(conds: Iterable[dict]) -> list[str]:
 def _missing(
     item: dict, repo: Path, is_pkg_installed: Callable[[str], bool], chosen: set[str] | None = None
 ) -> list[str]:
+    if "when" in item and _failed_conditions(item["when"]):
+        return []
     kind = item["kind"]
     if kind == "files":
         missing = [rel for rel, _src, dest in _file_pairs(item, repo, chosen) if not os.path.lexists(dest)]
+        missing.extend(rel for rel, _src, dest, _ow in _extra_file_pairs(item, repo, chosen) if not os.path.lexists(dest))
         if "check" in item:
             missing.extend(_failed_conditions(item["check"]))
         return missing
@@ -225,6 +255,9 @@ def compute_status(
     status = []
     for item in manifest["items"]:
         missing = _missing(item, repo, is_pkg_installed, chosen_by_item.get(item["id"]))
+        default_val = bool(item.get("default", True))
+        if "default_when" in item:
+            default_val = not _failed_conditions(item["default_when"])
         status.append(
             {
                 "id": item["id"],
@@ -235,7 +268,7 @@ def compute_status(
                 "missing": missing,
                 "declined": item["id"] in declined,
                 "terminal": bool(item.get("terminal")),
-                "default": bool(item.get("default", True)),
+                "default": default_val,
                 "requires": item.get("requires", []),
                 "features": _annotate_features(item.get("features", []), is_pkg_installed),
             }
@@ -290,15 +323,26 @@ def save_declined(state: Path, ids: set[str]) -> None:
 
 
 def install_files(item: dict, repo: Path, chosen: set[str] | None = None) -> list[str]:
-    """Yalnızca yerelde olmayan dosyaları kopyalar; var olanlara dokunmaz."""
+    """Yerelde olmayan dosyaları kopyalar; `overwrite: true` ise değişen dosyaları da günceller."""
     executable = set(item.get("executable", []))
+    overwrite = bool(item.get("overwrite", False))
     copied = []
     for rel, src, dest in _file_pairs(item, repo, chosen):
         if os.path.lexists(dest):
-            continue
+            if not overwrite or dest.is_symlink() or src.read_bytes() == dest.read_bytes():
+                continue
         dest.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(src, dest)
         if rel in executable:
+            dest.chmod(0o755)
+        copied.append(rel)
+    for rel, src, dest, ef_overwrite in _extra_file_pairs(item, repo, chosen):
+        if os.path.lexists(dest):
+            if not ef_overwrite or dest.is_symlink() or src.read_bytes() == dest.read_bytes():
+                continue
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dest)
+        if rel.endswith(".sh") or rel in executable:
             dest.chmod(0o755)
         copied.append(rel)
     return copied
@@ -375,7 +419,7 @@ def _emit(**event) -> None:
 
 def _load(do_sync: bool) -> tuple[dict, Path]:
     repo = repo_dir()
-    if do_sync:
+    if do_sync and not os.environ.get("DOTSYNC_NO_SYNC"):
         sync(repo, repo_name())
     if not (repo / "manifest.json").exists():
         raise ManifestError(f"repo önbelleği yok ({repo}); internet/gh girişini kontrol edin")

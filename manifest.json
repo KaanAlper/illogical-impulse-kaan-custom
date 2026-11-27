@@ -9,6 +9,7 @@
       "kind": "files",
       "src": "items/qs-custom",
       "dest": "~/.config/quickshell-custom",
+      "overwrite": true,
       "extra_files": [
         { "src": "items/hypr-custom/keybinds.lua", "dest": "~/.config/hypr/custom/keybinds.lua" },
         { "src": "items/hypr-custom/execs.lua", "dest": "~/.config/hypr/custom/execs.lua" },
@@ -213,11 +214,16 @@
     {
       "id": "grub-theme",
       "title": "GRUB boot teması (Marathon-NewCascadia)",
-      "desc": "GRUB açılış menüsüne 1920x1080 Marathon-NewCascadia temasını kurar ve /etc/default/grub ayarlarını (5 sn menü, splash) uygular. Yönetici parolası ister.",
+      "desc": "GRUB açılış menüsüne 1920x1080 Marathon-NewCascadia temasını kurar (/etc/default/grub: 5 sn menü, splash). Sistemde başka bir önyükleyici (rEFInd, systemd-boot, Limine vb.) varsa GRUB + tema kurulup varsayılan yapılabilir. Yönetici parolası ister.",
       "kind": "check",
+      "default_when": [
+        {
+          "exists": "/etc/default/grub"
+        }
+      ],
       "check": [
         {
-          "exists": "/boot/grub/themes/Marathon-NewCascadia/theme.txt"
+          "exists": "/usr/bin/grub-mkconfig"
         },
         {
           "file_has": [
@@ -227,7 +233,15 @@
         }
       ],
       "terminal": true,
-      "install": "bash {repo}/items/grub-theme/install.sh"
+      "install": "bash {repo}/items/grub-theme/install.sh",
+      "features": [
+        {
+          "id": "cleanup-old-bootloaders",
+          "title": "Eski önyükleyicileri temizle (rEFInd, systemd-boot, Limine vb.)",
+          "desc": "Sistemde kurulu diğer önyükleyici paketlerini, EFI klasörlerini ve önyükleme girişlerini kaldırır; yalnızca GRUB varsayılan kalır.",
+          "default": false
+        }
+      ]
     }
   ]
 }

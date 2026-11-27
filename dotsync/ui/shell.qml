@@ -214,7 +214,9 @@ ShellRoot {
                             if (feats[j].checked) chosen.push(feats[j].id);
                         }
                     }
-                    if (chosen.length > 0 && chosen.length < totalFeats) {
+                    if (chosen.length < totalFeats) {
+                        featArgs.push(it.id + ":" + chosen.join(","));
+                    } else if (feats.length > 0 && chosen.length === totalFeats) {
                         featArgs.push(it.id + ":" + chosen.join(","));
                     }
                 }

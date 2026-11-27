@@ -16,7 +16,7 @@ for dm in sddm gdm lightdm lxdm ly display-manager; do
 done
 
 if pacman -Q sddm >/dev/null 2>&1; then
-    pacman -Rns --noconfirm sddm
+    pacman -Rcns --noconfirm sddm
 fi
 
 # Clean up any legacy tty1 autologin drop-in

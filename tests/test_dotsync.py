@@ -443,3 +443,68 @@ def test_feature_paths_limit_copy_and_missing(tmp_path, monkeypatch):
     assert dotsync.load_chosen(tmp_path / "state" / "dotsync") == {"a": {"f2"}}
     st = dotsync.compute_status(manifest, repo, set(), lambda p: True)
     assert st[0]["state"] == "ok"
+
+
+def test_extra_files_and_overwrite_and_when(tmp_path):
+    repo = tmp_path / "repo"
+    (repo / "items/a").mkdir(parents=True)
+    (repo / "items/extra").mkdir(parents=True)
+    (repo / "items/a/app.sh").write_text("new-app\n")
+    (repo / "items/extra/base.lua").write_text("base\n")
+    (repo / "items/extra/feat.lua").write_text("feat\n")
+    (repo / "items/extra/off.lua").write_text("off\n")
+    dest = tmp_path / "dest"
+    dest.mkdir()
+    (dest / "app.sh").write_text("old-app\n")
+
+    extra_dest = tmp_path / "hypr"
+    item = {
+        "id": "a",
+        "kind": "files",
+        "src": "items/a",
+        "dest": str(dest),
+        "overwrite": True,
+        "executable": ["app.sh"],
+        "extra_files": [{"src": "items/extra/base.lua", "dest": str(extra_dest / "base.lua")}],
+        "features": [
+            {"id": "on", "extra_files": [{"src": "items/extra/feat.lua", "dest": str(extra_dest / "feat.lua")}]},
+            {"id": "off", "extra_files": [{"src": "items/extra/off.lua", "dest": str(extra_dest / "off.lua")}]},
+        ],
+    }
+    manifest = {"schema": 1, "items": [item]}
+    st = dotsync.compute_status(manifest, repo, set(), lambda p: True, {"a": {"on"}})
+    assert st[0]["state"] == "missing"
+    assert sorted(st[0]["missing"]) == ["items/extra/base.lua", "items/extra/feat.lua"]
+
+    copied = dotsync.install_files(item, repo, {"on"})
+    assert sorted(copied) == ["app.sh", "items/extra/base.lua", "items/extra/feat.lua"]
+    assert (dest / "app.sh").read_text() == "new-app\n"
+    assert not (extra_dest / "off.lua").exists()
+
+    # `when` koşulu sağlanmıyorsa öğe eksik sayılmaz
+    gated = {
+        "id": "g",
+        "kind": "check",
+        "when": [{"exists": str(tmp_path / "no-grub")}],
+        "check": [{"exists": str(tmp_path / "missing-theme")}],
+        "install": "true",
+    }
+    st_g = dotsync.compute_status({"schema": 1, "items": [gated]}, repo, set(), lambda p: True)
+    assert st_g[0]["state"] == "ok"
+    assert st_g[0]["missing"] == []
+
+    # `default_when` sağlanmıyorsa öğe yine görünür ama varsayılan işaretsiz olur
+    dw = {
+        "id": "dw",
+        "kind": "check",
+        "default_when": [{"exists": str(tmp_path / "no-grub")}],
+        "check": [{"exists": str(tmp_path / "missing-theme")}],
+        "install": "true",
+    }
+    st_dw = dotsync.compute_status({"schema": 1, "items": [dw]}, repo, set(), lambda p: True)
+    assert st_dw[0]["state"] == "missing"
+    assert st_dw[0]["default"] is False
+    (tmp_path / "no-grub").write_text("")
+    st_dw2 = dotsync.compute_status({"schema": 1, "items": [dw]}, repo, set(), lambda p: True)
+    assert st_dw2[0]["default"] is True
+
