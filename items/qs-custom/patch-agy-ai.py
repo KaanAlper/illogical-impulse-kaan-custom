@@ -686,6 +686,176 @@ def main() -> int:
                     '                ApiInputBoxIndicator {\n                    // Tool indicator',
                     '                ApiInputBoxIndicator {\n                    visible: Ai.getModel()?.api_format !== "agy"\n                    // Tool indicator',
                 ),
+                (
+                    "function attachDroppedFiles(rawList)",
+                    '    function handleInput(inputText) {',
+                    '    property var extraAttachedFiles: []\n\n'
+                    '    function attachDroppedFiles(rawList) {\n'
+                    '        const next = root.extraAttachedFiles.slice();\n'
+                    '        for (let i = 0; i < rawList.length; i++) {\n'
+                    '            let p = String(rawList[i] ?? "").trim();\n'
+                    '            if (p.startsWith("file://")) p = FileUtils.trimFileProtocol(p);\n'
+                    '            try { p = decodeURIComponent(p); } catch (e) {}\n'
+                    '            if (!p) continue;\n'
+                    '            if (Ai.pendingFilePath === "") {\n'
+                    '                Ai.attachFile(p);\n'
+                    '            } else if (Ai.pendingFilePath !== p && next.indexOf(p) < 0) {\n'
+                    '                next.push(p);\n'
+                    '            }\n'
+                    '        }\n'
+                    '        root.extraAttachedFiles = next;\n'
+                    '    }\n\n'
+                    '    function removeExtraAttachedFile(path) {\n'
+                    '        root.extraAttachedFiles = root.extraAttachedFiles.filter(p => p !== path);\n'
+                    '    }\n\n'
+                    '    function handleInput(inputText) {',
+                ),
+                (
+                    "const extraFiles = root.extraAttachedFiles.slice();",
+                    '            Ai.sendUserMessage(inputText);',
+                    '            const extraFiles = root.extraAttachedFiles.slice();\n'
+                    '            root.extraAttachedFiles = [];\n'
+                    '            const finalMsg = extraFiles.length > 0\n'
+                    '                ? extraFiles.map(p => `[Attached file: ${p}]`).join("\\n") + (inputText ? "\\n" + inputText : "")\n'
+                    '                : inputText;\n'
+                    '            Ai.sendUserMessage(finalMsg);',
+                ),
+                (
+                    "id: extraAttachedCol",
+                    '            AttachedFileIndicator {\n'
+                    '                id: attachedFileIndicator\n'
+                    '                anchors {\n'
+                    '                    top: parent.top\n'
+                    '                    left: parent.left\n'
+                    '                    right: parent.right\n'
+                    '                    margins: visible ? 5 : 0\n'
+                    '                }\n'
+                    '                filePath: Ai.pendingFilePath\n'
+                    '                onRemove: Ai.attachFile("")\n'
+                    '            }',
+                    '            AttachedFileIndicator {\n'
+                    '                id: attachedFileIndicator\n'
+                    '                anchors {\n'
+                    '                    top: parent.top\n'
+                    '                    left: parent.left\n'
+                    '                    right: parent.right\n'
+                    '                    margins: visible ? 5 : 0\n'
+                    '                }\n'
+                    '                filePath: Ai.pendingFilePath\n'
+                    '                onRemove: Ai.attachFile("")\n'
+                    '            }\n\n'
+                    '            ColumnLayout {\n'
+                    '                id: extraAttachedCol\n'
+                    '                visible: root.extraAttachedFiles.length > 0\n'
+                    '                anchors {\n'
+                    '                    top: attachedFileIndicator.bottom\n'
+                    '                    left: parent.left\n'
+                    '                    right: parent.right\n'
+                    '                    leftMargin: 5\n'
+                    '                    rightMargin: 5\n'
+                    '                    topMargin: visible ? 4 : 0\n'
+                    '                }\n'
+                    '                spacing: 4\n'
+                    '                Repeater {\n'
+                    '                    model: root.extraAttachedFiles\n'
+                    '                    delegate: AttachedFileIndicator {\n'
+                    '                        required property string modelData\n'
+                    '                        Layout.fillWidth: true\n'
+                    '                        filePath: modelData\n'
+                    '                        onRemove: root.removeExtraAttachedFile(modelData)\n'
+                    '                    }\n'
+                    '                }\n'
+                    '            }',
+                ),
+                (
+                    "extraAttachedCol.implicitHeight",
+                    '            implicitHeight: Math.max(inputFieldRowLayout.implicitHeight + inputFieldRowLayout.anchors.topMargin + commandButtonsRow.implicitHeight + commandButtonsRow.anchors.bottomMargin + spacing, 45) + (attachedFileIndicator.implicitHeight + spacing + attachedFileIndicator.anchors.topMargin)',
+                    '            implicitHeight: Math.max(inputFieldRowLayout.implicitHeight + inputFieldRowLayout.anchors.topMargin + commandButtonsRow.implicitHeight + commandButtonsRow.anchors.bottomMargin + spacing, 45) + (attachedFileIndicator.implicitHeight + spacing + attachedFileIndicator.anchors.topMargin) + (extraAttachedCol.visible ? extraAttachedCol.implicitHeight + 4 : 0)',
+                ),
+                (
+                    "id: aiFileDropArea",
+                    '                }\n            }\n        }\n    }\n}',
+                    '                }\n            }\n        }\n    }\n\n'
+                    '    DropArea {\n'
+                    '        id: aiFileDropArea\n'
+                    '        anchors.fill: parent\n'
+                    '        z: 50\n'
+                    '        onEntered: drag => {\n'
+                    '            if (drag.hasUrls || drag.hasText)\n'
+                    '                drag.accept(Qt.CopyAction);\n'
+                    '        }\n'
+                    '        onDropped: drop => {\n'
+                    '            const list = [];\n'
+                    '            if (drop.hasUrls && drop.urls.length > 0) {\n'
+                    '                for (let i = 0; i < drop.urls.length; i++)\n'
+                    '                    list.push(String(drop.urls[i]));\n'
+                    '            } else if (drop.hasText) {\n'
+                    '                const lines = drop.text.trim().split(/\\r?\\n/);\n'
+                    '                for (let i = 0; i < lines.length; i++)\n'
+                    '                    if (lines[i].trim()) list.push(lines[i].trim());\n'
+                    '            }\n'
+                    '            if (list.length > 0) {\n'
+                    '                root.attachDroppedFiles(list);\n'
+                    '                drop.accept(Qt.CopyAction);\n'
+                    '            }\n'
+                    '        }\n'
+                    '    }\n\n'
+                    '    Rectangle {\n'
+                    '        visible: aiFileDropArea.containsDrag\n'
+                    '        anchors.fill: parent\n'
+                    '        anchors.margins: 6\n'
+                    '        z: 51\n'
+                    '        radius: Appearance.rounding.normal\n'
+                    '        color: ColorUtils.transparentize(Appearance.colors.colPrimaryContainer, 0.72)\n'
+                    '        border.width: 2\n'
+                    '        border.color: Appearance.colors.colPrimary\n\n'
+                    '        ColumnLayout {\n'
+                    '            anchors.centerIn: parent\n'
+                    '            spacing: 6\n'
+                    '            MaterialSymbol {\n'
+                    '                Layout.alignment: Qt.AlignHCenter\n'
+                    '                text: "attach_file"\n'
+                    '                iconSize: 32\n'
+                    '                color: Appearance.colors.colPrimary\n'
+                    '            }\n'
+                    '            StyledText {\n'
+                    '                Layout.alignment: Qt.AlignHCenter\n'
+                    '                font.pixelSize: Appearance.font.pixelSize.normal\n'
+                    '                font.weight: Font.Medium\n'
+                    '                color: Appearance.colors.colOnPrimaryContainer\n'
+                    '                text: Translation.tr("Drop files to attach")\n'
+                    '            }\n'
+                    '        }\n'
+                    '    }\n}',
+                ),
+                (
+                    "root.attachDroppedFiles(list);",
+                    '            let p = "";\n'
+                    '            if (drop.hasUrls && drop.urls.length > 0) {\n'
+                    '                p = String(drop.urls[0]);\n'
+                    '            } else if (drop.hasText) {\n'
+                    '                p = drop.text.trim().split(/\\r?\\n/)[0];\n'
+                    '            }\n'
+                    '            if (p) {\n'
+                    '                if (p.startsWith("file://")) p = FileUtils.trimFileProtocol(p);\n'
+                    '                try { p = decodeURIComponent(p); } catch (e) {}\n'
+                    '                Ai.attachFile(p);\n'
+                    '                drop.accept(Qt.CopyAction);\n'
+                    '            }',
+                    '            const list = [];\n'
+                    '            if (drop.hasUrls && drop.urls.length > 0) {\n'
+                    '                for (let i = 0; i < drop.urls.length; i++)\n'
+                    '                    list.push(String(drop.urls[i]));\n'
+                    '            } else if (drop.hasText) {\n'
+                    '                const lines = drop.text.trim().split(/\\r?\\n/);\n'
+                    '                for (let i = 0; i < lines.length; i++)\n'
+                    '                    if (lines[i].trim()) list.push(lines[i].trim());\n'
+                    '            }\n'
+                    '            if (list.length > 0) {\n'
+                    '                root.attachDroppedFiles(list);\n'
+                    '                drop.accept(Qt.CopyAction);\n'
+                    '            }',
+                ),
             ],
         )
 
@@ -1176,7 +1346,7 @@ def main() -> int:
             ii / "modules/ii/sidebarLeft/SidebarLeft.qml",
             [
                 (
-                    "if (!GlobalStates.animeViewerOpen) panelWindow.hide();",
+                    "if (!GlobalStates.animeViewerOpen",
                     "            Connections {\n"
                     "                target: GlobalFocusGrab\n"
                     "                function onDismissed() {\n"
@@ -1186,7 +1356,7 @@ def main() -> int:
                     "            Connections {\n"
                     "                target: GlobalFocusGrab\n"
                     "                function onDismissed() {\n"
-                    "                    if (!GlobalStates.animeViewerOpen) panelWindow.hide();\n"
+                    "                    if (!GlobalStates.animeViewerOpen && !root.pin) panelWindow.hide();\n"
                     "                }\n"
                     "            }\n"
                     "            Connections {\n"
@@ -1197,6 +1367,11 @@ def main() -> int:
                     "                    }\n"
                     "                }\n"
                     "            }",
+                ),
+                (
+                    "if (!GlobalStates.animeViewerOpen && !root.pin) panelWindow.hide();",
+                    "if (!GlobalStates.animeViewerOpen) panelWindow.hide();",
+                    "if (!GlobalStates.animeViewerOpen && !root.pin) panelWindow.hide();",
                 ),
                 (
                     "if (event.key === Qt.Key_Escape && !GlobalStates.animeViewerOpen)",
