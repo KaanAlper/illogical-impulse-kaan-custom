@@ -7,5 +7,10 @@ url=$2
 common='--allow-overwrite=true -c -m 2 -s 16 -k 1M -j 10 -x 16 --summary-interval=0'
 case "$url" in
     *.sig) exec /usr/bin/aria2c -q $common -d / -o "$out" "$url" ;;
-    *)     exec /usr/bin/aria2c --console-log-level=error --download-result=hide $common -d / -o "$out" "$url" ;;
+    *)
+        /usr/bin/aria2c --console-log-level=error --download-result=hide $common -d / -o "$out" "$url"
+        rc=$?
+        # İlerleme satırı bitince kalıyor; sonraki çıktının üstüne yapışmasın diye sil.
+        [ -t 1 ] && printf '\r\033[K'
+        exit $rc ;;
 esac
