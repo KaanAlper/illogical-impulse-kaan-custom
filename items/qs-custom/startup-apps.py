@@ -10,8 +10,7 @@ import sys
 USER_AUTOSTART = pathlib.Path.home() / ".config/autostart"
 SYS_AUTOSTART = pathlib.Path("/etc/xdg/autostart")
 HYPR_EXECS_LUA = pathlib.Path.home() / ".config/hypr/custom/execs.lua"
-HYPR_PERSONAL_LUA = pathlib.Path.home() / ".config/hypr/custom/execs.d/personal.lua"
-HYPR_LUA_FILES = (HYPR_EXECS_LUA, HYPR_PERSONAL_LUA)
+HYPR_EXECS_D = pathlib.Path.home() / ".config/hypr/custom/execs.d"
 HYPR_EXECS_CONF = pathlib.Path.home() / ".config/hypr/custom/execs.conf"
 
 EXEC_LUA_RE = re.compile(r'^(\s*)(--\s*\[disabled\]\s*)?hl\.exec_cmd\((["\'])(.+)\3\)\s*$')
@@ -48,12 +47,18 @@ def _parse_desktop(path: pathlib.Path) -> dict[str, str]:
 
 
 def _friendly_hypr_name(cmd: str) -> tuple[str, str]:
-    # "sleep 7 && /usr/local/bin/asena-dpi-tray" -> "asena-dpi-tray" (sleep/bekleme önekleri adı bozmasın)
+    # "sleep 7 && /usr/bin/foo-tray" -> "foo-tray" (sleep/bekleme önekleri adı bozmasın)
     segments = [s.strip() for s in re.split(r"&&|;|\|\|", cmd) if s.strip()]
     real = [s for s in segments if s.split()[0] not in ("sleep", "pkill")]
     parts = (real[-1] if real else cmd).split()
     base = os.path.basename(parts[0]) if parts else cmd
     return (base, "terminal")
+
+
+def _hypr_lua_files() -> list[pathlib.Path]:
+    """execs.lua + execs.d/*.lua: kullanıcının/özelliklerin eklediği tüm Hyprland başlangıç dosyaları (otomatik algılanır)."""
+    extra = sorted(HYPR_EXECS_D.glob("*.lua")) if HYPR_EXECS_D.is_dir() else []
+    return [HYPR_EXECS_LUA, *extra]
 
 
 def _label_from_comment(comment: str) -> str:
@@ -67,7 +72,7 @@ def list_apps() -> list[dict]:
     items: list[dict] = []
 
     # 1. Hyprland custom execs.lua / execs.conf entries
-    for fi, lua_path in enumerate(HYPR_LUA_FILES):
+    for lua_path in _hypr_lua_files():
         if lua_path.exists():
             mtime = lua_path.stat().st_mtime
             label = ""
@@ -81,12 +86,15 @@ def list_apps() -> list[dict]:
                     continue
                 disabled = bool(m.group(2))
                 cmd = m.group(4)
+                if "startup-apps.py" in cmd:  # bu yöneticinin kendi başlatıcısı: kapatılırsa hiçbir autostart çalışmaz
+                    label = ""
+                    continue
                 name, icon = _friendly_hypr_name(cmd)
                 if label:
                     name = label
                 label = ""
                 items.append({
-                    "id": f"hyprlua:{idx}" if fi == 0 else f"hyprlua:{fi}:{idx}",
+                    "id": f"hyprlua:{idx}" if lua_path == HYPR_EXECS_LUA else f"hyprlua:{lua_path.name}:{idx}",
                     "name": name,
                     "cmd": cmd,
                     "icon": icon,
@@ -161,10 +169,12 @@ def list_apps() -> list[dict]:
 def toggle_app(item_id: str, enable: bool) -> int:
     if item_id.startswith("hyprlua:"):
         parts = item_id.split(":")
-        fi, idx = (0, int(parts[1])) if len(parts) == 2 else (int(parts[1]), int(parts[2]))
-        if not 0 <= fi < len(HYPR_LUA_FILES):
-            return 1
-        lua_path = HYPR_LUA_FILES[fi]
+        if len(parts) == 2:
+            lua_path, idx = HYPR_EXECS_LUA, int(parts[1])
+        else:
+            if pathlib.Path(parts[1]).name != parts[1]:  # yol geçişi yok: yalnızca execs.d içindeki dosya adı
+                return 1
+            lua_path, idx = HYPR_EXECS_D / parts[1], int(parts[2])
         if not lua_path.exists():
             return 1
         lines = lua_path.read_text(encoding="utf-8").splitlines(keepends=True)

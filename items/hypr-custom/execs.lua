@@ -1,13 +1,19 @@
 -- Commands executed once at Hyprland startup (not on config reload).
 -- Feature-specific startup hooks live in ~/.config/hypr/custom/execs.d/*.lua
--- and are installed as part of their parent feature in dotsync.
+-- (installed by dotsync features, or add your own: every file there is loaded automatically).
 
 hl.on("hyprland.start", function ()
-    for _, name in ipairs({ "bootsplash", "startup-apps", "personal" }) do
-        local p = HOME .. "/.config/hypr/custom/execs.d/" .. name .. ".lua"
-        if is_file_exists(p) then
-            dofile(p)
+    -- Load every execs.d/*.lua hook (dotsync features and anything you add yourself).
+    -- A file dropped in there starts automatically; a broken one never blocks the rest.
+    local ls = io.popen("ls -1 \"" .. HOME .. "/.config/hypr/custom/execs.d/\"*.lua 2>/dev/null")
+    if ls then
+        for p in ls:lines() do
+            local ok, err = pcall(dofile, p)
+            if not ok then
+                print("execs.d: " .. p .. ": " .. tostring(err))
+            end
         end
+        ls:close()
     end
 
     -- Focus configured default monitor (or largest resolution monitor) on startup
