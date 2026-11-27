@@ -10,6 +10,8 @@ import sys
 USER_AUTOSTART = pathlib.Path.home() / ".config/autostart"
 SYS_AUTOSTART = pathlib.Path("/etc/xdg/autostart")
 HYPR_EXECS_LUA = pathlib.Path.home() / ".config/hypr/custom/execs.lua"
+HYPR_PERSONAL_LUA = pathlib.Path.home() / ".config/hypr/custom/execs.d/personal.lua"
+HYPR_LUA_FILES = (HYPR_EXECS_LUA, HYPR_PERSONAL_LUA)
 HYPR_EXECS_CONF = pathlib.Path.home() / ".config/hypr/custom/execs.conf"
 
 EXEC_LUA_RE = re.compile(r'^(\s*)(--\s*\[disabled\]\s*)?hl\.exec_cmd\((["\'])(.+)\3\)\s*$')
@@ -65,33 +67,34 @@ def list_apps() -> list[dict]:
     items: list[dict] = []
 
     # 1. Hyprland custom execs.lua / execs.conf entries
-    if HYPR_EXECS_LUA.exists():
-        mtime = HYPR_EXECS_LUA.stat().st_mtime
-        label = ""
-        for idx, line in enumerate(HYPR_EXECS_LUA.read_text(encoding="utf-8", errors="replace").splitlines()):
-            stripped = line.strip()
-            if stripped.startswith("--") and "[disabled]" not in stripped:
-                label = _label_from_comment(stripped)
-                continue
-            m = EXEC_LUA_RE.match(line)
-            if not m:
-                continue
-            disabled = bool(m.group(2))
-            cmd = m.group(4)
-            name, icon = _friendly_hypr_name(cmd)
-            if label:
-                name = label
+    for fi, lua_path in enumerate(HYPR_LUA_FILES):
+        if lua_path.exists():
+            mtime = lua_path.stat().st_mtime
             label = ""
-            items.append({
-                "id": f"hyprlua:{idx}",
-                "name": name,
-                "cmd": cmd,
-                "icon": icon,
-                "source": "Hypr",
-                "enabled": not disabled,
-                "removable": False,
-                "mtime": mtime,
-            })
+            for idx, line in enumerate(lua_path.read_text(encoding="utf-8", errors="replace").splitlines()):
+                stripped = line.strip()
+                if stripped.startswith("--") and "[disabled]" not in stripped:
+                    label = _label_from_comment(stripped)
+                    continue
+                m = EXEC_LUA_RE.match(line)
+                if not m:
+                    continue
+                disabled = bool(m.group(2))
+                cmd = m.group(4)
+                name, icon = _friendly_hypr_name(cmd)
+                if label:
+                    name = label
+                label = ""
+                items.append({
+                    "id": f"hyprlua:{idx}" if fi == 0 else f"hyprlua:{fi}:{idx}",
+                    "name": name,
+                    "cmd": cmd,
+                    "icon": icon,
+                    "source": "Hypr",
+                    "enabled": not disabled,
+                    "removable": False,
+                    "mtime": mtime,
+                })
 
     if HYPR_EXECS_CONF.exists():
         mtime = HYPR_EXECS_CONF.stat().st_mtime
@@ -157,10 +160,14 @@ def list_apps() -> list[dict]:
 
 def toggle_app(item_id: str, enable: bool) -> int:
     if item_id.startswith("hyprlua:"):
-        idx = int(item_id.split(":", 1)[1])
-        if not HYPR_EXECS_LUA.exists():
+        parts = item_id.split(":")
+        fi, idx = (0, int(parts[1])) if len(parts) == 2 else (int(parts[1]), int(parts[2]))
+        if not 0 <= fi < len(HYPR_LUA_FILES):
             return 1
-        lines = HYPR_EXECS_LUA.read_text(encoding="utf-8").splitlines(keepends=True)
+        lua_path = HYPR_LUA_FILES[fi]
+        if not lua_path.exists():
+            return 1
+        lines = lua_path.read_text(encoding="utf-8").splitlines(keepends=True)
         if 0 <= idx < len(lines):
             m = EXEC_LUA_RE.match(lines[idx].rstrip("\r\n"))
             if m:
@@ -168,7 +175,7 @@ def toggle_app(item_id: str, enable: bool) -> int:
                 nl = "\n" if lines[idx].endswith("\n") else ""
                 prefix = "" if enable else "-- [disabled] "
                 lines[idx] = f"{indent}{prefix}hl.exec_cmd({q}{cmd}{q}){nl}"
-                HYPR_EXECS_LUA.write_text("".join(lines), encoding="utf-8")
+                lua_path.write_text("".join(lines), encoding="utf-8")
                 return 0
         return 1
 
