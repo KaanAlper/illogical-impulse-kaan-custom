@@ -15,7 +15,9 @@ setup_aria2() {
     pacman -Q aria2 >/dev/null 2>&1 || sudo pacman -S --needed --noconfirm aria2
     # Eski/yorumlu/çift XferCommand satırlarını temizle, [options] altına tek satır ekle.
     sudo sed -i -E '/^#?XferCommand/d' "$CONF"
-    sudo sed -i '/^\[options\]/a XferCommand = /usr/bin/aria2c -q --allow-overwrite=true -c -m 2 -s 16 -k 1M -j 10 -x 16 --summary-interval=0 -d / -o %o %u' "$CONF"
+    # Sarmalayıcıyı conf'tan ÖNCE kur: yoksa XferCommand pacman'i bozar.
+    sudo install -Dm755 "$(dirname "${BASH_SOURCE[0]}")/pacman-aria2" /usr/local/bin/pacman-aria2
+    sudo sed -i '/^\[options\]/a XferCommand = /usr/local/bin/pacman-aria2 %o %u' "$CONF"
     echo "✓ aria2 XferCommand ayarlandı"
 }
 

@@ -252,7 +252,7 @@
         {
           "file_has": [
             "/etc/pacman.conf",
-            "XferCommand = /usr/bin/aria2c"
+            "XferCommand = /usr/local/bin/pacman-aria2"
           ]
         }
       ],

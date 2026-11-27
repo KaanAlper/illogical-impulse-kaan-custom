@@ -1,0 +1,11 @@
+#!/bin/sh
+# pacman XferCommand sarmalayıcısı: pacman-aria2 <çıktı-dosyası> <url>
+# .sig dosyaları sessiz iner (çoğu depo imza yayınlamaz, 404 normaldir; çıkış kodu yine iletilir).
+# Diğer indirmelerde ilerleme satırı gösterilir, sonuç tablosu gizlenir.
+out=$1
+url=$2
+common='--allow-overwrite=true -c -m 2 -s 16 -k 1M -j 10 -x 16 --summary-interval=0'
+case "$url" in
+    *.sig) exec /usr/bin/aria2c -q $common -d / -o "$out" "$url" ;;
+    *)     exec /usr/bin/aria2c --console-log-level=error --download-result=hide $common -d / -o "$out" "$url" ;;
+esac
